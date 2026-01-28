@@ -18,47 +18,20 @@
             color: #e0e0e0;
             background-image: radial-gradient(circle at center, #1a1a1a 0%, #0a0a0a 100%);
         }
-        h1, h2, h3, h4, h5, .nav-link, .btn {
-            text-transform: uppercase;
-            letter-spacing: 1px;
-        }
+        h1, h2, h3, h4, h5, .nav-link, .btn { text-transform: uppercase; letter-spacing: 1px; }
         .text-shock { color: var(--shock-red) !important; text-shadow: 0 0 10px rgba(192, 57, 43, 0.3); }
         .btn-shock { background-color: var(--shock-red); border: none; color: white; font-weight: 600; }
         .btn-shock:hover { background-color: #a93226; box-shadow: 0 0 15px rgba(192, 57, 43, 0.5); color: white; }
-        
-        .card {
-            background-color: var(--card-bg);
-            border: 1px solid #333;
-            box-shadow: 0 4px 6px rgba(0,0,0,0.3);
-        }
+        .card { background-color: var(--card-bg); border: 1px solid #333; box-shadow: 0 4px 6px rgba(0,0,0,0.3); }
         .card-header { border-bottom: 1px solid #333; background-color: rgba(192, 57, 43, 0.1); }
-        .form-control, .form-select {
-            background-color: #222;
-            border: 1px solid #444;
-            color: #fff;
-        }
-        .form-control:focus, .form-select:focus {
-            background-color: #2a2a2a;
-            border-color: var(--shock-red);
-            box-shadow: 0 0 5px rgba(192, 57, 43, 0.5);
-            color: #fff;
-        }
-
-        /* Onglets */
+        .form-control, .form-select { background-color: #222; border: 1px solid #444; color: #fff; }
+        .form-control:focus, .form-select:focus { background-color: #2a2a2a; border-color: var(--shock-red); color: #fff; }
         .nav-tabs { border-bottom: 2px solid #333; }
         .nav-link { color: #888; border: none; padding: 1rem 1.5rem; font-weight: 600; transition: all 0.3s; }
         .nav-link:hover { color: var(--shock-red); }
-        .nav-link.active {
-            background-color: transparent;
-            color: var(--shock-red);
-            border-bottom: 3px solid var(--shock-red);
-        }
-
-        /* Badges */
-        .badge-done { background-color: #27ae60; color: white; box-shadow: 0 0 10px rgba(39, 174, 96, 0.3); }
-        .badge-pending { background-color: #f39c12; color: #000; box-shadow: 0 0 10px rgba(243, 156, 18, 0.3); }
-
-        /* Détails */
+        .nav-link.active { background-color: transparent; color: var(--shock-red); border-bottom: 3px solid var(--shock-red); }
+        .badge-done { background-color: #27ae60; color: white; }
+        .badge-pending { background-color: #f39c12; color: #000; }
         .details-box { background-color: rgba(255,255,255,0.05); border-left: 3px solid var(--shock-red); }
     </style>
 </head>
@@ -70,12 +43,8 @@
     </header>
 
     <ul class="nav nav-tabs mb-4 justify-content-center">
-        <li class="nav-item">
-            <a class="nav-link active" href="#" onclick="changerOnglet('encours')">📡 Mandats en Cours</a>
-        </li>
-        <li class="nav-item">
-            <a class="nav-link" href="#" onclick="changerOnglet('historique')">💾 Archives (30 Derniers)</a>
-        </li>
+        <li class="nav-item"><a class="nav-link active" href="#" onclick="changerOnglet('encours')">📡 Mandats en Cours</a></li>
+        <li class="nav-item"><a class="nav-link" href="#" onclick="changerOnglet('historique')">💾 Archives (30 Derniers)</a></li>
     </ul>
 
     <div id="btnAdminZone" class="text-center mb-4">
@@ -85,7 +54,7 @@
     <div class="row justify-content-center" id="adminPanel" style="display: none;">
         <div class="col-lg-10 mb-5">
             <div class="card border-danger">
-                <div class="card-header text-center text-shock fw-bold py-3">
+                <div class="card-header text-center text-shock fw-bold py-3" id="formTitle">
                     ⚠️ ORDONNER UN NOUVEAU PROTOCOLE
                 </div>
                 <div class="card-body p-4">
@@ -94,12 +63,8 @@
                             <h5 class="text-muted mb-3">Information de l'Officier</h5>
                             <input type="password" id="authCode" class="form-control mb-2" placeholder="Code de Sécurité (Requis)">
                             <div class="row g-2">
-                                <div class="col-4">
-                                    <input type="text" id="matricule" class="form-control" placeholder="Matricule">
-                                </div>
-                                <div class="col-8">
-                                    <input type="text" id="nom" class="form-control" placeholder="Nom">
-                                </div>
+                                <div class="col-4"><input type="text" id="matricule" class="form-control" placeholder="Matricule"></div>
+                                <div class="col-8"><input type="text" id="nom" class="form-control" placeholder="Nom"></div>
                             </div>
                             <select id="grade" class="form-select mt-2">
                                 <option selected disabled>Sélectionner un grade...</option>
@@ -111,18 +76,16 @@
                             <h5 class="text-muted mb-3">Détails du Mandat</h5>
                             <input type="text" id="steamid" class="form-control mb-2 fw-bold text-warning" placeholder="SteamID64 de la Cible">
                             <div class="row g-2">
-                                <div class="col-6">
-                                    <input type="text" id="protocole" class="form-control" placeholder="Sanction (ex: 10min)">
-                                </div>
-                                <div class="col-6">
-                                    <input type="text" id="raison" class="form-control" placeholder="Raison sommaire">
-                                </div>
+                                <div class="col-6"><input type="text" id="protocole" class="form-control" placeholder="Sanction"></div>
+                                <div class="col-6"><input type="text" id="raison" class="form-control" placeholder="Raison"></div>
                             </div>
-                            <textarea id="details" class="form-control mt-2" rows="3" placeholder="Rapport détaillé de l'incident..."></textarea>
+                            <textarea id="details" class="form-control mt-2" rows="3" placeholder="Rapport détaillé..."></textarea>
                         </div>
                     </div>
+                    
                     <div class="text-center mt-4">
-                        <button onclick="envoyerProtocole()" class="btn btn-shock btn-lg px-5">Transmettre l'Ordre</button>
+                        <button id="btnSubmit" onclick="envoyerProtocole()" class="btn btn-shock btn-lg px-5">Transmettre l'Ordre</button>
+                        <button id="btnCancel" onclick="resetForm()" class="btn btn-outline-secondary btn-lg px-3 ms-2" style="display:none;">Annuler</button>
                     </div>
                 </div>
             </div>
@@ -134,14 +97,16 @@
         <span class="badge bg-secondary" id="compteur">0 dossiers</span>
     </div>
     
-    <div id="listeProtocoles" class="row g-4">
-        </div>
+    <div id="listeProtocoles" class="row g-4"></div>
 
     <script src="https://cdn.jsdelivr.net/npm/bootstrap@5.3.2/dist/js/bootstrap.bundle.min.js"></script>
     <script>
         const API_URL = '/api/protocoles';
         const API_HISTORY = '/api/historique';
-        let ongletActuel = 'encours';
+        
+        // Variables globales pour stocker les données et l'état d'édition
+        let currentData = [];
+        let editingId = null; 
 
         function toggleAdmin() {
             const panel = document.getElementById('adminPanel');
@@ -149,7 +114,7 @@
         }
 
         function changerOnglet(type) {
-            ongletActuel = type;
+            resetForm(); // Reset du formulaire si on change d'onglet
             document.querySelectorAll('.nav-link').forEach(el => el.classList.remove('active'));
             event.target.classList.add('active');
 
@@ -172,17 +137,67 @@
         async function chargerEnCours() {
             try {
                 const response = await fetch(API_URL);
-                const data = await response.json();
-                afficherCartes(data, true);
+                currentData = await response.json(); // On stocke les données
+                afficherCartes(currentData, true);
             } catch (e) { console.error(e); }
         }
 
         async function chargerHistorique() {
             try {
                 const response = await fetch(API_HISTORY);
-                const data = await response.json();
-                afficherCartes(data, false);
+                currentData = await response.json();
+                afficherCartes(currentData, false);
             } catch (e) { console.error(e); }
+        }
+
+        // Fonction pour pré-remplir le formulaire
+        function preparerAction(id, mode) {
+            // On trouve l'élément dans la liste locale
+            const item = currentData.find(p => p._id === id);
+            if(!item) return;
+
+            // On remplit les champs
+            document.getElementById('matricule').value = item.auteurMatricule;
+            document.getElementById('nom').value = item.auteurNom;
+            document.getElementById('grade').value = item.auteurGrade;
+            document.getElementById('steamid').value = item.targetSteamID;
+            document.getElementById('protocole').value = item.protocoleType;
+            document.getElementById('raison').value = item.raison;
+            document.getElementById('details').value = item.details;
+
+            // Afficher le panneau
+            document.getElementById('adminPanel').style.display = 'block';
+            
+            // Scroller vers le formulaire
+            document.getElementById('adminPanel').scrollIntoView({ behavior: 'smooth' });
+
+            if(mode === 'modifier') {
+                editingId = id;
+                document.getElementById('formTitle').innerText = "📝 MODIFICATION DU PROTOCOLE";
+                document.getElementById('btnSubmit').innerText = "Sauvegarder les modifications";
+                document.getElementById('btnSubmit').className = "btn btn-warning btn-lg px-5";
+                document.getElementById('btnCancel').style.display = "inline-block";
+            } else if(mode === 'dupliquer') {
+                editingId = null; // On force la création d'un nouveau
+                document.getElementById('formTitle').innerText = "📋 DUPLICATION DE PROTOCOLE";
+                document.getElementById('btnSubmit').innerText = "Créer la copie";
+                document.getElementById('btnSubmit').className = "btn btn-shock btn-lg px-5";
+                document.getElementById('btnCancel').style.display = "inline-block";
+            }
+        }
+
+        function resetForm() {
+            editingId = null;
+            document.getElementById('formTitle').innerText = "⚠️ ORDONNER UN NOUVEAU PROTOCOLE";
+            document.getElementById('btnSubmit').innerText = "Transmettre l'Ordre";
+            document.getElementById('btnSubmit').className = "btn btn-shock btn-lg px-5";
+            document.getElementById('btnCancel').style.display = "none";
+            
+            // On vide les champs cibles (mais on peut garder les infos de l'officier si on veut)
+            document.getElementById('steamid').value = '';
+            document.getElementById('protocole').value = '';
+            document.getElementById('raison').value = '';
+            document.getElementById('details').value = '';
         }
 
         function afficherCartes(data, estEditable) {
@@ -191,9 +206,7 @@
             document.getElementById('compteur').innerText = `${data.length} dossiers`;
 
             if(data.length === 0) {
-                container.innerHTML = `<div class="col-12 text-center py-5 text-muted">
-                    <h3 class="fw-light">Aucun dossier dans cette section.</h3>
-                </div>`;
+                container.innerHTML = `<div class="col-12 text-center py-5 text-muted"><h3 class="fw-light">Aucun dossier.</h3></div>`;
                 return;
             }
 
@@ -203,16 +216,20 @@
                     ? '<span class="badge badge-done rounded-pill px-3 py-2">✅ EFFECTUÉ</span>' 
                     : '<span class="badge badge-pending rounded-pill px-3 py-2">⏳ EN ATTENTE</span>';
                 
-                const btnValider = estEditable 
-                    ? `<div class="card-footer bg-transparent border-top-0 pt-0">
-                        <button onclick="valider('${p._id}')" class="btn btn-outline-success w-100 fw-bold">Confirmer le Traitement</button>
-                       </div>` 
-                    : '';
+                // Barre de boutons
+                let actionButtons = '';
+                if(estEditable) {
+                    actionButtons = `
+                    <div class="card-footer bg-transparent border-top-0 pt-0 d-flex gap-2">
+                        <button onclick="valider('${p._id}')" class="btn btn-outline-success flex-grow-1 fw-bold">Confirmer</button>
+                        <button onclick="preparerAction('${p._id}', 'modifier')" class="btn btn-outline-warning" title="Modifier">✏️</button>
+                        <button onclick="preparerAction('${p._id}', 'dupliquer')" class="btn btn-outline-info" title="Dupliquer">📋</button>
+                    </div>`;
+                }
 
-                // Opacité réduite pour l'historique
                 const cardStyle = estEditable ? '' : 'opacity: 0.7; filter: grayscale(30%);';
                 const dateObj = new Date(p.date);
-                const dateStr = dateObj.toLocaleDateString() + ' à ' + dateObj.toLocaleTimeString().slice(0,5);
+                const dateStr = dateObj.toLocaleDateString() + ' ' + dateObj.toLocaleTimeString().slice(0,5);
 
                 const card = `
                 <div class="col-md-6 col-xl-4" style="${cardStyle}">
@@ -224,36 +241,21 @@
                         <div class="card-body">
                             <div class="d-flex justify-content-between small text-muted mb-3">
                                 <span>📅 ${dateStr}</span>
-                                <span>Par: <strong class="text-shock">${p.auteurGrade} ${p.auteurNom}</strong></span>
+                                <span>${p.auteurGrade} ${p.auteurNom}</span>
                             </div>
-                            
                             <div class="row mb-3 g-2">
-                                <div class="col-6">
-                                    <div class="p-2 bg-dark rounded border border-secondary">
-                                        <small class="text-muted d-block ls-1">SANCTION</small>
-                                        <span class="fw-bold text-danger fs-5">${p.protocoleType}</span>
-                                    </div>
-                                </div>
-                                <div class="col-6">
-                                    <div class="p-2 bg-dark rounded border border-secondary">
-                                        <small class="text-muted d-block ls-1">RAISON</small>
-                                        <span class="fw-bold fs-5">${p.raison}</span>
-                                    </div>
-                                </div>
+                                <div class="col-6"><div class="p-2 bg-dark rounded border border-secondary"><small class="text-muted d-block ls-1">SANCTION</small><span class="fw-bold text-danger">${p.protocoleType}</span></div></div>
+                                <div class="col-6"><div class="p-2 bg-dark rounded border border-secondary"><small class="text-muted d-block ls-1">RAISON</small><span class="fw-bold">${p.raison}</span></div></div>
                             </div>
-
-                            <div class="details-box p-3 rounded bg-dark text-light small fst-italic">
-                                " ${p.details} "
-                            </div>
+                            <div class="details-box p-3 rounded bg-dark text-light small fst-italic mb-2">" ${p.details} "</div>
                         </div>
-                        ${btnValider}
+                        ${actionButtons}
                     </div>
                 </div>`;
                 container.innerHTML += card;
             });
         }
         
-        // (Les fonctions envoyerProtocole et valider restent identiques, je les remets pour être sûr)
         async function envoyerProtocole() {
             const auth = document.getElementById('authCode').value;
             if(!auth) { alert("Code de sécurité manquant."); return; }
@@ -268,35 +270,37 @@
                 details: document.getElementById('details').value
             };
 
+            // Logique : Si editingId existe -> PUT (Modif), sinon -> POST (Création)
+            const method = editingId ? 'PUT' : 'POST';
+            const url = editingId ? `${API_URL}/${editingId}` : API_URL;
+
             try {
-                const response = await fetch(API_URL, {
-                    method: 'POST',
+                const response = await fetch(url, {
+                    method: method,
                     headers: { 'Content-Type': 'application/json', 'Authorization': auth },
                     body: JSON.stringify(body)
                 });
-                if(response.ok) {
-                    document.getElementById('details').value = '';
-                    document.getElementById('steamid').value = '';
-                    alert('✅ Ordre transmis avec succès.');
-                    chargerEnCours();
-                    toggleAdmin();
-                } else { alert('❌ Erreur : Code Officier Incorrect.'); }
-            } catch(e) { alert("Erreur de connexion au serveur."); }
-        }
 
-        async function valider(id) {
-            const auth = prompt("Confirmation Officier (Code d'accès) :");
-            if(!auth) return;
-            try {
-                const response = await fetch(`${API_URL}/${id}/valider`, {
-                    method: 'PUT',
-                    headers: { 'Authorization': auth }
-                });
-                if(response.ok) { chargerEnCours(); } else { alert("❌ Accès refusé."); }
+                if(response.ok) {
+                    alert(editingId ? '✅ Modification enregistrée' : '✅ Ordre transmis');
+                    resetForm(); // On remet le formulaire à zéro
+                    chargerEnCours();
+                    if(!editingId) toggleAdmin(); // On ferme le panneau si c'était une création
+                } else { 
+                    alert('❌ Erreur : Code Officier Incorrect.'); 
+                }
             } catch(e) { alert("Erreur de connexion."); }
         }
 
-        // Démarrage
+        async function valider(id) {
+            const auth = prompt("Code Officier requis :");
+            if(!auth) return;
+            try {
+                await fetch(`${API_URL}/${id}/valider`, { method: 'PUT', headers: { 'Authorization': auth } });
+                chargerEnCours();
+            } catch(e) {}
+        }
+
         chargerEnCours();
     </script>
 </body>
