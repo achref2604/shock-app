@@ -99,4 +99,16 @@ app.put('/api/protocoles/:id/valider', verifierAuth, async (req, res) => {
 // ... (La fin avec app.listen ne change pas)
 const PORT = process.env.PORT || 3000;
 
+// 5. MODIFIER un protocole (Mise à jour des infos)
+app.put('/api/protocoles/:id', verifierAuth, async (req, res) => {
+    try {
+        // On met à jour tous les champs envoyés
+        await Protocole.findByIdAndUpdate(req.params.id, req.body);
+        res.json({ message: "Protocole mis à jour avec succès." });
+    } catch (error) {
+        res.status(500).json({ error: "Erreur lors de la modification" });
+    }
+});
+
 app.listen(PORT, () => console.log(`Serveur lancé sur le port ${PORT}`));
+
