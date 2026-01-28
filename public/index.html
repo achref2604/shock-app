@@ -1,79 +1,91 @@
-<!DOCTYPE html>
-<html lang="fr">
-<head>
-    <meta charset="UTF-8">
-    <title>Gestion Protocoles - Shock Troopers</title>
-    <link href="https://cdn.jsdelivr.net/npm/bootstrap@5.3.0/dist/css/bootstrap.min.css" rel="stylesheet">
-    <style>
-        body { background-color: #1a1a1a; color: #fff; }
-        .card { background-color: #2d2d2d; border: 1px solid #c0392b; }
-        .btn-shock { background-color: #c0392b; color: white; }
-        .text-shock { color: #c0392b; }
-    </style>
-</head>
 <body class="container py-5">
-
     <h1 class="text-center text-shock mb-5">CENTRE DE DÉTENTION - CORUSCANT GUARD</h1>
 
+    <div class="text-center mb-4">
+        <button class="btn btn-outline-danger btn-sm" onclick="toggleAdmin()">🔒 Accès Officier (Ajouter Protocole)</button>
+    </div>
+
     <div class="row">
-        <div class="col-md-4">
-            <div class="card p-3">
-                <h4 class="mb-3">Ordonner un Protocole</h4>
-                <input type="password" id="authCode" class="form-control mb-2" placeholder="Code d'accès Officier">
-                <hr>
-                <input type="text" id="matricule" class="form-control mb-2" placeholder="Votre Matricule (ex: 3567)">
-                <input type="text" id="nom" class="form-control mb-2" placeholder="Votre Nom">
-                <select id="grade" class="form-control mb-2">
-                    <option>Cadet</option>
-                    <option>Trooper</option>
-                    <option>Sergent</option>
-                    <option>Lieutenant</option>
-                    <option>Capitaine</option>
-                    <option>Commandant</option>
-                </select>
-                <input type="text" id="steamid" class="form-control mb-2" placeholder="SteamID64 du Suspect (IMPORTANT)">
-                <input type="text" id="protocole" class="form-control mb-2" placeholder="Protocole (ex: 10min)">
-                <input type="text" id="raison" class="form-control mb-2" placeholder="Raison sommaire">
-                <textarea id="details" class="form-control mb-2" placeholder="Détails complets de l'incident"></textarea>
-                
-                <button onclick="envoyerProtocole()" class="btn btn-shock w-100">Enregistrer l'ordre</button>
+        <div class="col-md-12 mb-4" id="adminPanel" style="display: none;">
+            <div class="card p-3 border-danger">
+                <h4 class="mb-3 text-danger">⚠️ Ordonner un Protocole</h4>
+                <div class="row">
+                    <div class="col-md-6">
+                        <input type="password" id="authCode" class="form-control mb-2" placeholder="Code d'accès Officier">
+                        <input type="text" id="matricule" class="form-control mb-2" placeholder="Votre Matricule">
+                        <input type="text" id="nom" class="form-control mb-2" placeholder="Votre Nom">
+                        <select id="grade" class="form-control mb-2">
+                            <option>Cadet</option><option>Trooper</option><option>Sergent</option>
+                            <option>Lieutenant</option><option>Capitaine</option><option>Commandant</option>
+                        </select>
+                    </div>
+                    <div class="col-md-6">
+                        <input type="text" id="steamid" class="form-control mb-2" placeholder="SteamID64 Cible">
+                        <input type="text" id="protocole" class="form-control mb-2" placeholder="Type de Protocole">
+                        <input type="text" id="raison" class="form-control mb-2" placeholder="Raison">
+                        <textarea id="details" class="form-control mb-2" placeholder="Détails"></textarea>
+                        <button onclick="envoyerProtocole()" class="btn btn-shock w-100">Enregistrer l'ordre</button>
+                    </div>
+                </div>
             </div>
         </div>
 
-        <div class="col-md-8">
-            <h4 class="mb-3">Mandats d'arrêt & Protocoles en attente</h4>
-            <div id="listeProtocoles">
+        <div class="col-md-12">
+            <h4 class="mb-3">Dossiers en cours</h4>
+            <div id="listeProtocoles" class="row">
                 </div>
         </div>
     </div>
 
     <script>
-        const API_URL = '/api/protocoles'; // A changer lors de la mise en ligne
+        const API_URL = '/api/protocoles';
 
-        async function chargerProtocoles() {
-            const response = await fetch(API_URL);
-            const data = await response.json();
-            const container = document.getElementById('listeProtocoles');
-            container.innerHTML = '';
-
-            data.forEach(p => {
-                const badgeColor = p.statut === 'Effectué' ? 'bg-success' : 'bg-warning';
-                
-                const card = `
-                <div class="card mb-3 p-3">
-                    <div class="d-flex justify-content-between">
-                        <h5>Cible : ${p.targetSteamID} <span class="badge ${badgeColor}">${p.statut}</span></h5>
-                        <small class="text-muted">${new Date(p.date).toLocaleDateString()}</small>
-                    </div>
-                    <p><strong>Sanction :</strong> ${p.protocoleType} pour ${p.raison}</p>
-                    <p><em>Ordonné par : ${p.auteurGrade} ${p.auteurNom} (${p.auteurMatricule})</em></p>
-                    <div class="alert alert-secondary p-2">${p.details}</div>
-                    ${p.statut !== 'Effectué' ? `<button onclick="valider('${p._id}')" class="btn btn-sm btn-outline-success">Marquer comme fait</button>` : ''}
-                </div>`;
-                container.innerHTML += card;
-            });
+        // Fonction pour afficher/cacher le panneau admin
+        function toggleAdmin() {
+            const panel = document.getElementById('adminPanel');
+            if (panel.style.display === 'none') {
+                panel.style.display = 'block';
+            } else {
+                panel.style.display = 'none';
+            }
         }
 
+        async function chargerProtocoles() {
+            try {
+                const response = await fetch(API_URL);
+                if (!response.ok) throw new Error("Erreur réseau"); // Vérification
+                const data = await response.json();
+                const container = document.getElementById('listeProtocoles');
+                container.innerHTML = '';
+
+                data.forEach(p => {
+                    const badgeColor = p.statut === 'Effectué' ? 'bg-success' : 'bg-warning';
+                    // J'ai mis col-md-6 pour en afficher 2 par ligne, plus joli
+                    const card = `
+                    <div class="col-md-6 mb-3">
+                        <div class="card h-100 p-3">
+                            <div class="d-flex justify-content-between">
+                                <h5>${p.targetSteamID} <span class="badge ${badgeColor}">${p.statut}</span></h5>
+                                <small class="text-muted">${new Date(p.date).toLocaleDateString()}</small>
+                            </div>
+                            <p class="mb-1"><strong>Sanction :</strong> ${p.protocoleType}</p>
+                            <p class="mb-1"><strong>Raison :</strong> ${p.raison}</p>
+                            <p class="text-muted small"><em>Par : ${p.auteurGrade} ${p.auteurNom}</em></p>
+                            <div class="alert alert-dark p-2 small mb-2">${p.details}</div>
+                            ${p.statut !== 'Effectué' ? `<button onclick="valider('${p._id}')" class="btn btn-sm btn-outline-success w-100">👮 Marquer comme fait</button>` : ''}
+                        </div>
+                    </div>`;
+                    container.innerHTML += card;
+                });
+            } catch (e) {
+                console.error("Erreur de chargement:", e);
+            }
+        }
+
+        // Le reste de tes fonctions (envoyerProtocole, valider) ne change pas...
+        // ... Recopie tes fonctions envoyerProtocole et valider ici ...
+        
+        // Copie ici exactement les fonctions envoyerProtocole et valider que tu avais avant
         async function envoyerProtocole() {
             const auth = document.getElementById('authCode').value;
             const body = {
@@ -95,6 +107,7 @@
             if(response.ok) {
                 alert('Protocole enregistré');
                 chargerProtocoles();
+                toggleAdmin(); // Cache le formulaire après succès
             } else {
                 alert('Erreur : Vérifiez votre code d\'accès');
             }
@@ -102,15 +115,18 @@
 
         async function valider(id) {
             const auth = prompt("Code d'accès pour valider :");
-            await fetch(`${API_URL}/${id}/valider`, {
+            if(!auth) return;
+            const response = await fetch(`${API_URL}/${id}/valider`, {
                 method: 'PUT',
                 headers: { 'Authorization': auth }
             });
-            chargerProtocoles();
+            if(response.ok) {
+                chargerProtocoles();
+            } else {
+                alert("Code incorrect");
+            }
         }
 
-        // Charger au démarrage
         chargerProtocoles();
     </script>
 </body>
-</html>
