@@ -43,7 +43,25 @@ const verifierAuth = (req, res, next) => {
     }
 };
 
-// Routes API
+// ... (Le début de ton fichier avec les connexions ne change pas) ...
+
+// --- ROUTES API ---
+
+// 1. VOIR les protocoles EN ATTENTE (Pour la page principale)
+app.get('/api/protocoles', async (req, res) => {
+    // On ne cherche que ceux qui ne sont PAS effectués
+    const protocoles = await Protocole.find({ statut: { $ne: 'Effectué' } }).sort({ date: -1 });
+    res.json(protocoles);
+});
+
+// 2. VOIR L'HISTORIQUE (Les 30 derniers effectués)
+app.get('/api/historique', async (req, res) => {
+    // On cherche ceux qui SONT effectués
+    const protocoles = await Protocole.find({ statut: 'Effectué' }).sort({ date: -1 });
+    res.json(protocoles);
+});
+
+// 3. AJOUTER un protocole (Reste pareil)
 app.post('/api/protocoles', verifierAuth, async (req, res) => {
     try {
         const nouveauProtocole = new Protocole(req.body);
@@ -52,15 +70,33 @@ app.post('/api/protocoles', verifierAuth, async (req, res) => {
     } catch (error) { res.status(500).json({ error: error.message }); }
 });
 
-app.get('/api/protocoles', async (req, res) => {
-    const protocoles = await Protocole.find().sort({ date: -1 });
-    res.json(protocoles);
-});
-
+// 4. VALIDER un protocole + NETTOYAGE AUTOMATIQUE (C'est ici que la magie opère)
 app.put('/api/protocoles/:id/valider', verifierAuth, async (req, res) => {
-    await Protocole.findByIdAndUpdate(req.params.id, { statut: 'Effectué' });
-    res.json({ message: "Validé." });
+    try {
+        // A. On marque le protocole comme effectué
+        await Protocole.findByIdAndUpdate(req.params.id, { statut: 'Effectué' });
+
+        // B. Logique de suppression des vieux protocoles (> 30)
+        // On compte combien sont terminés
+        const historique = await Protocole.find({ statut: 'Effectué' }).sort({ date: -1 }); // Du plus récent au plus vieux
+        
+        if (historique.length > 30) {
+            // S'il y en a plus de 30, on récupère les ID de ceux qui dépassent (les plus vieux à la fin de la liste)
+            const tropVieux = historique.slice(30); 
+            const idsASupprimer = tropVieux.map(p => p._id);
+            
+            // On les supprime de la base de données
+            await Protocole.deleteMany({ _id: { $in: idsASupprimer } });
+            console.log(`${idsASupprimer.length} vieux protocoles supprimés.`);
+        }
+
+        res.json({ message: "Validé et historique nettoyé." });
+    } catch (error) {
+        res.status(500).json({ error: "Erreur lors de la validation" });
+    }
 });
 
+// ... (La fin avec app.listen ne change pas)
 const PORT = process.env.PORT || 3000;
+
 app.listen(PORT, () => console.log(`Serveur lancé sur le port ${PORT}`));
