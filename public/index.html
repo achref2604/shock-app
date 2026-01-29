@@ -38,13 +38,12 @@
         .tag-remove { cursor: pointer; color: #e74c3c; margin-left: 5px; }
         .ls-1 { letter-spacing: 1px; font-weight: 600; font-size: 0.75rem; }
 
-        /* NOUVEAU STYLE POUR LE TEXTE UTILISATEUR (Retour à la ligne) */
         .user-text {
-            white-space: pre-wrap;       /* Garde les retours à la ligne de l'input */
-            word-wrap: break-word;       /* Coupe les mots si trop longs */
-            word-break: break-word;      /* Force la coupure si nécessaire */
-            overflow-wrap: break-word;   /* Standard moderne */
-            display: block;              /* Assure que ça prend la largeur */
+            white-space: pre-wrap;       
+            word-wrap: break-word;       
+            word-break: break-word;      
+            overflow-wrap: break-word;   
+            display: block;              
         }
     </style>
 </head>
@@ -114,14 +113,19 @@
                     <div class="row g-3">
                         <div class="col-md-3 border-end border-secondary pe-md-4">
                             <h5 class="text-muted mb-3"><i class="fas fa-user-shield"></i> Le Shock</h5>
-                            <div class="mb-3"><label class="small text-muted">Identification du Shock*</label><input type="text" id="sigShockName" class="form-control fw-bold text-signal" placeholder="Matricule + Nom"></div>
+                            <div class="mb-3">
+                                <label class="small text-muted">Identification du Shock*</label>
+                                <input type="text" id="sigShockName" class="form-control fw-bold text-signal" placeholder="Matricule + Nom">
+                            </div>
                         </div>
                         <div class="col-md-9 ps-md-4">
                             <h5 class="text-muted mb-3"><i class="fas fa-bullseye"></i> Clone Sanctionné</h5>
                             <div class="mb-2"><label class="small text-muted">Identité Cible*</label><input type="text" id="sigCibleNom" class="form-control"></div>
                             <div class="row g-2 mb-2">
                                 <div class="col-6"><label class="small text-muted">Grade*</label><input type="text" id="sigCibleGrade" class="form-control"></div>
-                                <div class="col-6"><label class="small text-muted">Régiment*</label><select id="sigCibleRegiment" class="form-select"><option value="" disabled selected>Chargement...</option></select></div>
+                                <div class="col-6"><label class="small text-muted">Régiment*</label>
+                                    <select id="sigCibleRegiment" class="form-select"><option value="" disabled selected>Chargement...</option></select>
+                                </div>
                             </div>
                             <div class="row g-2 mb-2">
                                 <div class="col-6"><label class="small text-muted">Protocole (1-10)*</label>
@@ -134,10 +138,18 @@
                                 </div>
                                 <div class="col-6"><label class="small text-muted">Ordonné par (Opt.)</label><input type="text" id="sigOrderedBy" class="form-control"></div>
                             </div>
-                            <div class="mb-2"><label class="small text-muted">Raison*</label><input type="text" id="sigRaison" class="form-control"></div>
-                            <h5 class="text-muted mb-2 mt-4">Détails</h5>
-                            <textarea id="sigDetails" class="form-control mb-3" rows="3"></textarea>
-                            <input type="text" id="sigSteamID" class="form-control form-control-sm text-secondary border-secondary" placeholder="SteamID64 (Facultatif)">
+                            
+                            <div class="mb-2">
+                                <label class="small text-muted">Raison*</label>
+                                <textarea id="sigRaison" class="form-control" rows="2"></textarea>
+                            </div>
+                            
+                            <div class="mb-2">
+                                <label class="small text-muted">Détails</label>
+                                <textarea id="sigDetails" class="form-control" rows="4"></textarea>
+                            </div>
+
+                            <input type="text" id="sigSteamID" class="form-control form-control-sm text-secondary border-secondary mt-3" placeholder="SteamID64 (Facultatif)">
                         </div>
                     </div>
                     <div class="text-center mt-4 pt-3 border-top border-secondary">
@@ -163,7 +175,9 @@
                             <div class="mb-2"><label class="small text-muted">Identité*</label><input type="text" id="cibleNom" class="form-control" placeholder="Matricule + Nom"></div>
                             <div class="row g-2 mb-2">
                                 <div class="col-6"><label class="small text-muted">Grade*</label><input type="text" id="cibleGrade" class="form-control"></div>
-                                <div class="col-6"><label class="small text-muted">Régiment*</label><select id="cibleRegiment" class="form-select"><option value="" disabled selected>Chargement...</option></select></div>
+                                <div class="col-6"><label class="small text-muted">Régiment*</label>
+                                    <select id="cibleRegiment" class="form-select"><option value="" disabled selected>Chargement...</option></select>
+                                </div>
                             </div>
                             <div class="row g-2 mb-2">
                                 <div class="col-6"><label class="small text-muted">Protocole*</label>
@@ -175,10 +189,18 @@
                                 </div>
                                 <div class="col-6"><label class="small text-muted">Temps (Opt.)</label><input type="text" id="tempsRestant" class="form-control border-warning text-warning"></div>
                             </div>
-                            <div class="mb-2"><label class="small text-muted">Raison*</label><input type="text" id="raison" class="form-control"></div>
-                            <h5 class="text-muted mb-2 mt-4">Détails</h5>
-                            <textarea id="details" class="form-control" rows="4"></textarea>
-                            <input type="text" id="steamid" class="form-control form-control-sm text-secondary border-secondary mt-3" placeholder="SteamID64 (Facultatif)">
+                            
+                            <div class="mb-2">
+                                <label class="small text-muted">Raison*</label>
+                                <textarea id="raison" class="form-control" rows="2"></textarea>
+                            </div>
+
+                            <div class="mb-2">
+                                <label class="small text-muted">Détails</label>
+                                <textarea id="details" class="form-control" rows="4"></textarea>
+                            </div>
+
+                            <div class="mb-2"><input type="text" id="steamid" class="form-control form-control-sm text-secondary border-secondary mt-3" placeholder="SteamID64 (Facultatif)"></div>
                         </div>
                     </div>
                     <div class="text-center mt-4 pt-3 border-top border-secondary">
@@ -312,12 +334,18 @@
             }
 
             try {
-                const res = await fetch('/api/protocoles/direct', { method: 'POST', headers: { 'Content-Type': 'application/json' }, body: JSON.stringify(body) });
+                const res = await fetch('/api/protocoles/direct', {
+                    method: 'POST',
+                    headers: { 'Content-Type': 'application/json' },
+                    body: JSON.stringify(body)
+                });
                 if(res.ok) {
                     alert("Signalement enregistré et archivé !");
                     document.querySelectorAll('#signalementPanel input, #signalementPanel textarea, #signalementPanel select').forEach(i => i.value = '');
                     document.querySelectorAll('.nav-link')[1].click(); 
-                } else { alert("Erreur"); }
+                } else {
+                    alert("Erreur");
+                }
             } catch(e) { alert("Erreur connexion"); }
         }
 
