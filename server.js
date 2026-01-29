@@ -19,7 +19,6 @@ const CALLBACK_URL = process.env.DISCORD_CALLBACK_URL;
 const SESSION_SECRET = process.env.SESSION_SECRET || 'secretSuperShock';
 const ALLOWED_GUILD_ID = process.env.ALLOWED_GUILD_ID;
 
-// CONFIG GOOGLE SHEET
 const SPREADSHEET_ID = '1vEQkvkcCMr6wvl0FsSj1oVdS5CUMttXsBNlt5jThXX0';
 const SHEET_NAME = '👮‍♂️ Casier Actuel';
 
@@ -38,23 +37,42 @@ mongoose.connect(MONGO_URI, { useNewUrlParser: true, useUnifiedTopology: true })
     .then(() => console.log("✅ Connecté à MongoDB"))
     .catch(err => console.error("❌ Erreur MongoDB:", err));
 
+// MODIFICATION CONFIG SCHEMA : Regiments devient un tableau d'objets
 const ConfigSchema = new mongoose.Schema({
-    adminRoles: [String], adminUsers: [String], officerRoles: [String], marineRoles: [String], regiments: [String]     
+    adminRoles: [String], 
+    adminUsers: [String], 
+    officerRoles: [String], 
+    marineRoles: [String],  
+    regiments: [{
+        name: String,
+        rappelDays: { type: Number, default: 7 },
+        sanctionDays: { type: Number, default: 3 },
+        sanctionText: { type: String, default: "Sanction par défaut" }
+    }]     
 });
 const Config = mongoose.model('Config', ConfigSchema);
 
 async function initConfig() {
     const exists = await Config.findOne();
-    if (!exists) { await new Config({ adminRoles: [], adminUsers: [], officerRoles: [], marineRoles: [], regiments: ['Shock', '501st'] }).save(); }
+    if (!exists) {
+        await new Config({ 
+            adminRoles: [], adminUsers: [], officerRoles: [], marineRoles: [], 
+            regiments: [{ name: 'Shock', rappelDays: 7, sanctionDays: 3, sanctionText: 'Arrêts' }] 
+        }).save();
+    }
 }
 initConfig();
 
 const ProtocoleSchema = new mongoose.Schema({
-    auteurNom: String, // Pour "Ordonné par"
+    auteurNom: String,
     discordUser: String, discordNick: String, discordId: String,
     cibleNom: String, cibleGrade: String, cibleRegiment: String, targetSteamID: String,
     protocoleType: String, raison: String, details: String, tempsRestant: String,
-    validatorUser: String, validatorNick: String, validatorId: String, validatorManualName: String, // Pour "Identification Shock"
+    validatorUser: String, validatorNick: String, validatorId: String, validatorManualName: String,
+    
+    // NOUVEAU : Qui a pris en charge le rappel
+    rappelPrisEnChargeBy: String, 
+
     statut: { type: String, default: 'En Attente' },
     date: { type: Date, default: Date.now }
 });
@@ -110,12 +128,12 @@ const checkValidate = async (req, res, next) => {
     res.status(403).json({ message: "Officiers Only." }); 
 };
 
-// --- FONCTION GOOGLE SHEET ---
 async function sendToGoogleSheet(protocole, shockName) {
     try {
         const sheets = google.sheets({ version: 'v4', auth: googleAuth });
         const result = await sheets.spreadsheets.values.get({ spreadsheetId: SPREADSHEET_ID, range: `${SHEET_NAME}!A:A` });
-        const nextRow = (result.data.values ? result.data.values.length : 0) + 1;
+        const numRows = result.data.values ? result.data.values.length : 0;
+        const nextRow = numRows + 1;
 
         const now = new Date();
         const dateStr = now.toLocaleDateString('fr-FR', { day: '2-digit', month: '2-digit', year: '2-digit', timeZone: 'Europe/Paris' }) + 
@@ -124,16 +142,8 @@ async function sendToGoogleSheet(protocole, shockName) {
         const protoNum = protocole.protocoleType.replace(/Protocole\s+/i, '');
 
         const values = [[
-            dateStr,                    // A: Date
-            shockName,                  // B: Shock (Celui qui applique)
-            protocole.cibleRegiment,    // C: Régiment
-            protocole.cibleGrade,       // D: Grade
-            protocole.cibleNom,         // E: Cible
-            protoNum,                   // F: Numéro Protocole
-            protocole.raison,           // G: Raison
-            protocole.auteurNom || "",  // H: Ordonné par (Peut être vide)
-            protocole.details || "",    // I: Détails
-            protocole.targetSteamID || "" // J: SteamID
+            dateStr, shockName, protocole.cibleRegiment, protocole.cibleGrade, protocole.cibleNom,
+            protoNum, protocole.raison, protocole.auteurNom || "", protocole.details || "", protocole.targetSteamID || ""
         ]];
 
         await sheets.spreadsheets.values.update({
@@ -170,36 +180,21 @@ app.post('/api/protocoles', checkEdit, async (req, res) => {
     } catch (e) { res.status(500).json({ error: e.message }); }
 });
 
-// NOUVELLE ROUTE : SIGNALEMENT DIRECT (Effectué immédiatement)
 app.post('/api/protocoles/direct', checkValidate, async (req, res) => {
     try {
         const data = req.body;
-        // On remplit les infos Discord du Shock connecté
-        data.discordUser = req.user.username;
-        data.discordNick = req.user.serverNick;
-        data.discordId = req.user.id;
-        
-        // On définit directement le statut et le validateur (le Shock connecté)
+        data.discordUser = req.user.username; data.discordNick = req.user.serverNick; data.discordId = req.user.id;
         data.statut = 'Effectué';
-        data.validatorUser = req.user.username;
-        data.validatorNick = req.user.serverNick;
-        data.validatorId = req.user.id;
-        // validatorManualName est déjà dans req.body (envoyé par le formulaire)
-
+        data.validatorUser = req.user.username; data.validatorNick = req.user.serverNick; data.validatorId = req.user.id;
         const nouveau = new Protocole(data);
         await nouveau.save();
-
-        // Envoi Sheet
         await sendToGoogleSheet(nouveau, data.validatorManualName);
-
-        // Nettoyage historique > 30
         const historique = await Protocole.find({ statut: 'Effectué' }).sort({ date: -1 });
         if (historique.length > 30) {
             const tropVieux = historique.slice(30);
             await Protocole.deleteMany({ _id: { $in: tropVieux.map(p => p._id) } });
         }
-
-        res.json({ message: "Signalement effectué et archivé." });
+        res.json({ message: "OK" });
     } catch (e) { res.status(500).json({ error: e.message }); }
 });
 
@@ -217,11 +212,9 @@ app.put('/api/protocoles/:id/valider', checkValidate, async (req, res) => {
     const { validatorName } = req.body;
     const p = await Protocole.findById(req.params.id);
     if(p && validatorName) await sendToGoogleSheet(p, validatorName);
-
     await Protocole.findByIdAndUpdate(req.params.id, {
         statut: 'Effectué', validatorUser: req.user.username, validatorNick: req.user.serverNick, validatorId: req.user.id, validatorManualName: validatorName
     });
-    // Nettoyage... (code dupliqué pour la sureté, idéalement fonction à part)
     const historique = await Protocole.find({ statut: 'Effectué' }).sort({ date: -1 });
     if (historique.length > 30) {
         const tropVieux = historique.slice(30);
@@ -232,10 +225,18 @@ app.put('/api/protocoles/:id/valider', checkValidate, async (req, res) => {
 
 app.put('/api/protocoles/:id/restaurer', checkValidate, async (req, res) => {
     const { tempsRestant } = req.body;
-    let updateData = { statut: 'En Attente', date: Date.now(), validatorUser: null, validatorNick: null, validatorId: null, validatorManualName: null };
+    let updateData = { statut: 'En Attente', date: Date.now(), validatorUser: null, validatorNick: null, validatorId: null, validatorManualName: null, rappelPrisEnChargeBy: null };
     if (tempsRestant) updateData.tempsRestant = tempsRestant;
     await Protocole.findByIdAndUpdate(req.params.id, updateData);
     res.json({ message: "OK" });
+});
+
+// NOUVELLE ROUTE : PRISE EN CHARGE RAPPEL
+app.put('/api/protocoles/:id/rappel', checkValidate, async (req, res) => {
+    // On sauvegarde le pseudo discord de celui qui clique
+    const takenBy = `${req.user.serverNick} (${req.user.username})`;
+    await Protocole.findByIdAndUpdate(req.params.id, { rappelPrisEnChargeBy: takenBy });
+    res.json({ message: "OK", takenBy });
 });
 
 app.delete('/api/protocoles/:id', checkAdmin, async (req, res) => {
