@@ -159,25 +159,27 @@ const checkValidate = async (req, res, next) => {
 
 // --- FONCTION ENVOI GOOGLE SHEET ---
 // --- FONCTION ENVOI GOOGLE SHEET (CORRIGÉE) ---
+// --- FONCTION ENVOI GOOGLE SHEET (CORRIGÉE HEURE + POSITION) ---
 async function sendToGoogleSheet(protocole, validatorName) {
     try {
         const sheets = google.sheets({ version: 'v4', auth: googleAuth });
         
-        // 1. On lit UNIQUEMENT la colonne A pour trouver la dernière ligne remplie
+        // 1. On lit la colonne A pour trouver la dernière ligne remplie
         const result = await sheets.spreadsheets.values.get({
             spreadsheetId: SPREADSHEET_ID,
-            range: `${SHEET_NAME}!A:A`, // On scanne la colonne A
+            range: `${SHEET_NAME}!A:A`,
         });
 
-        // Si result.data.values existe, on prend sa longueur, sinon 0.
-        // On ajoute +1 pour écrire sur la ligne suivante.
         const numRows = result.data.values ? result.data.values.length : 0;
         const nextRow = numRows + 1;
 
-        // Formatage Date
+        // 2. Formatage Date avec Fuseau Horaire PARIS
         const now = new Date();
-        const dateStr = now.toLocaleDateString('fr-FR', { day: '2-digit', month: '2-digit', year: '2-digit' }) + 
-                        ' à ' + now.toLocaleTimeString('fr-FR', { hour: '2-digit', minute: '2-digit' });
+        const optionsDate = { day: '2-digit', month: '2-digit', year: '2-digit', timeZone: 'Europe/Paris' };
+        const optionsTime = { hour: '2-digit', minute: '2-digit', timeZone: 'Europe/Paris' };
+
+        const dateStr = now.toLocaleDateString('fr-FR', optionsDate) + 
+                        ' à ' + now.toLocaleTimeString('fr-FR', optionsTime);
 
         const protoNum = protocole.protocoleType.replace(/Protocole\s+/i, '');
 
@@ -194,15 +196,15 @@ async function sendToGoogleSheet(protocole, validatorName) {
             protocole.targetSteamID || "" // J
         ]];
 
-        // 2. On écrit (UPDATE) spécifiquement sur la ligne calculée (ex: A21)
+        // 3. On écrit
         await sheets.spreadsheets.values.update({
             spreadsheetId: SPREADSHEET_ID,
-            range: `${SHEET_NAME}!A${nextRow}`, // Cible la première ligne vide de A
+            range: `${SHEET_NAME}!A${nextRow}`,
             valueInputOption: 'USER_ENTERED',
             resource: { values },
         });
         
-        console.log(`📝 Ligne ajoutée au Google Sheet ligne ${nextRow}.`);
+        console.log(`📝 Ligne ajoutée au Google Sheet ligne ${nextRow} (Heure Paris).`);
     } catch (error) {
         console.error("❌ Erreur Google Sheet:", error);
     }
@@ -322,4 +324,5 @@ app.delete('/api/protocoles/:id', checkAdmin, async (req, res) => {
 
 const PORT = process.env.PORT || 3000;
 app.listen(PORT, () => console.log(`Serveur lancé sur le port ${PORT}`));
+
 
