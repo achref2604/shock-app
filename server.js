@@ -37,15 +37,22 @@ mongoose.connect(MONGO_URI, { useNewUrlParser: true, useUnifiedTopology: true })
     .then(() => console.log("✅ Connecté à MongoDB"))
     .catch(err => console.error("❌ Erreur MongoDB:", err));
 
+// MODIFICATION SCHEMA : Ajout de 'color'
 const ConfigSchema = new mongoose.Schema({
     adminRoles: [String], adminUsers: [String], officerRoles: [String], marineRoles: [String], 
-    regiments: [{ name: String, rappelDays: { type: Number, default: 7 }, sanctionDays: { type: Number, default: 3 }, sanctionText: { type: String, default: "Sanction par défaut" } }]     
+    regiments: [{ 
+        name: String, 
+        rappelDays: { type: Number, default: 7 }, 
+        sanctionDays: { type: Number, default: 3 }, 
+        sanctionText: { type: String, default: "Sanction par défaut" },
+        color: { type: String, default: '#c0392b' } // Couleur par défaut (Rouge Shock)
+    }]     
 });
 const Config = mongoose.model('Config', ConfigSchema);
 
 async function initConfig() {
     const exists = await Config.findOne();
-    if (!exists) { await new Config({ adminRoles: [], adminUsers: [], officerRoles: [], marineRoles: [], regiments: [{ name: 'Shock', rappelDays: 7, sanctionDays: 3, sanctionText: 'Arrêts' }] }).save(); }
+    if (!exists) { await new Config({ adminRoles: [], adminUsers: [], officerRoles: [], marineRoles: [], regiments: [{ name: 'Shock', rappelDays: 7, sanctionDays: 3, sanctionText: 'Arrêts', color: '#c0392b' }] }).save(); }
 }
 initConfig();
 
@@ -55,11 +62,8 @@ const ProtocoleSchema = new mongoose.Schema({
     cibleNom: String, cibleGrade: String, cibleRegiment: String, targetSteamID: String,
     protocoleType: String, raison: String, details: String, tempsRestant: String,
     validatorUser: String, validatorNick: String, validatorId: String, validatorManualName: String,
-    
-    // --- NOUVEAUX CHAMPS RAPPEL ---
     rappelPrisEnChargeBy: String, 
-    rappelDate: Date, // C'est ici que la date du clic est stockée
-
+    rappelDate: Date, 
     statut: { type: String, default: 'En Attente' },
     date: { type: Date, default: Date.now }
 });
@@ -218,10 +222,8 @@ app.put('/api/protocoles/:id/restaurer', checkValidate, async (req, res) => {
     res.json({ message: "OK" });
 });
 
-// ROUTE PRISE EN CHARGE RAPPEL (IMPORTANTE)
 app.put('/api/protocoles/:id/rappel', checkValidate, async (req, res) => {
     const takenBy = `${req.user.serverNick} (${req.user.username})`;
-    // Ici on enregistre la DATE EXACTE du clic
     await Protocole.findByIdAndUpdate(req.params.id, { 
         rappelPrisEnChargeBy: takenBy,
         rappelDate: Date.now() 
