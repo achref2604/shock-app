@@ -6,7 +6,7 @@ const session = require('express-session');
 const MongoStore = require('connect-mongo');
 const passport = require('passport');
 const DiscordStrategy = require('passport-discord').Strategy;
-const axios = require('axios'); // NOUVEAU
+const axios = require('axios');
 
 const app = express();
 
@@ -16,10 +16,7 @@ const CLIENT_ID = process.env.DISCORD_CLIENT_ID;
 const CLIENT_SECRET = process.env.DISCORD_CLIENT_SECRET;
 const CALLBACK_URL = process.env.DISCORD_CALLBACK_URL;
 const SESSION_SECRET = process.env.SESSION_SECRET || 'secretSuperShock';
-
-// NOUVEAU : Configuration des accès
-const ALLOWED_GUILD_ID = process.env.ALLOWED_GUILD_ID; // L'ID de ton serveur Discord
-// Les rôles autorisés (séparés par des virgules dans Render)
+const ALLOWED_GUILD_ID = process.env.ALLOWED_GUILD_ID;
 const ALLOWED_ROLE_IDS = (process.env.ALLOWED_ROLE_IDS || "").split(',');
 
 // --- BASE DE DONNÉES ---
@@ -27,17 +24,25 @@ mongoose.connect(MONGO_URI, { useNewUrlParser: true, useUnifiedTopology: true })
     .then(() => console.log("✅ Connecté à MongoDB"))
     .catch(err => console.error("❌ Erreur MongoDB:", err));
 
+// NOUVEAU SCHÉMA ADAPTÉ À TES BESOINS
 const ProtocoleSchema = new mongoose.Schema({
+    // Officier (Juste le nom maintenant)
     auteurNom: String,
-    auteurMatricule: String,
-    auteurGrade: String,
     discordUser: String,
     discordId: String,
-    protocoleType: String,
+
+    // Cible (Le prisonnier)
+    cibleNom: String,       // Matricule + Nom
+    cibleGrade: String,
+    cibleRegiment: String,
+    targetSteamID: String,  // Devenu Facultatif
+
+    // Détails sanction
+    protocoleType: String,  // Liste 1-8
     raison: String,
-    targetSteamID: String,
-    details: String,
+    details: String,        // Facultatif
     tempsRestant: String,
+
     statut: { type: String, default: 'En Attente' },
     date: { type: Date, default: Date.now }
 });
@@ -66,52 +71,34 @@ passport.use(new DiscordStrategy({
     clientID: CLIENT_ID,
     clientSecret: CLIENT_SECRET,
     callbackURL: CALLBACK_URL,
-    scope: ['identify', 'guilds', 'guilds.members.read'] // NOUVEAU : on demande le droit de lire les membres
+    scope: ['identify', 'guilds', 'guilds.members.read']
 }, async (accessToken, refreshToken, profile, done) => {
     try {
-        // On va vérifier si l'utilisateur est dans le bon serveur ET s'il a le bon rôle
         if (ALLOWED_GUILD_ID) {
-            // Appel API Discord pour récupérer le membre et ses rôles
             const response = await axios.get(`https://discord.com/api/users/@me/guilds/${ALLOWED_GUILD_ID}/member`, {
                 headers: { Authorization: `Bearer ${accessToken}` }
             });
-            
             const member = response.data;
-            const userRoles = member.roles; // Liste des IDs de rôles de l'utilisateur
-
-            // Vérifie si l'utilisateur possède au moins UN des rôles autorisés
+            const userRoles = member.roles;
             const aLeDroit = userRoles.some(roleId => ALLOWED_ROLE_IDS.includes(roleId));
-
-            // On ajoute cette info au profil de l'utilisateur pour l'utiliser plus tard
             profile.isOfficier = aLeDroit; 
         } else {
-            // Si pas d'ID serveur configuré, tout le monde est officier (mode test)
             profile.isOfficier = true; 
         }
-        
         return done(null, profile);
     } catch (error) {
         console.error("Erreur vérification rôles:", error.response ? error.response.data : error.message);
-        // Si erreur (ex: pas dans le serveur), on le laisse se connecter mais sans droits
         profile.isOfficier = false;
         return done(null, profile);
     }
 }));
 
-// --- FONCTIONS DE SÉCURITÉ ---
-
-// Juste être connecté (pour voir)
-const estConnecte = (req, res, next) => {
-    if (req.isAuthenticated()) return next();
-    res.status(401).json({ message: "Non authentifié." });
-};
-
-// Etre connecté ET avoir le grade (pour modifier)
+// --- FONCTIONS SÉCURITÉ ---
 const estOfficier = (req, res, next) => {
     if (req.isAuthenticated() && req.user.isOfficier) {
         return next();
     }
-    res.status(403).json({ message: "Permission refusée. Grade insuffisant." });
+    res.status(403).json({ message: "Permission refusée." });
 };
 
 // --- ROUTES AUTH ---
@@ -121,14 +108,13 @@ app.get('/auth/logout', (req, res, next) => {
     req.logout((err) => { if (err) return next(err); res.redirect('/'); });
 });
 
-// Route info user modifiée pour envoyer le statut "isOfficier" au site
 app.get('/auth/user', (req, res) => {
     if (req.isAuthenticated()) {
         res.json({ 
             connecte: true, 
             username: req.user.username, 
             avatar: `https://cdn.discordapp.com/avatars/${req.user.id}/${req.user.avatar}.png`,
-            isOfficier: req.user.isOfficier // On envoie l'info au frontend
+            isOfficier: req.user.isOfficier
         });
     } else {
         res.json({ connecte: false });
@@ -136,8 +122,6 @@ app.get('/auth/user', (req, res) => {
 });
 
 // --- ROUTES API ---
-
-// Tout le monde peut voir (Public)
 app.get('/api/protocoles', async (req, res) => {
     const protocoles = await Protocole.find({ statut: { $ne: 'Effectué' } }).sort({ date: -1 });
     res.json(protocoles);
@@ -147,7 +131,7 @@ app.get('/api/historique', async (req, res) => {
     res.json(protocoles);
 });
 
-// SEULS LES OFFICIERS PEUVENT FAIRE ÇA : (J'ai remplacé estConnecte par estOfficier)
+// AJOUT (Mise à jour avec les nouveaux champs)
 app.post('/api/protocoles', estOfficier, async (req, res) => {
     try {
         const data = req.body;
