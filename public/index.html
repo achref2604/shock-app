@@ -29,7 +29,6 @@
         .user-bar { position: absolute; top: 20px; right: 20px; }
         .avatar { width: 40px; height: 40px; border-radius: 50%; border: 2px solid var(--shock-red); }
         
-        /* Styles Admin */
         .admin-section { border-left: 2px solid var(--shock-red); padding-left: 15px; margin-bottom: 20px; }
         .tag-remove { cursor: pointer; color: #e74c3c; margin-left: 5px; }
     </style>
@@ -62,17 +61,15 @@
             <div class="card border-warning">
                 <div class="card-header text-center text-warning fw-bold py-3">CONFIGURATION SYSTÈME (ADMIN ONLY)</div>
                 <div class="card-body p-4">
-                    
                     <div class="admin-section">
                         <h5>👮 Rôles Officiers (Accès Total)</h5>
                         <p class="small text-muted">Copiez les IDs des rôles Discord ici.</p>
                         <div class="d-flex gap-2 mb-2">
-                            <input type="text" id="newOfficerRole" class="form-control form-control-sm" placeholder="ID Rôle (Ex: 10548...)">
+                            <input type="text" id="newOfficerRole" class="form-control form-control-sm" placeholder="ID Rôle">
                             <button onclick="addConfig('officerRoles')" class="btn btn-sm btn-success">Ajouter</button>
                         </div>
                         <div id="listOfficerRoles" class="d-flex flex-wrap gap-2"></div>
                     </div>
-
                     <div class="admin-section">
                         <h5>🔫 Rôles Marines (Accès Restreint)</h5>
                         <p class="small text-muted">Peuvent créer/modifier, mais PAS valider ni restaurer.</p>
@@ -82,21 +79,18 @@
                         </div>
                         <div id="listMarineRoles" class="d-flex flex-wrap gap-2"></div>
                     </div>
-
                     <div class="admin-section">
                         <h5>🏴 Régiments</h5>
                         <p class="small text-muted">Liste du menu déroulant.</p>
                         <div class="d-flex gap-2 mb-2">
-                            <input type="text" id="newRegiment" class="form-control form-control-sm" placeholder="Nom Régiment (Ex: 104th)">
+                            <input type="text" id="newRegiment" class="form-control form-control-sm" placeholder="Nom Régiment">
                             <button onclick="addConfig('regiments')" class="btn btn-sm btn-success">Ajouter</button>
                         </div>
                         <div id="listRegiments" class="d-flex flex-wrap gap-2"></div>
                     </div>
-
                     <div class="text-end">
                         <button onclick="saveConfig()" class="btn btn-warning fw-bold">Sauvegarder la Configuration</button>
                     </div>
-
                 </div>
             </div>
         </div>
@@ -108,24 +102,19 @@
                 <div class="card-header text-center text-shock fw-bold py-3" id="formTitle">⚠️ ORDONNER UN NOUVEAU PROTOCOLE</div>
                 <div class="card-body p-4">
                     <div class="row g-3">
-                        
                         <div class="col-md-3 border-end border-secondary pe-md-4">
                             <h5 class="text-muted mb-3"><i class="fas fa-user-shield"></i> L'Officier</h5>
                             <div class="mb-3"><label class="small text-muted">Votre Nom*</label><input type="text" id="auteurNom" class="form-control"></div>
                         </div>
-
                         <div class="col-md-9 ps-md-4">
                             <h5 class="text-muted mb-3"><i class="fas fa-bullseye"></i> Informations Cible</h5>
-                            
                             <div class="mb-2"><label class="small text-muted">Identité*</label><input type="text" id="cibleNom" class="form-control" placeholder="Matricule + Nom"></div>
-                            
                             <div class="row g-2 mb-2">
                                 <div class="col-6"><label class="small text-muted">Grade*</label><input type="text" id="cibleGrade" class="form-control"></div>
                                 <div class="col-6"><label class="small text-muted">Régiment*</label>
                                     <select id="cibleRegiment" class="form-select"><option value="" disabled selected>Chargement...</option></select>
                                 </div>
                             </div>
-                            
                             <div class="row g-2 mb-2">
                                 <div class="col-6"><label class="small text-muted">Protocole*</label>
                                     <select id="protocole" class="form-select">
@@ -136,14 +125,11 @@
                                 </div>
                                 <div class="col-6"><label class="small text-muted">Temps (Opt.)</label><input type="text" id="tempsRestant" class="form-control border-warning text-warning"></div>
                             </div>
-                            
                             <div class="mb-2"><label class="small text-muted">Raison*</label><input type="text" id="raison" class="form-control"></div>
                             <div class="mb-2"><input type="text" id="steamid" class="form-control form-control-sm text-secondary border-secondary" placeholder="SteamID64 (Facultatif)"></div>
-
                             <h5 class="text-muted mb-2 mt-4">Détails</h5>
                             <textarea id="details" class="form-control" rows="4"></textarea>
                         </div>
-
                     </div>
                     <div class="text-center mt-4 pt-3 border-top border-secondary">
                         <button id="btnSubmit" onclick="envoyerProtocole()" class="btn btn-shock btn-lg px-5">Transmettre</button>
@@ -172,7 +158,6 @@
         
         let user = { connecte: false, isAdmin: false, isOfficer: false, isMarine: false };
 
-        // --- AUTH & INIT ---
         async function init() {
             await fetchConfig(); 
             await checkUserStatus();
@@ -221,7 +206,6 @@
             } catch (e) { console.error("Erreur auth", e); }
         }
 
-        // --- GESTION CONFIG ---
         async function fetchConfig() {
             try {
                 const res = await fetch('/api/config');
@@ -238,7 +222,6 @@
             });
         }
 
-        // --- UI NAVIGATION ---
         function toggleForm() {
             const panel = document.getElementById('protocolFormPanel');
             panel.style.display = panel.style.display === 'none' ? 'block' : 'none';
@@ -290,10 +273,8 @@
             if(key === 'officerRoles') inputId = 'newOfficerRole';
             if(key === 'marineRoles') inputId = 'newMarineRole';
             if(key === 'regiments') inputId = 'newRegiment';
-            
             const val = document.getElementById(inputId).value.trim();
             if(!val) return;
-            
             configData[key].push(val);
             document.getElementById(inputId).value = '';
             renderAdminUI();
@@ -314,7 +295,6 @@
             renderRegimentsSelect();
         }
 
-        // --- LOGIQUE PROTOCOLES ---
         async function chargerEnCours() {
             const res = await fetch('/api/protocoles');
             currentData = await res.json();
@@ -344,7 +324,6 @@
                     : '<span class="badge badge-pending rounded-pill px-3 py-2">⏳ EN ATTENTE</span>';
                 
                 let actionButtons = '';
-                
                 const canEdit = user.isAdmin || user.isOfficer || user.isMarine;
                 const canValidate = user.isAdmin || user.isOfficer;
 
@@ -363,6 +342,11 @@
                     </div>`;
                 }
 
+                let deleteBtn = '';
+                if(user.isAdmin) {
+                    deleteBtn = `<button onclick="supprimer('${p._id}')" class="btn btn-sm btn-danger ms-2" title="Supprimer définitivement"><i class="fas fa-trash"></i></button>`;
+                }
+
                 let timeAlert = (p.tempsRestant && !isDone) ? `<div class="alert-time p-2 rounded mb-2 text-center fw-bold">⚠️ RESTANT : ${p.tempsRestant}</div>` : '';
                 
                 let logName = p.discordNick || p.discordUser;
@@ -378,17 +362,19 @@
                     <div class="card h-100">
                         <div class="card-header d-flex justify-content-between align-items-center">
                             <div><span class="fw-bold text-white fs-5">${p.cibleNom}</span> <span class="small text-muted ms-2">${p.cibleGrade} - ${p.cibleRegiment}</span></div>
-                            ${badge}
+                            <div class="d-flex align-items-center gap-2">
+                                ${badge}
+                                ${deleteBtn}
+                            </div>
                         </div>
                         <div class="card-body">
-                            
                             <div class="row">
                                 <div class="col-md-9">
                                      <div class="row mb-3 g-2">
                                         <div class="col-md-4"><div class="p-2 bg-dark rounded border border-secondary"><small class="text-muted d-block ls-1">SANCTION</small><span class="fw-bold text-danger">${p.protocoleType}</span></div></div>
-                                        <div class="col-md-8"><div class="p-2 bg-dark rounded border border-secondary"><small class="text-muted d-block ls-1">RAISON</small><span class="fw-bold">${p.raison}</span></div></div>
+                                        <div class="col-md-8"><div class="p-2 bg-dark rounded border border-secondary"><small class="text-muted d-block ls-1">RAISON</small><span class="fst-italic">"${p.raison}"</span></div></div>
                                     </div>
-                                    ${p.details ? `<div class="details-box p-3 rounded bg-dark text-light small fst-italic mb-2">" ${p.details} "</div>` : ''}
+                                    ${p.details ? `<div class="details-box p-3 rounded bg-dark text-light small mb-2">${p.details}</div>` : ''}
                                     ${timeAlert}
                                 </div>
                                 <div class="col-md-3 border-start border-secondary ps-4 d-flex flex-column justify-content-center">
@@ -398,7 +384,6 @@
                                     ${steamInfo}
                                 </div>
                             </div>
-
                         </div>
                         ${actionButtons}
                     </div>
@@ -406,7 +391,6 @@
             });
         }
 
-        // --- FORM HANDLING ---
         function preparerAction(id, mode) {
             const item = currentData.find(p => p._id === id);
             document.getElementById('auteurNom').value = item.auteurNom;
@@ -506,6 +490,23 @@
             });
             if(res.ok) chargerHistorique();
             else alert("Permission refusée");
+        }
+
+        async function supprimer(id) {
+            if(!confirm("⚠️ SUPPRESSION DÉFINITIVE ⚠️\nÊtes-vous sûr de vouloir supprimer ce dossier ? Cette action est irréversible.")) return;
+            try {
+                const res = await fetch(`${API_URL}/${id}`, { method: 'DELETE' });
+                if(res.ok) {
+                    // On recharge la liste où on se trouve (En cours ou Historique)
+                    // Le moyen le plus simple est de recharger la page ou de deviner
+                    // Mais comme on ne sait pas où on est, on recharge la liste actuelle
+                    const activeTab = document.querySelector('.nav-link.active').getAttribute('onclick');
+                    if(activeTab.includes('encours')) chargerEnCours();
+                    else chargerHistorique();
+                } else {
+                    alert("Erreur : Seul l'Admin peut supprimer.");
+                }
+            } catch(e) { alert("Erreur serveur"); }
         }
 
         init();
