@@ -11,7 +11,7 @@ const { google } = require('googleapis');
 
 const app = express();
 
-// --- INDISPENSABLE POUR RENDER (Mobile Fix) ---
+// --- FIX MOBILE & RENDER (OBLIGATOIRE) ---
 app.set('trust proxy', 1); 
 
 // --- CONFIGURATION ---
@@ -75,17 +75,17 @@ app.use(cors());
 app.use(bodyParser.json());
 app.use(express.static('public'));
 
-// --- SESSION CONFIG (Mobile Fix) ---
+// --- SESSION SECURISÉE POUR MOBILE ---
 app.use(session({
     secret: SESSION_SECRET, 
     resave: false, 
     saveUninitialized: false,
-    proxy: true, // IMPORTANT
+    proxy: true, // INDISPENSABLE
     store: MongoStore.create({ mongoUrl: MONGO_URI }), 
     cookie: { 
         maxAge: 1000 * 60 * 60 * 24 * 7,
-        secure: true, 
-        sameSite: 'none',
+        secure: true, // HTTPS OBLIGATOIRE
+        sameSite: 'none', // CROSS-SITE OBLIGATOIRE
         httpOnly: true
     }
 }));
@@ -101,7 +101,7 @@ passport.use(new DiscordStrategy({
     clientSecret: CLIENT_SECRET, 
     callbackURL: CALLBACK_URL, 
     scope: ['identify', 'guilds', 'guilds.members.read'],
-    proxy: true // IMPORTANT
+    proxy: true
 }, async (accessToken, refreshToken, profile, done) => {
     try {
         if (ALLOWED_GUILD_ID) {
@@ -116,11 +116,7 @@ passport.use(new DiscordStrategy({
     }
 }));
 
-// --- Middleware Debug ---
-app.use((err, req, res, next) => {
-    console.error("🔥 ERREUR INTERNE SERVEUR :", err.stack);
-    res.status(500).send('Erreur serveur.');
-});
+// --- FONCTIONS DE PERMISSIONS & MIDDLEWARES ---
 
 async function getPermissions(user) {
     if (!user || !user.roles) return { isAdmin: false, isOfficer: false, isMarine: false };
@@ -134,8 +130,11 @@ async function getPermissions(user) {
     return { isAdmin: false, isOfficer: isOfficer, isMarine: isMarine };
 }
 
-// --- MIDDLEWARES DE SÉCURITÉ (C'est ce qui manquait !) ---
-const checkAdmin = async (req, res, next) => { if (req.isAuthenticated() && (await getPermissions(req.user)).isAdmin) return next(); res.status(403).json({ message: "Admin Only." }); };
+// C'EST ICI QUE CA MANQUAIT DANS LA VERSION PRECEDENTE :
+const checkAdmin = async (req, res, next) => { 
+    if (req.isAuthenticated() && (await getPermissions(req.user)).isAdmin) return next(); 
+    res.status(403).json({ message: "Admin Only." }); 
+};
 
 const checkEdit = async (req, res, next) => { 
     const perms = await getPermissions(req.user);
