@@ -194,13 +194,16 @@ async function sendToGoogleSheet(protocole, shockName) {
 
 app.get('/auth/discord', passport.authenticate('discord'));
 
+// Remplace le callback d'auth par celui-ci pour "voir" l'erreur
 app.get('/auth/discord/callback', (req, res, next) => {
-    passport.authenticate('discord', { failureRedirect: '/' }, (err, user, info) => {
-        if (err) { console.error("Passport Err:", err); return next(err); }
-        if (!user) { console.error("No User returned"); return res.redirect('/'); }
+    passport.authenticate('discord', (err, user, info) => {
+        if (err) {
+            // Cela va afficher l'erreur réelle dans ton navigateur pour le debug
+            return res.status(500).send(`Erreur Détaillée : ${err.message} | ${JSON.stringify(err)}`);
+        }
+        if (!user) return res.redirect('/');
         req.logIn(user, (err) => {
-            if (err) { console.error("Login Err:", err); return next(err); }
-            console.log("✅ Session OK : " + user.username);
+            if (err) return next(err);
             return res.redirect('/');
         });
     })(req, res, next);
@@ -303,4 +306,5 @@ app.delete('/api/protocoles/:id', checkAdmin, async (req, res) => {
 
 const PORT = process.env.PORT || 3000;
 app.listen(PORT, () => console.log(`Serveur lancé sur le port ${PORT}`));
+
 
