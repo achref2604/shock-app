@@ -6,18 +6,10 @@
     <title>Gestion Protocoles - Coruscant Guard</title>
     <link href="https://cdn.jsdelivr.net/npm/bootstrap@5.3.2/dist/css/bootstrap.min.css" rel="stylesheet">
     <link href="https://fonts.googleapis.com/css2?family=Rajdhani:wght@400;600;700&display=swap" rel="stylesheet">
+    <link rel="stylesheet" href="https://cdnjs.cloudflare.com/ajax/libs/font-awesome/6.4.0/css/all.min.css">
     <style>
-        :root {
-            --shock-red: #c0392b;
-            --bg-dark: #0a0a0a;
-            --card-bg: #161616;
-        }
-        body {
-            font-family: 'Rajdhani', sans-serif;
-            background-color: var(--bg-dark);
-            color: #e0e0e0;
-            background-image: radial-gradient(circle at center, #1a1a1a 0%, #0a0a0a 100%);
-        }
+        :root { --shock-red: #c0392b; --bg-dark: #0a0a0a; --card-bg: #161616; }
+        body { font-family: 'Rajdhani', sans-serif; background-color: var(--bg-dark); color: #e0e0e0; background-image: radial-gradient(circle at center, #1a1a1a 0%, #0a0a0a 100%); }
         h1, h2, h3, h4, h5, .nav-link, .btn { text-transform: uppercase; letter-spacing: 1px; }
         .text-shock { color: var(--shock-red) !important; text-shadow: 0 0 10px rgba(192, 57, 43, 0.3); }
         .btn-shock { background-color: var(--shock-red); border: none; color: white; font-weight: 600; }
@@ -34,11 +26,21 @@
         .badge-pending { background-color: #f39c12; color: #000; }
         .details-box { background-color: rgba(255,255,255,0.05); border-left: 3px solid var(--shock-red); }
         .alert-time { background-color: rgba(243, 156, 18, 0.2); border: 1px solid #f39c12; color: #f39c12; }
+        
+        /* User Bar */
+        .user-bar { position: absolute; top: 20px; right: 20px; }
+        .avatar { width: 40px; height: 40px; border-radius: 50%; border: 2px solid var(--shock-red); }
     </style>
 </head>
 <body class="container py-5">
 
-    <header class="text-center mb-5">
+    <div class="user-bar" id="userZone">
+        <a href="/auth/discord" class="btn btn-outline-light btn-sm">
+            <i class="fab fa-discord"></i> Connexion Officier
+        </a>
+    </div>
+
+    <header class="text-center mb-5 mt-4">
         <h1 class="display-4 fw-bold text-shock">Coruscant Guard</h1>
         <p class="lead text-muted">Système de Gestion des Détentions</p>
     </header>
@@ -48,8 +50,12 @@
         <li class="nav-item"><a class="nav-link" href="#" onclick="changerOnglet('historique')">💾 Archives (30 Derniers)</a></li>
     </ul>
 
-    <div id="btnAdminZone" class="text-center mb-4">
+    <div id="btnAdminZone" class="text-center mb-4" style="display:none;">
         <button class="btn btn-outline-danger btn-sm px-4 py-2" onclick="toggleAdmin()">🔒 Panneau Officier</button>
+    </div>
+
+    <div id="loginWarning" class="text-center mb-4 text-muted fst-italic">
+        <small>Vous devez être connecté via Discord pour effectuer des actions.</small>
     </div>
 
     <div class="row justify-content-center" id="adminPanel" style="display: none;">
@@ -62,7 +68,6 @@
                     <div class="row g-3">
                         <div class="col-md-6">
                             <h5 class="text-muted mb-3">Information de l'Officier</h5>
-                            <input type="password" id="authCode" class="form-control mb-2" placeholder="Code de Sécurité (Requis)">
                             <div class="row g-2">
                                 <div class="col-4"><input type="text" id="matricule" class="form-control" placeholder="Matricule"></div>
                                 <div class="col-8"><input type="text" id="nom" class="form-control" placeholder="Nom"></div>
@@ -77,7 +82,7 @@
                             <h5 class="text-muted mb-3">Détails du Mandat</h5>
                             <input type="text" id="steamid" class="form-control mb-2 fw-bold text-warning" placeholder="SteamID64 de la Cible">
                             <div class="row g-2 mb-2">
-                                <div class="col-6"><input type="text" id="protocole" class="form-control" placeholder="Sanction (Total)"></div>
+                                <div class="col-6"><input type="text" id="protocole" class="form-control" placeholder="Sanction"></div>
                                 <div class="col-6"><input type="text" id="tempsRestant" class="form-control border-warning text-warning" placeholder="Temps Restant (Opt.)"></div>
                             </div>
                             <input type="text" id="raison" class="form-control mb-2" placeholder="Raison">
@@ -106,7 +111,39 @@
         const API_HISTORY = '/api/historique';
         let currentData = [];
         let editingId = null; 
+        let userConnecte = false;
 
+        // --- GESTION DE LA CONNEXION ---
+        async function checkUserStatus() {
+            try {
+                const res = await fetch('/auth/user');
+                const data = await res.json();
+                const userZone = document.getElementById('userZone');
+                const btnZone = document.getElementById('btnAdminZone');
+                const warning = document.getElementById('loginWarning');
+
+                if (data.connecte) {
+                    userConnecte = true;
+                    userZone.innerHTML = `
+                        <div class="d-flex align-items-center gap-2">
+                            <img src="${data.avatar}" class="avatar" alt="Avatar">
+                            <span class="fw-bold">${data.username}</span>
+                            <a href="/auth/logout" class="btn btn-sm btn-outline-danger"><i class="fas fa-sign-out-alt"></i></a>
+                        </div>`;
+                    btnZone.style.display = 'block';
+                    warning.style.display = 'none';
+                } else {
+                    userConnecte = false;
+                    userZone.innerHTML = `<a href="/auth/discord" class="btn btn-outline-light btn-sm"><i class="fab fa-discord"></i> Connexion Officier</a>`;
+                    btnZone.style.display = 'none';
+                    warning.style.display = 'block';
+                    document.getElementById('adminPanel').style.display = 'none';
+                }
+                chargerEnCours(); // Recharge la liste pour afficher/cacher les boutons d'action
+            } catch (e) { console.error("Erreur auth check", e); }
+        }
+
+        // --- RESTE DU CODE ---
         function toggleAdmin() {
             const panel = document.getElementById('adminPanel');
             panel.style.display = panel.style.display === 'none' ? 'block' : 'none';
@@ -122,7 +159,8 @@
 
             if(type === 'encours') {
                 titre.innerHTML = '<span class="text-shock">►</span> Mandats en Cours';
-                btnZone.style.display = 'block';
+                // Affiche le bouton admin seulement si connecté
+                btnZone.style.display = userConnecte ? 'block' : 'none';
                 chargerEnCours();
             } else {
                 titre.innerHTML = '<span class="text-shock">►</span> Archives des Traitements';
@@ -208,28 +246,32 @@
                     ? '<span class="badge badge-done rounded-pill px-3 py-2">✅ EFFECTUÉ</span>' 
                     : '<span class="badge badge-pending rounded-pill px-3 py-2">⏳ EN ATTENTE</span>';
                 
-                // Gestion des boutons selon l'onglet
+                // Si l'utilisateur n'est pas connecté, il ne voit AUCUN bouton d'action
                 let actionButtons = '';
-                if(estEnCours) {
-                    actionButtons = `
-                    <div class="card-footer bg-transparent border-top-0 pt-0 d-flex gap-2">
-                        <button onclick="valider('${p._id}')" class="btn btn-outline-success flex-grow-1 fw-bold">Confirmer</button>
-                        <button onclick="preparerAction('${p._id}', 'modifier')" class="btn btn-outline-warning" title="Modifier">✏️</button>
-                        <button onclick="preparerAction('${p._id}', 'dupliquer')" class="btn btn-outline-info" title="Dupliquer">📋</button>
-                    </div>`;
-                } else {
-                    // Bouton restaurer dans l'historique
-                    actionButtons = `
-                    <div class="card-footer bg-transparent border-top-0 pt-0">
-                        <button onclick="restaurer('${p._id}')" class="btn btn-outline-light w-100 fw-bold">↩️ Restaurer en cours</button>
-                    </div>`;
+
+                if (userConnecte) {
+                    if(estEnCours) {
+                        actionButtons = `
+                        <div class="card-footer bg-transparent border-top-0 pt-0 d-flex gap-2">
+                            <button onclick="valider('${p._id}')" class="btn btn-outline-success flex-grow-1 fw-bold">Confirmer</button>
+                            <button onclick="preparerAction('${p._id}', 'modifier')" class="btn btn-outline-warning" title="Modifier">✏️</button>
+                            <button onclick="preparerAction('${p._id}', 'dupliquer')" class="btn btn-outline-info" title="Dupliquer">📋</button>
+                        </div>`;
+                    } else {
+                        actionButtons = `
+                        <div class="card-footer bg-transparent border-top-0 pt-0">
+                            <button onclick="restaurer('${p._id}')" class="btn btn-outline-light w-100 fw-bold">↩️ Restaurer en cours</button>
+                        </div>`;
+                    }
                 }
 
-                // Affichage du temps restant si présent
                 let timeAlert = '';
                 if(p.tempsRestant && !isDone) {
                     timeAlert = `<div class="alert-time p-2 rounded mb-2 text-center fw-bold">⚠️ RESTANT : ${p.tempsRestant}</div>`;
                 }
+
+                // Info Discord user
+                const discordInfo = p.discordUser ? `<br><small class="text-secondary"><i class="fab fa-discord"></i> Log: ${p.discordUser}</small>` : '';
 
                 const cardStyle = estEnCours ? '' : 'opacity: 0.8; filter: grayscale(20%);';
                 const dateObj = new Date(p.date);
@@ -245,7 +287,10 @@
                         <div class="card-body">
                             <div class="d-flex justify-content-between small text-muted mb-3">
                                 <span>📅 ${dateStr}</span>
-                                <span>${p.auteurGrade} ${p.auteurNom}</span>
+                                <div class="text-end">
+                                    <span>${p.auteurGrade} ${p.auteurNom}</span>
+                                    ${discordInfo}
+                                </div>
                             </div>
                             
                             ${timeAlert}
@@ -264,8 +309,7 @@
         }
         
         async function envoyerProtocole() {
-            const auth = document.getElementById('authCode').value;
-            if(!auth) { alert("Code de sécurité manquant."); return; }
+            // Plus besoin d'authCode, l'utilisateur est checké par le cookie de session
             
             const body = {
                 auteurMatricule: document.getElementById('matricule').value,
@@ -284,7 +328,7 @@
             try {
                 const response = await fetch(url, {
                     method: method,
-                    headers: { 'Content-Type': 'application/json', 'Authorization': auth },
+                    headers: { 'Content-Type': 'application/json' },
                     body: JSON.stringify(body)
                 });
 
@@ -293,41 +337,40 @@
                     resetForm();
                     chargerEnCours();
                     if(!editingId) toggleAdmin();
-                } else { alert('❌ Erreur : Code Officier Incorrect.'); }
+                } else if (response.status === 401) {
+                    alert('❌ Session expirée, reconnectez-vous via Discord.');
+                    window.location.reload();
+                } else { 
+                    alert('❌ Erreur serveur.'); 
+                }
             } catch(e) { alert("Erreur connexion."); }
         }
 
         async function valider(id) {
-            const auth = prompt("Code Officier requis :");
-            if(!auth) return;
+            if(!confirm("Valider ce protocole ?")) return;
             try {
-                await fetch(`${API_URL}/${id}/valider`, { method: 'PUT', headers: { 'Authorization': auth } });
+                const res = await fetch(`${API_URL}/${id}/valider`, { method: 'PUT' });
+                if(res.status === 401) return alert("Reconnectez-vous");
                 chargerEnCours();
             } catch(e) {}
         }
 
         async function restaurer(id) {
-            const nouveauTemps = prompt("Il reste combien de temps ? (Laisser vide si inchangé)");
-            const auth = prompt("Code Officier pour restaurer :");
-            if(!auth) return;
-
+            const nouveauTemps = prompt("Temps restant ? (Laisser vide si inchangé)");
             try {
-                const response = await fetch(`${API_URL}/${id}/restaurer`, {
+                const res = await fetch(`${API_URL}/${id}/restaurer`, {
                     method: 'PUT',
-                    headers: { 'Content-Type': 'application/json', 'Authorization': auth },
+                    headers: { 'Content-Type': 'application/json' },
                     body: JSON.stringify({ tempsRestant: nouveauTemps })
                 });
-
-                if(response.ok) {
-                    alert("Dossier restauré dans 'En Cours'");
-                    chargerHistorique(); // On rafraichit l'historique (il va disparaitre)
-                } else {
-                    alert("Accès refusé");
-                }
+                if(res.status === 401) return alert("Reconnectez-vous");
+                chargerHistorique();
             } catch(e) { console.error(e); }
         }
 
-        chargerEnCours();
+        // Lancement : Vérifier qui est connecté
+        checkUserStatus();
+
     </script>
 </body>
 </html>
