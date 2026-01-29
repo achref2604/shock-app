@@ -27,6 +27,7 @@ const ProtocoleSchema = new mongoose.Schema({
     raison: String,
     targetSteamID: String,
     details: String,
+    tempsRestant: String, // <--- NOUVEAU CHAMP ICI
     statut: { type: String, default: 'En Attente' },
     date: { type: Date, default: Date.now }
 });
@@ -110,5 +111,24 @@ app.put('/api/protocoles/:id', verifierAuth, async (req, res) => {
     }
 });
 
+// 6. RESTAURER un protocole (Sortir des archives -> Vers En cours)
+app.put('/api/protocoles/:id/restaurer', verifierAuth, async (req, res) => {
+    try {
+        const { tempsRestant } = req.body;
+        
+        // On prépare la mise à jour : on change le statut ET le temps restant si fourni
+        let updateData = { statut: 'En Attente', date: Date.now() }; // On met à jour la date pour qu'il remonte en haut
+        if (tempsRestant) {
+            updateData.tempsRestant = tempsRestant;
+        }
+
+        await Protocole.findByIdAndUpdate(req.params.id, updateData);
+        res.json({ message: "Protocole restauré." });
+    } catch (error) {
+        res.status(500).json({ error: "Erreur lors de la restauration" });
+    }
+});
+
 app.listen(PORT, () => console.log(`Serveur lancé sur le port ${PORT}`));
+
 
