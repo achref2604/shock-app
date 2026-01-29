@@ -39,8 +39,9 @@
         .ls-1 { letter-spacing: 1px; font-weight: 600; font-size: 0.75rem; }
         .user-text { white-space: pre-wrap; word-wrap: break-word; word-break: break-word; overflow-wrap: break-word; display: block; }
         
-        .rappel-card { border: 1px solid #e74c3c; box-shadow: 0 0 10px rgba(231, 76, 60, 0.2); }
-        .rappel-header { background-color: rgba(231, 76, 60, 0.1); border-bottom: 1px solid #e74c3c; color: white; font-weight: bold; }
+        /* Styles spécifiques aux Rappels (CONTOUR ROUGE FIXE) */
+        .rappel-card { border: 1px solid #c0392b !important; box-shadow: 0 0 10px rgba(192, 57, 43, 0.2); }
+        .rappel-header { border-bottom: 1px solid #c0392b !important; color: white; font-weight: bold; }
         .generated-box { background: #222; border: 1px dashed #666; padding: 10px; font-family: monospace; font-size: 0.85rem; color: #aaa; margin-top: 10px; cursor: pointer; }
         .generated-box:hover { border-color: #fff; color: #fff; }
         
@@ -49,7 +50,7 @@
     
         .main-wrapper { max-width: 1800px; margin: 0 auto; }
 
-        /* --- MODALES --- */
+        /* MODALES */
         .modal-content { background-color: #1a1a1a; border: 1px solid #444; color: white; }
         .modal-header { border-bottom: 1px solid #444; }
         .modal-footer { border-top: 1px solid #444; }
@@ -406,9 +407,9 @@
 
         function afficherRappels(container, p, regConfig, retardJours, sanctionBanner, deadlineText) {
             const regColor = getRegimentColor(p.cibleRegiment);
-            // MODIFICATION ICI : Couleur carte ROUGE fixe, Header Coloré + Texte Blanc
-            const cardStyle = `border: 1px solid #c0392b; box-shadow: 0 0 10px rgba(192, 57, 43, 0.2);`; 
-            const headerStyle = `background-color: ${regColor}20; border-bottom: 1px solid ${regColor}; color: white; font-weight: bold;`;
+            
+            // MODIFICATION ICI : BORDURE ROUGE FIXE POUR LE CONTOUR, FOND COLORÉ POUR LE TITRE, TEXTE ROUGE POUR RETARD
+            const headerStyle = `background-color: ${regColor}33; border-bottom: 1px solid #c0392b; color: white; font-weight: bold;`;
 
             const btnGen = `<button class="btn btn-outline-light btn-sm w-100 mb-2" onclick="generateAndShow('${p._id}', '${p.cibleRegiment}', '${p.cibleGrade}', '${p.cibleNom}', '${p.auteurNom}', '${p.protocoleType}', '${p.raison}', '${p.details || ''}', '${p.targetSteamID || ''}', ${regConfig.sanctionDays}, '${regConfig.sanctionText}')">📄 Générer le Rapport Discord</button>`;
 
@@ -418,8 +419,7 @@
 
             container.innerHTML += `
             <div class="col-12">
-                <div class="card h-100" style="${cardStyle}">
-                    <div class="card-header d-flex justify-content-between align-items-center" style="${headerStyle}">
+                <div class="card h-100 rappel-card"> <div class="card-header d-flex justify-content-between align-items-center" style="${headerStyle}">
                         <span>⚠️ RAPPEL NÉCESSAIRE : ${p.cibleNom}</span>
                         <small style="color:#e74c3c; font-weight:bold;">Retard de ${retardJours} jours</small>
                     </div>
@@ -465,6 +465,7 @@
             data.forEach(p => {
                 const isDone = p.statut === 'Effectué';
                 const badge = isDone ? '<span class="badge badge-done rounded-pill px-3 py-2">✅ EFFECTUÉ</span>' : '<span class="badge badge-pending rounded-pill px-3 py-2">⏳ EN ATTENTE</span>';
+                
                 const regColor = getRegimentColor(p.cibleRegiment);
                 const headerStyle = `background-color: ${regColor}20; border-bottom: 2px solid ${regColor}; color: white; font-weight: bold;`;
 
@@ -527,10 +528,32 @@
             afficherMandats(currentData, false);
         }
 
-        function generateAndShow(id, reg, grade, nom, auteur, proto, raison, details, steam, sanctionDays, sanctionText) { const dateFinale = new Date(); dateFinale.setDate(dateFinale.getDate() + parseInt(sanctionDays)); const dateFinaleStr = dateFinale.toLocaleDateString('fr-FR'); const titlePost = `${reg} ${grade} ${nom} -> ${dateFinaleStr}`; const bodyPost = `<:FlecheVert:990651262976528414> Protocole à effectuer avant le ${dateFinaleStr} sinon : ${sanctionText}\n<:FlecheVert:990651262976528414> Reçu\n\n...........................................................................\n\n- **Qui l'a ordonné :** ${auteur}\n- **Protocole :** ${proto.replace(/Protocole\s+/i, '')}\n- **Raison :** ${raison}${details ? `\n- **Détails :** ${details}` : ''}${steam ? `\n- **Steam ID :** ${steam}` : ''}`; document.getElementById(`title-${id}`).innerText = titlePost; document.getElementById(`body-${id}`).innerText = bodyPost; toggleBox(id); }
+        // --- RESTE DU CODE (ADMIN, BUTTONS, ETC.) ---
+        
+        function generateAndShow(id, reg, grade, nom, auteur, proto, raison, details, steam, sanctionDays, sanctionText) {
+            const dateFinale = new Date();
+            dateFinale.setDate(dateFinale.getDate() + parseInt(sanctionDays));
+            const dateFinaleStr = dateFinale.toLocaleDateString('fr-FR');
+            const titlePost = `${reg} ${grade} ${nom} -> ${dateFinaleStr}`;
+            const bodyPost = `<:FlecheVert:990651262976528414> Protocole à effectuer avant le ${dateFinaleStr} sinon : ${sanctionText}\n<:FlecheVert:990651262976528414> Reçu\n\n...........................................................................\n\n- **Qui l'a ordonné :** ${auteur}\n- **Protocole :** ${proto.replace(/Protocole\s+/i, '')}\n- **Raison :** ${raison}${details ? `\n- **Détails :** ${details}` : ''}${steam ? `\n- **Steam ID :** ${steam}` : ''}`;
+            document.getElementById(`title-${id}`).innerText = titlePost;
+            document.getElementById(`body-${id}`).innerText = bodyPost;
+            toggleBox(id);
+        }
+
         function toggleBox(id) { const el = document.getElementById(`gen-${id}`); el.style.display = el.style.display === 'none' ? 'block' : 'none'; }
-        async function validerRappel(id) { const confirm = await customConfirm("Confirmer que vous prenez en charge ce rappel sur le forum ?"); if(!confirm) return; try { const res = await fetch(`${API_URL}/${id}/rappel`, { method: 'PUT' }); if(res.ok) chargerDelais(); } catch(e) { customAlert("Erreur réseau"); } }
-        async function envoyerSignalement() { const body = { validatorManualName: document.getElementById('sigShockName').value, cibleNom: document.getElementById('sigCibleNom').value, cibleGrade: document.getElementById('sigCibleGrade').value, cibleRegiment: document.getElementById('sigCibleRegiment').value, protocoleType: document.getElementById('sigProtocole').value, auteurNom: document.getElementById('sigOrderedBy').value, raison: document.getElementById('sigRaison').value, details: document.getElementById('sigDetails').value, targetSteamID: document.getElementById('sigSteamID').value }; if(!body.validatorManualName || !body.cibleNom || !body.cibleGrade || !body.cibleRegiment || !body.protocoleType || !body.raison) return customAlert("Champs obligatoires manquants."); try { const res = await fetch('/api/protocoles/direct', { method: 'POST', headers: { 'Content-Type': 'application/json' }, body: JSON.stringify(body) }); if(res.ok) { customAlert("Enregistré !"); document.querySelectorAll('#signalementPanel input, #signalementPanel textarea, #signalementPanel select').forEach(i => i.value = ''); document.querySelectorAll('.nav-link')[3].click(); } else customAlert("Erreur"); } catch(e) { customAlert("Erreur connexion"); } }
+        async function validerRappel(id) { 
+            const confirm = await customConfirm("Confirmer que vous prenez en charge ce rappel sur le forum ?");
+            if(!confirm) return; 
+            try { const res = await fetch(`${API_URL}/${id}/rappel`, { method: 'PUT' }); if(res.ok) chargerDelais(); } catch(e) { customAlert("Erreur réseau"); } 
+        }
+        
+        async function envoyerSignalement() { 
+            const body = { validatorManualName: document.getElementById('sigShockName').value, cibleNom: document.getElementById('sigCibleNom').value, cibleGrade: document.getElementById('sigCibleGrade').value, cibleRegiment: document.getElementById('sigCibleRegiment').value, protocoleType: document.getElementById('sigProtocole').value, auteurNom: document.getElementById('sigOrderedBy').value, raison: document.getElementById('sigRaison').value, details: document.getElementById('sigDetails').value, targetSteamID: document.getElementById('sigSteamID').value }; 
+            if(!body.validatorManualName || !body.cibleNom || !body.cibleGrade || !body.cibleRegiment || !body.protocoleType || !body.raison) return customAlert("Champs obligatoires manquants."); 
+            try { const res = await fetch('/api/protocoles/direct', { method: 'POST', headers: { 'Content-Type': 'application/json' }, body: JSON.stringify(body) }); if(res.ok) { customAlert("Enregistré !"); document.querySelectorAll('#signalementPanel input, #signalementPanel textarea, #signalementPanel select').forEach(i => i.value = ''); document.querySelectorAll('.nav-link')[3].click(); } else customAlert("Erreur"); } catch(e) { customAlert("Erreur connexion"); } 
+        }
+        
         function renderAdminUI() { const listAdminR = document.getElementById('listAdminRoles'); const listAdminU = document.getElementById('listAdminUsers'); const listOfficer = document.getElementById('listOfficerRoles'); const listMarine = document.getElementById('listMarineRoles'); listAdminR.innerHTML = (configData.adminRoles||[]).map(r => `<span class="badge bg-secondary">${r} <i class="fas fa-times tag-remove" onclick="removeConfig('adminRoles', '${r}')"></i></span>`).join(''); listAdminU.innerHTML = (configData.adminUsers||[]).map(r => `<span class="badge bg-secondary">${r} <i class="fas fa-times tag-remove" onclick="removeConfig('adminUsers', '${r}')"></i></span>`).join(''); listOfficer.innerHTML = (configData.officerRoles||[]).map(r => `<span class="badge bg-secondary">${r} <i class="fas fa-times tag-remove" onclick="removeConfig('officerRoles', '${r}')"></i></span>`).join(''); listMarine.innerHTML = (configData.marineRoles||[]).map(r => `<span class="badge bg-secondary">${r} <i class="fas fa-times tag-remove" onclick="removeConfig('marineRoles', '${r}')"></i></span>`).join(''); const regList = document.getElementById('regimentConfigList'); regList.innerHTML = ''; (configData.regiments || []).forEach((reg, index) => { const currentColor = reg.color || '#c0392b'; regList.innerHTML += `<div class="col-md-6 col-lg-4"><div class="card border-secondary h-100"><div class="card-header d-flex justify-content-between align-items-center py-2" style="border-bottom: 3px solid ${currentColor}"><span class="fw-bold">${reg.name}</span><button class="btn btn-sm btn-outline-danger" onclick="removeRegiment(${index})">🗑️</button></div><div class="card-body p-2"><div class="input-group input-group-sm mb-1"><span class="input-group-text bg-dark text-white border-secondary">Rappel (j)</span><input type="number" class="form-control" value="${reg.rappelDays}" onchange="updateRegiment(${index}, 'rappelDays', this.value)"></div><div class="input-group input-group-sm mb-1"><span class="input-group-text bg-dark text-white border-secondary">Sanction (j)</span><input type="number" class="form-control" value="${reg.sanctionDays}" onchange="updateRegiment(${index}, 'sanctionDays', this.value)"></div><div class="input-group input-group-sm mb-2"><span class="input-group-text bg-dark text-white border-secondary">Sanction</span><input type="text" class="form-control" value="${reg.sanctionText}" onchange="updateRegiment(${index}, 'sanctionText', this.value)"></div><div class="d-flex align-items-center gap-2"><small class="text-muted">Couleur Bandeau :</small><input type="color" class="form-control form-control-color" value="${currentColor}" onchange="updateRegiment(${index}, 'color', this.value)" title="Choisir la couleur"></div></div></div></div>`; }); }
         function addNewRegiment() { const name = document.getElementById('newRegimentName').value.trim(); if(!name) return; if(!configData.regiments) configData.regiments = []; configData.regiments.push({ name: name, rappelDays: 7, sanctionDays: 3, sanctionText: 'Arrêts', color: '#c0392b' }); document.getElementById('newRegimentName').value = ''; renderAdminUI(); }
         function updateRegiment(index, field, value) { if(field === 'rappelDays' || field === 'sanctionDays') value = parseInt(value); configData.regiments[index][field] = value; }
