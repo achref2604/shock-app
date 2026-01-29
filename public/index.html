@@ -26,8 +26,6 @@
         .badge-pending { background-color: #f39c12; color: #000; }
         .details-box { background-color: rgba(255,255,255,0.05); border-left: 3px solid var(--shock-red); }
         .alert-time { background-color: rgba(243, 156, 18, 0.2); border: 1px solid #f39c12; color: #f39c12; }
-        
-        /* User Bar */
         .user-bar { position: absolute; top: 20px; right: 20px; }
         .avatar { width: 40px; height: 40px; border-radius: 50%; border: 2px solid var(--shock-red); }
     </style>
@@ -66,30 +64,69 @@
                 </div>
                 <div class="card-body p-4">
                     <div class="row g-3">
-                        <div class="col-md-6">
-                            <h5 class="text-muted mb-3">Information de l'Officier</h5>
-                            <div class="row g-2">
-                                <div class="col-4"><input type="text" id="matricule" class="form-control" placeholder="Matricule"></div>
-                                <div class="col-8"><input type="text" id="nom" class="form-control" placeholder="Nom"></div>
+                        <div class="col-md-7 border-end border-secondary pe-md-4">
+                            <h5 class="text-muted mb-3"><i class="fas fa-bullseye"></i> Informations Cible (Prisonnier)</h5>
+                            
+                            <div class="mb-2">
+                                <label class="small text-muted">Identité*</label>
+                                <input type="text" id="cibleNom" class="form-control" placeholder="Matricule + Nom (Ex: CT-7567 Rex)">
                             </div>
-                            <select id="grade" class="form-select mt-2">
-                                <option selected disabled>Sélectionner un grade...</option>
-                                <option>Cadet</option><option>Trooper</option><option>Sergent</option>
-                                <option>Lieutenant</option><option>Capitaine</option><option>Commandant</option>
-                            </select>
-                        </div>
-                        <div class="col-md-6">
-                            <h5 class="text-muted mb-3">Détails du Mandat</h5>
-                            <input type="text" id="steamid" class="form-control mb-2 fw-bold text-warning" placeholder="SteamID64 de la Cible">
+                            
                             <div class="row g-2 mb-2">
-                                <div class="col-6"><input type="text" id="protocole" class="form-control" placeholder="Sanction"></div>
-                                <div class="col-6"><input type="text" id="tempsRestant" class="form-control border-warning text-warning" placeholder="Temps Restant (Opt.)"></div>
+                                <div class="col-6">
+                                    <label class="small text-muted">Grade*</label>
+                                    <input type="text" id="cibleGrade" class="form-control" placeholder="Ex: Capitaine">
+                                </div>
+                                <div class="col-6">
+                                    <label class="small text-muted">Régiment*</label>
+                                    <input type="text" id="cibleRegiment" class="form-control" placeholder="Ex: 501st">
+                                </div>
                             </div>
-                            <input type="text" id="raison" class="form-control mb-2" placeholder="Raison">
-                            <textarea id="details" class="form-control" rows="2" placeholder="Rapport détaillé..."></textarea>
+
+                            <div class="row g-2 mb-2">
+                                <div class="col-6">
+                                    <label class="small text-muted">Protocole*</label>
+                                    <select id="protocole" class="form-select">
+                                        <option value="" selected disabled>Choisir...</option>
+                                        <option value="Protocole 1">Protocole 1</option>
+                                        <option value="Protocole 2">Protocole 2</option>
+                                        <option value="Protocole 3">Protocole 3</option>
+                                        <option value="Protocole 4">Protocole 4</option>
+                                        <option value="Protocole 5">Protocole 5</option>
+                                        <option value="Protocole 6">Protocole 6</option>
+                                        <option value="Protocole 7">Protocole 7</option>
+                                        <option value="Protocole 8">Protocole 8</option>
+                                    </select>
+                                </div>
+                                <div class="col-6">
+                                    <label class="small text-muted">Temps Restant (Optionnel)</label>
+                                    <input type="text" id="tempsRestant" class="form-control border-warning text-warning" placeholder="Ex: 15min">
+                                </div>
+                            </div>
+                            
+                            <div class="mb-2">
+                                <label class="small text-muted">Raison*</label>
+                                <input type="text" id="raison" class="form-control" placeholder="Motif de l'arrestation">
+                            </div>
+
+                            <div class="mb-2">
+                                <input type="text" id="steamid" class="form-control form-control-sm text-secondary border-secondary" placeholder="SteamID64 (Facultatif)">
+                            </div>
+                        </div>
+
+                        <div class="col-md-5 ps-md-4">
+                            <h5 class="text-muted mb-3"><i class="fas fa-user-shield"></i> L'Officier</h5>
+                            <div class="mb-3">
+                                <label class="small text-muted">Votre Nom*</label>
+                                <input type="text" id="auteurNom" class="form-control" placeholder="Ex: Commander Fox">
+                            </div>
+
+                            <h5 class="text-muted mb-2 mt-4">Détails</h5>
+                            <textarea id="details" class="form-control" rows="4" placeholder="Détails supplémentaires (Facultatif)..."></textarea>
                         </div>
                     </div>
-                    <div class="text-center mt-4">
+                    
+                    <div class="text-center mt-4 pt-3 border-top border-secondary">
                         <button id="btnSubmit" onclick="envoyerProtocole()" class="btn btn-shock btn-lg px-5">Transmettre l'Ordre</button>
                         <button id="btnCancel" onclick="resetForm()" class="btn btn-outline-secondary btn-lg px-3 ms-2" style="display:none;">Annuler</button>
                     </div>
@@ -112,9 +149,8 @@
         let currentData = [];
         let editingId = null; 
         let userConnecte = false;
-        let isOfficier = false; // Variable globale pour stocker si c'est un officier ou non
+        let isOfficier = false;
 
-        // --- GESTION DE LA CONNEXION ---
         async function checkUserStatus() {
             try {
                 const res = await fetch('/auth/user');
@@ -125,9 +161,7 @@
 
                 if (data.connecte) {
                     userConnecte = true;
-                    isOfficier = data.isOfficier; // On récupère le droit depuis le serveur
-
-                    // Affichage avatar + Badge Officier/Soldat
+                    isOfficier = data.isOfficier;
                     userZone.innerHTML = `
                         <div class="d-flex align-items-center gap-2">
                             <img src="${data.avatar}" class="avatar" alt="Avatar">
@@ -135,19 +169,13 @@
                             ${isOfficier ? '<span class="badge bg-danger">OFFICIER</span>' : '<span class="badge bg-secondary">SOLDAT</span>'}
                             <a href="/auth/logout" class="btn btn-sm btn-outline-danger"><i class="fas fa-sign-out-alt"></i></a>
                         </div>`;
-                    
-                    // On affiche le bouton "Panneau Officier" SEULEMENT si c'est un officier
                     btnZone.style.display = isOfficier ? 'block' : 'none';
                     warning.style.display = 'none';
-                    
-                    // Si connecté mais pas officier, on met un petit message
                     if(!isOfficier) {
                          warning.innerHTML = "<small>Vous êtes connecté, mais vous n'avez pas les droits pour modifier les protocoles.</small>";
                          warning.style.display = 'block';
                     }
-
                 } else {
-                    // Si pas connecté du tout
                     userConnecte = false;
                     isOfficier = false;
                     userZone.innerHTML = `<a href="/auth/discord" class="btn btn-outline-light btn-sm"><i class="fab fa-discord"></i> Connexion Officier</a>`;
@@ -156,11 +184,10 @@
                     warning.style.display = 'block';
                     document.getElementById('adminPanel').style.display = 'none';
                 }
-                chargerEnCours(); // Recharge la liste pour afficher/cacher les boutons d'action
+                chargerEnCours(); 
             } catch (e) { console.error("Erreur auth check", e); }
         }
 
-        // --- FONCTIONS UTILITAIRES ---
         function toggleAdmin() {
             const panel = document.getElementById('adminPanel');
             panel.style.display = panel.style.display === 'none' ? 'block' : 'none';
@@ -176,7 +203,6 @@
 
             if(type === 'encours') {
                 titre.innerHTML = '<span class="text-shock">►</span> Mandats en Cours';
-                // Affiche le bouton admin seulement si c'est un Officier
                 btnZone.style.display = isOfficier ? 'block' : 'none';
                 chargerEnCours();
             } else {
@@ -207,10 +233,14 @@
             const item = currentData.find(p => p._id === id);
             if(!item) return;
 
-            document.getElementById('matricule').value = item.auteurMatricule;
-            document.getElementById('nom').value = item.auteurNom;
-            document.getElementById('grade').value = item.auteurGrade;
-            document.getElementById('steamid').value = item.targetSteamID;
+            // Remplissage des champs avec les nouvelles données
+            document.getElementById('auteurNom').value = item.auteurNom;
+            
+            document.getElementById('cibleNom').value = item.cibleNom;
+            document.getElementById('cibleGrade').value = item.cibleGrade;
+            document.getElementById('cibleRegiment').value = item.cibleRegiment;
+            document.getElementById('steamid').value = item.targetSteamID || '';
+
             document.getElementById('protocole').value = item.protocoleType;
             document.getElementById('raison').value = item.raison;
             document.getElementById('details').value = item.details;
@@ -240,6 +270,11 @@
             document.getElementById('btnSubmit').innerText = "Transmettre l'Ordre";
             document.getElementById('btnSubmit').className = "btn btn-shock btn-lg px-5";
             document.getElementById('btnCancel').style.display = "none";
+            
+            // Vider les champs
+            document.getElementById('cibleNom').value = '';
+            document.getElementById('cibleGrade').value = '';
+            document.getElementById('cibleRegiment').value = '';
             document.getElementById('steamid').value = '';
             document.getElementById('protocole').value = '';
             document.getElementById('raison').value = '';
@@ -263,10 +298,8 @@
                     ? '<span class="badge badge-done rounded-pill px-3 py-2">✅ EFFECTUÉ</span>' 
                     : '<span class="badge badge-pending rounded-pill px-3 py-2">⏳ EN ATTENTE</span>';
                 
-                // Si l'utilisateur n'est pas connecté, il ne voit AUCUN bouton d'action
                 let actionButtons = '';
 
-                // ICI C'EST IMPORTANT : On vérifie (Connecté ET Officier)
                 if (userConnecte && isOfficier) {
                     if(estEnCours) {
                         actionButtons = `
@@ -289,6 +322,7 @@
                 }
 
                 const discordInfo = p.discordUser ? `<br><small class="text-secondary"><i class="fab fa-discord"></i> Log: ${p.discordUser}</small>` : '';
+                const steamInfo = p.targetSteamID ? `<small class="text-muted d-block mt-1" style="font-size:0.7rem">${p.targetSteamID}</small>` : '';
 
                 const cardStyle = estEnCours ? '' : 'opacity: 0.8; filter: grayscale(20%);';
                 const dateObj = new Date(p.date);
@@ -298,14 +332,17 @@
                 <div class="col-md-6 col-xl-4" style="${cardStyle}">
                     <div class="card h-100">
                         <div class="card-header d-flex justify-content-between align-items-center">
-                            <span class="font-monospace fw-bold text-warning">ID: ${p.targetSteamID.substring(0,12)}...</span>
+                            <div>
+                                <span class="fw-bold text-white fs-5">${p.cibleNom}</span>
+                                <div class="small text-muted">${p.cibleGrade} - ${p.cibleRegiment}</div>
+                            </div>
                             ${badge}
                         </div>
                         <div class="card-body">
                             <div class="d-flex justify-content-between small text-muted mb-3">
                                 <span>📅 ${dateStr}</span>
                                 <div class="text-end">
-                                    <span>${p.auteurGrade} ${p.auteurNom}</span>
+                                    <span>Officier: ${p.auteurNom}</span>
                                     ${discordInfo}
                                 </div>
                             </div>
@@ -316,7 +353,8 @@
                                 <div class="col-6"><div class="p-2 bg-dark rounded border border-secondary"><small class="text-muted d-block ls-1">SANCTION</small><span class="fw-bold text-danger">${p.protocoleType}</span></div></div>
                                 <div class="col-6"><div class="p-2 bg-dark rounded border border-secondary"><small class="text-muted d-block ls-1">RAISON</small><span class="fw-bold">${p.raison}</span></div></div>
                             </div>
-                            <div class="details-box p-3 rounded bg-dark text-light small fst-italic mb-2">" ${p.details} "</div>
+                            ${p.details ? `<div class="details-box p-3 rounded bg-dark text-light small fst-italic mb-2">" ${p.details} "</div>` : ''}
+                            ${steamInfo}
                         </div>
                         ${actionButtons}
                     </div>
@@ -326,13 +364,27 @@
         }
         
         async function envoyerProtocole() {
+            const cibleNom = document.getElementById('cibleNom').value;
+            const cibleGrade = document.getElementById('cibleGrade').value;
+            const cibleRegiment = document.getElementById('cibleRegiment').value;
+            const protocole = document.getElementById('protocole').value;
+            const raison = document.getElementById('raison').value;
+            const auteurNom = document.getElementById('auteurNom').value;
+
+            // Vérification des champs obligatoires
+            if(!cibleNom || !cibleGrade || !cibleRegiment || !protocole || !raison || !auteurNom) {
+                alert("❌ Merci de remplir tous les champs obligatoires (Identité, Grade, Régiment, Protocole, Raison, Nom Officier).");
+                return;
+            }
+
             const body = {
-                auteurMatricule: document.getElementById('matricule').value,
-                auteurNom: document.getElementById('nom').value,
-                auteurGrade: document.getElementById('grade').value,
+                auteurNom: auteurNom,
+                cibleNom: cibleNom,
+                cibleGrade: cibleGrade,
+                cibleRegiment: cibleRegiment,
                 targetSteamID: document.getElementById('steamid').value,
-                protocoleType: document.getElementById('protocole').value,
-                raison: document.getElementById('raison').value,
+                protocoleType: protocole,
+                raison: raison,
                 details: document.getElementById('details').value,
                 tempsRestant: document.getElementById('tempsRestant').value
             };
@@ -385,7 +437,6 @@
             } catch(e) { console.error(e); }
         }
 
-        // Lancement : Vérifier qui est connecté
         checkUserStatus();
 
     </script>
