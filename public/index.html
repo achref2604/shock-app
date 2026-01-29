@@ -24,12 +24,14 @@
         .nav-link.active { background-color: transparent; color: var(--shock-red); border-bottom: 3px solid var(--shock-red); }
         .badge-done { background-color: #27ae60; color: white; }
         .badge-pending { background-color: #f39c12; color: #000; }
-        .details-box { background-color: rgba(255,255,255,0.05); border-left: 3px solid var(--shock-red); }
         .alert-time { background-color: rgba(243, 156, 18, 0.2); border: 1px solid #f39c12; color: #f39c12; }
         .user-bar { position: absolute; top: 20px; right: 20px; }
         .avatar { width: 40px; height: 40px; border-radius: 50%; border: 2px solid var(--shock-red); }
         .admin-section { border-left: 2px solid var(--shock-red); padding-left: 15px; margin-bottom: 20px; }
         .tag-remove { cursor: pointer; color: #e74c3c; margin-left: 5px; }
+        
+        /* Utilitaires de texte */
+        .ls-1 { letter-spacing: 1px; font-weight: 600; font-size: 0.75rem; }
     </style>
 </head>
 <body class="container py-5">
@@ -152,7 +154,6 @@
         let configData = { officerRoles: [], marineRoles: [], regiments: [] };
         let editingId = null; 
         
-        // On rajoute 'id' dans l'objet user pour savoir qui je suis
         let user = { connecte: false, id: null, isAdmin: false, isOfficer: false, isMarine: false };
 
         async function init() {
@@ -324,15 +325,11 @@
                 const canEdit = user.isAdmin || user.isOfficer || user.isMarine;
                 const canValidate = user.isAdmin || user.isOfficer;
                 
-                // VÉRIFICATION AUTEUR : Est-ce moi ?
                 const isAuthor = (p.discordId === user.id);
-                // On peut modifier si on est Admin OU si on est l'auteur
                 const canModify = user.isAdmin || isAuthor;
 
                 if (estEnCours && canEdit) {
                     let btnValider = canValidate ? `<button onclick="valider('${p._id}')" class="btn btn-outline-success flex-grow-1 fw-bold">Confirmer</button>` : '';
-                    
-                    // Bouton modifier affiché conditionnellement
                     let btnModifier = canModify ? `<button onclick="preparerAction('${p._id}', 'modifier')" class="btn btn-outline-warning" title="Modifier">✏️</button>` : '';
 
                     actionButtons = `
@@ -348,11 +345,7 @@
                     </div>`;
                 }
 
-                let deleteBtn = '';
-                if(user.isAdmin) {
-                    deleteBtn = `<button onclick="supprimer('${p._id}')" class="btn btn-sm btn-danger ms-2" title="Supprimer définitivement"><i class="fas fa-trash"></i></button>`;
-                }
-
+                let deleteBtn = user.isAdmin ? `<button onclick="supprimer('${p._id}')" class="btn btn-sm btn-danger ms-2" title="Supprimer définitivement"><i class="fas fa-trash"></i></button>` : '';
                 let timeAlert = (p.tempsRestant && !isDone) ? `<div class="alert-time p-2 rounded mb-2 text-center fw-bold">⚠️ RESTANT : ${p.tempsRestant}</div>` : '';
                 
                 let logName = p.discordNick || p.discordUser;
@@ -363,6 +356,7 @@
                 const steamInfo = p.targetSteamID ? `<small class="text-muted d-block mt-1" style="font-size:0.7rem">${p.targetSteamID}</small>` : '';
                 const dateStr = new Date(p.date).toLocaleString().slice(0, -3);
 
+                // --- MODIFICATION ICI : Réorganisation de l'affichage ---
                 container.innerHTML += `
                 <div class="col-12" style="${estEnCours ? '' : 'opacity:0.8; filter:grayscale(20%);'}">
                     <div class="card h-100">
@@ -376,11 +370,29 @@
                         <div class="card-body">
                             <div class="row">
                                 <div class="col-md-9">
-                                     <div class="row mb-3 g-2">
-                                        <div class="col-md-4"><div class="p-2 bg-dark rounded border border-secondary"><small class="text-muted d-block ls-1">SANCTION</small><span class="fw-bold text-danger">${p.protocoleType}</span></div></div>
-                                        <div class="col-md-8"><div class="p-2 bg-dark rounded border border-secondary"><small class="text-muted d-block ls-1">RAISON</small><span class="fst-italic">"${p.raison}"</span></div></div>
+                                    
+                                    <div class="mb-2">
+                                        <div class="p-2 bg-dark rounded border border-secondary">
+                                            <small class="text-muted d-block ls-1">SANCTION</small>
+                                            <span class="fw-bold text-danger">${p.protocoleType}</span>
+                                        </div>
                                     </div>
-                                    ${p.details ? `<div class="details-box p-3 rounded bg-dark text-light small mb-2">${p.details}</div>` : ''}
+
+                                    <div class="mb-2">
+                                        <div class="p-2 bg-dark rounded border border-danger">
+                                            <small class="text-muted d-block ls-1">RAISON</small>
+                                            <span class="text-light">${p.raison}</span>
+                                        </div>
+                                    </div>
+
+                                    ${p.details ? `
+                                    <div class="mb-2">
+                                        <div class="p-2 bg-dark rounded border border-warning">
+                                            <small class="text-muted d-block ls-1">DÉTAILS</small>
+                                            <span class="text-light">${p.details}</span>
+                                        </div>
+                                    </div>` : ''}
+
                                     ${timeAlert}
                                 </div>
                                 <div class="col-md-3 border-start border-secondary ps-4 d-flex flex-column justify-content-center">
