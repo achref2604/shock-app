@@ -24,7 +24,7 @@
         .card { background-color: var(--card-bg); border: 1px solid #333; box-shadow: 0 4px 6px rgba(0,0,0,0.3); }
         .card-header { border-bottom: 1px solid #333; background-color: rgba(192, 57, 43, 0.1); }
         .form-control, .form-select { background-color: #222; border: 1px solid #444; color: #fff; }
-        .form-control:focus, .form-select:focus { background-color: #2a2a2a; border-color: var(--shock-red); color: #fff; }
+        .form-control:focus, .form-select:focus { background-color: #333; border-color: var(--shock-red); color: #fff; }
         .nav-tabs { border-bottom: 2px solid #333; }
         .nav-link { color: #888; border: none; padding: 1rem 1.5rem; font-weight: 600; transition: all 0.3s; }
         .nav-link:hover { color: var(--shock-red); }
@@ -406,7 +406,6 @@
 
         function afficherRappels(container, p, regConfig, retardJours, sanctionBanner, deadlineText) {
             const regColor = getRegimentColor(p.cibleRegiment);
-            // CORRECTION COULEUR: Texte Blanc, Fond Couleur
             const headerStyle = `background-color: ${regColor}33; border-bottom: 1px solid #c0392b; color: white; font-weight: bold;`;
 
             const btnGen = `<button class="btn btn-outline-light btn-sm w-100 mb-2" onclick="generateAndShow('${p._id}', '${p.cibleRegiment}', '${p.cibleGrade}', '${p.cibleNom}', '${p.auteurNom}', '${p.protocoleType}', '${p.raison}', '${p.details || ''}', '${p.targetSteamID || ''}', ${regConfig.sanctionDays}, '${regConfig.sanctionText}')">📄 Générer le Rapport Discord</button>`;
@@ -540,12 +539,36 @@
         function addConfig(key) { let inputId = (key==='adminRoles')?'newAdminRole':(key==='adminUsers')?'newAdminUser':(key==='officerRoles')?'newOfficerRole':'newMarineRole'; const val = document.getElementById(inputId).value.trim(); if(!val) return; if(!configData[key]) configData[key] = []; configData[key].push(val); document.getElementById(inputId).value = ''; renderAdminUI(); }
         function removeConfig(key, val) { configData[key] = configData[key].filter(item => item !== val); renderAdminUI(); }
         async function saveConfig() { await fetch('/api/config', { method: 'PUT', headers: { 'Content-Type': 'application/json' }, body: JSON.stringify(configData) }); customAlert("Configuration sauvegardée !"); renderRegimentsSelect(); }
+        
         function preparerAction(id, mode) { const item = currentData.find(p => p._id === id); document.getElementById('auteurNom').value = item.auteurNom; document.getElementById('cibleNom').value = item.cibleNom; document.getElementById('cibleGrade').value = item.cibleGrade; document.getElementById('cibleRegiment').value = item.cibleRegiment; document.getElementById('steamid').value = item.targetSteamID || ''; document.getElementById('protocole').value = item.protocoleType; document.getElementById('raison').value = item.raison; document.getElementById('details').value = item.details; document.getElementById('tempsRestant').value = item.tempsRestant || ''; document.getElementById('protocolFormPanel').style.display = 'block'; document.getElementById('protocolFormPanel').scrollIntoView({ behavior: 'smooth' }); if(mode === 'modifier') { editingId = id; document.getElementById('formTitle').innerText = "📝 MODIFICATION"; document.getElementById('btnSubmit').innerText = "Sauvegarder"; document.getElementById('btnSubmit').className = "btn btn-warning btn-lg px-5"; document.getElementById('btnCancel').style.display = "inline-block"; } else { editingId = null; document.getElementById('formTitle').innerText = "📋 DUPLICATION"; document.getElementById('btnSubmit').innerText = "Créer la copie"; document.getElementById('btnSubmit').className = "btn btn-shock btn-lg px-5"; document.getElementById('btnCancel').style.display = "inline-block"; } }
         function resetForm() { editingId = null; document.getElementById('formTitle').innerText = "⚠️ ORDONNER UN NOUVEAU PROTOCOLE"; document.getElementById('btnSubmit').innerText = "Transmettre"; document.getElementById('btnSubmit').className = "btn btn-shock btn-lg px-5"; document.getElementById('btnCancel').style.display = "none"; document.getElementById('cibleNom').value = ''; document.getElementById('cibleGrade').value = ''; document.getElementById('cibleRegiment').value = ''; document.getElementById('steamid').value = ''; document.getElementById('protocole').value = ''; document.getElementById('raison').value = ''; document.getElementById('details').value = ''; document.getElementById('tempsRestant').value = ''; }
-        async function envoyerProtocole() { const body = { auteurNom: document.getElementById('auteurNom').value, cibleNom: document.getElementById('cibleNom').value, cibleGrade: document.getElementById('cibleGrade').value, cibleRegiment: document.getElementById('cibleRegiment').value, targetSteamID: document.getElementById('steamid').value, protocoleType: document.getElementById('protocole').value, raison: document.getElementById('raison').value, details: document.getElementById('details').value, tempsRestant: document.getElementById('tempsRestant').value }; if(!body.cibleNom || !body.cibleGrade || !body.cibleRegiment || !body.protocoleType || !body.raison || !body.auteurNom) return customAlert("Champs obligatoires manquants."); const method = editingId ? 'PUT' : 'POST'; const url = editingId ? `${API_URL}/${editingId}` : API_URL; try { const res = await fetch(url, { method: method, headers: { 'Content-Type': 'application/json' }, body: JSON.stringify(body) }); if(res.ok) { customAlert('✅ OK'); resetForm(); chargerEnCours(); if(!editingId) toggleForm(); } else { if(res.status === 403) customAlert("Seul l'auteur ou l'admin peut modifier."); else customAlert('Erreur ou Permissions insuffisantes.'); } } catch(e) { customAlert("Erreur réseau"); } }
-        async function valider(id) { const validatorName = await customPrompt("Veuillez entrer votre Matricule + Nom pour confirmer l'archivage :"); if (validatorName === null || validatorName.trim() === "") return; try { const res = await fetch(`${API_URL}/${id}/valider`, { method: 'PUT', headers: { 'Content-Type': 'application/json' }, body: JSON.stringify({ validatorName: validatorName }) }); if(res.ok) chargerEnCours(); else customAlert("Erreur validation"); } catch(e) { customAlert("Erreur connexion"); } }
-        async function restaurer(id) { const temps = await customPrompt("Temps restant ?"); const res = await fetch(`${API_URL}/${id}/restaurer`, { method: 'PUT', headers: { 'Content-Type': 'application/json' }, body: JSON.stringify({ tempsRestant: temps }) }); if(res.ok) chargerHistorique(); else customAlert("Permission refusée"); }
-        async function supprimer(id) { if(!confirm("⚠️ SUPPRESSION DÉFINITIVE ⚠️\nÊtes-vous sûr ?")) return; try { const res = await fetch(`${API_URL}/${id}`, { method: 'DELETE' }); if(res.ok) { const activeTab = document.querySelector('.nav-link.active').getAttribute('onclick'); if(activeTab.includes('encours')) chargerEnCours(); else chargerHistorique(); } else customAlert("Erreur : Seul l'Admin peut supprimer."); } catch(e) { customAlert("Erreur serveur"); } }
+        
+        async function envoyerProtocole() { 
+            const body = { auteurNom: document.getElementById('auteurNom').value, cibleNom: document.getElementById('cibleNom').value, cibleGrade: document.getElementById('cibleGrade').value, cibleRegiment: document.getElementById('cibleRegiment').value, targetSteamID: document.getElementById('steamid').value, protocoleType: document.getElementById('protocole').value, raison: document.getElementById('raison').value, details: document.getElementById('details').value, tempsRestant: document.getElementById('tempsRestant').value }; 
+            if(!body.cibleNom || !body.cibleGrade || !body.cibleRegiment || !body.protocoleType || !body.raison || !body.auteurNom) return customAlert("Champs obligatoires manquants."); 
+            const method = editingId ? 'PUT' : 'POST'; const url = editingId ? `${API_URL}/${editingId}` : API_URL; 
+            try { const res = await fetch(url, { method: method, headers: { 'Content-Type': 'application/json' }, body: JSON.stringify(body) }); if(res.ok) { customAlert('✅ OK'); resetForm(); chargerEnCours(); if(!editingId) toggleForm(); } else { if(res.status === 403) customAlert("Seul l'auteur ou l'admin peut modifier."); else customAlert('Erreur ou Permissions insuffisantes.'); } } catch(e) { customAlert("Erreur réseau"); } 
+        }
+        
+        async function valider(id) { 
+            const validatorName = await customPrompt("Veuillez entrer votre Matricule + Nom pour confirmer l'archivage :"); 
+            if (validatorName === null || validatorName.trim() === "") return; 
+            try { const res = await fetch(`${API_URL}/${id}/valider`, { method: 'PUT', headers: { 'Content-Type': 'application/json' }, body: JSON.stringify({ validatorName: validatorName }) }); if(res.ok) chargerEnCours(); else customAlert("Erreur validation"); } catch(e) { customAlert("Erreur connexion"); } 
+        }
+        
+        async function restaurer(id) { 
+            const temps = await customPrompt("Temps restant ?"); 
+            if(temps === null) return;
+            const res = await fetch(`${API_URL}/${id}/restaurer`, { method: 'PUT', headers: { 'Content-Type': 'application/json' }, body: JSON.stringify({ tempsRestant: temps }) }); 
+            if(res.ok) chargerHistorique(); else customAlert("Permission refusée"); 
+        }
+        
+        async function supprimer(id) { 
+            const confirm = await customConfirm("⚠️ SUPPRESSION DÉFINITIVE ⚠️\nÊtes-vous sûr ?");
+            if(!confirm) return; 
+            try { const res = await fetch(`${API_URL}/${id}`, { method: 'DELETE' }); if(res.ok) { const activeTab = document.querySelector('.nav-link.active').getAttribute('onclick'); if(activeTab.includes('encours')) chargerEnCours(); else chargerHistorique(); } else customAlert("Erreur : Seul l'Admin peut supprimer."); } catch(e) { customAlert("Erreur serveur"); } 
+        }
+        
         init();
     </script>
 </body>
