@@ -18,7 +18,7 @@ const CALLBACK_URL = process.env.DISCORD_CALLBACK_URL;
 const SESSION_SECRET = process.env.SESSION_SECRET || 'secretSuperShock';
 const ALLOWED_GUILD_ID = process.env.ALLOWED_GUILD_ID;
 
-// IDs des "Super Admins" (Fox)
+// IDs des "Super Admins" (Fox) - SEULS EUX PEUVENT SUPPRIMER
 const SUPER_ADMIN_USERS = ['517350911647940611']; 
 const SUPER_ADMIN_ROLES = ['1313599623004160082'];
 
@@ -27,33 +27,26 @@ mongoose.connect(MONGO_URI, { useNewUrlParser: true, useUnifiedTopology: true })
     .then(() => console.log("✅ Connecté à MongoDB"))
     .catch(err => console.error("❌ Erreur MongoDB:", err));
 
-// 1. Schéma de Configuration (Rôles dynamiques et Régiments)
+// Schémas
 const ConfigSchema = new mongoose.Schema({
-    officerRoles: [String], // Liste des ID roles qui ont TOUT les droits
-    marineRoles: [String],  // Liste des ID roles qui peuvent juste Ajouter/Modifier
-    regiments: [String]     // Liste des régiments pour le menu déroulant
+    officerRoles: [String], 
+    marineRoles: [String],  
+    regiments: [String]     
 });
 const Config = mongoose.model('Config', ConfigSchema);
 
-// Fonction pour initialiser la config si elle n'existe pas
 async function initConfig() {
     const exists = await Config.findOne();
     if (!exists) {
-        await new Config({
-            officerRoles: [],
-            marineRoles: [],
-            regiments: ['Shock', '501st', '212th', '104th'] // Valeurs par défaut
-        }).save();
-        console.log("⚙️ Configuration initialisée.");
+        await new Config({ officerRoles: [], marineRoles: [], regiments: ['Shock', '501st'] }).save();
     }
 }
 initConfig();
 
-// 2. Schéma des Protocoles (inchangé)
 const ProtocoleSchema = new mongoose.Schema({
     auteurNom: String,
-    discordUser: String, // Pseudo Username
-    discordNick: String, // Surnom Serveur
+    discordUser: String,
+    discordNick: String,
     discordId: String,
     cibleNom: String,
     cibleGrade: String,
@@ -95,39 +88,35 @@ passport.use(new DiscordStrategy({
 }, async (accessToken, refreshToken, profile, done) => {
     try {
         if (ALLOWED_GUILD_ID) {
-            // On récupère le membre pour avoir ses rôles ET son surnom (nick)
             const response = await axios.get(`https://discord.com/api/users/@me/guilds/${ALLOWED_GUILD_ID}/member`, {
                 headers: { Authorization: `Bearer ${accessToken}` }
             });
-            
             const member = response.data;
-            profile.roles = member.roles; // On stocke les rôles
-            profile.serverNick = member.nick || member.user.username; // Surnom ou Username si pas de surnom
+            profile.roles = member.roles;
+            profile.serverNick = member.nick || member.user.username;
         }
         return done(null, profile);
     } catch (error) {
-        console.error("Erreur Discord:", error.message);
         return done(null, profile);
     }
 }));
 
-// --- GESTION DES PERMISSIONS ---
+// --- PERMISSIONS ---
 async function getPermissions(user) {
     if (!user || !user.roles) return { isAdmin: false, isOfficer: false, isMarine: false };
-
-    // 1. Check Admin (Hardcodé)
+    
+    // Admin (Hardcodé)
     const isAdmin = SUPER_ADMIN_USERS.includes(user.id) || user.roles.some(r => SUPER_ADMIN_ROLES.includes(r));
     if (isAdmin) return { isAdmin: true, isOfficer: true, isMarine: true };
 
-    // 2. Check DB Config pour Officer et Marine
+    // DB Config
     const config = await Config.findOne();
     const isOfficer = user.roles.some(r => config.officerRoles.includes(r));
     const isMarine = user.roles.some(r => config.marineRoles.includes(r));
 
-    return { isAdmin: false, isOfficer: isOfficer, isMarine: isMarine }; // Officier écrase Marine plus tard
+    return { isAdmin: false, isOfficer: isOfficer, isMarine: isMarine };
 }
 
-// Middleware de protection Admin
 const checkAdmin = async (req, res, next) => {
     if (req.isAuthenticated()) {
         const perms = await getPermissions(req.user);
@@ -136,7 +125,6 @@ const checkAdmin = async (req, res, next) => {
     res.status(403).json({ message: "Réservé à 1010 Fox." });
 };
 
-// Middleware pour modifier/ajouter (Marine + Officier + Admin)
 const checkEdit = async (req, res, next) => {
     if (req.isAuthenticated()) {
         const perms = await getPermissions(req.user);
@@ -145,7 +133,6 @@ const checkEdit = async (req, res, next) => {
     res.status(403).json({ message: "Accès refusé." });
 };
 
-// Middleware pour Valider/Restaurer (Officier + Admin SEULEMENT)
 const checkValidate = async (req, res, next) => {
     if (req.isAuthenticated()) {
         const perms = await getPermissions(req.user);
@@ -154,7 +141,7 @@ const checkValidate = async (req, res, next) => {
     res.status(403).json({ message: "Réservé aux Officiers." });
 };
 
-// --- ROUTES AUTH ---
+// --- ROUTES ---
 app.get('/auth/discord', passport.authenticate('discord'));
 app.get('/auth/discord/callback', passport.authenticate('discord', { failureRedirect: '/' }), (req, res) => res.redirect('/'));
 app.get('/auth/logout', (req, res, next) => {
@@ -167,7 +154,7 @@ app.get('/auth/user', async (req, res) => {
         res.json({ 
             connecte: true, 
             username: req.user.username,
-            nickname: req.user.serverNick, // Le nom sur le serveur
+            nickname: req.user.serverNick,
             avatar: `https://cdn.discordapp.com/avatars/${req.user.id}/${req.user.avatar}.png`,
             isAdmin: perms.isAdmin,
             isOfficer: perms.isOfficer,
@@ -178,44 +165,24 @@ app.get('/auth/user', async (req, res) => {
     }
 });
 
-// --- ROUTES CONFIGURATION (ADMIN) ---
-app.get('/api/config', async (req, res) => {
-    const config = await Config.findOne();
-    res.json(config);
-});
+app.get('/api/config', async (req, res) => { const config = await Config.findOne(); res.json(config); });
+app.put('/api/config', checkAdmin, async (req, res) => { await Config.findOneAndUpdate({}, req.body, { upsert: true }); res.json({ message: "OK" }); });
 
-app.put('/api/config', checkAdmin, async (req, res) => {
-    // req.body contient { officerRoles: [], marineRoles: [], regiments: [] }
-    await Config.findOneAndUpdate({}, req.body, { upsert: true });
-    res.json({ message: "Configuration mise à jour." });
-});
-
-// --- ROUTES API PROTOCOLES ---
-app.get('/api/protocoles', async (req, res) => {
-    const protocoles = await Protocole.find({ statut: { $ne: 'Effectué' } }).sort({ date: -1 });
-    res.json(protocoles);
-});
-app.get('/api/historique', async (req, res) => {
-    const protocoles = await Protocole.find({ statut: 'Effectué' }).sort({ date: -1 });
-    res.json(protocoles);
-});
+app.get('/api/protocoles', async (req, res) => { const p = await Protocole.find({ statut: { $ne: 'Effectué' } }).sort({ date: -1 }); res.json(p); });
+app.get('/api/historique', async (req, res) => { const p = await Protocole.find({ statut: 'Effectué' }).sort({ date: -1 }); res.json(p); });
 
 app.post('/api/protocoles', checkEdit, async (req, res) => {
     try {
         const data = req.body;
         data.discordUser = req.user.username;
-        data.discordNick = req.user.serverNick; // On sauvegarde le surnom
+        data.discordNick = req.user.serverNick;
         data.discordId = req.user.id;
-        const nouveauProtocole = new Protocole(data);
-        await nouveauProtocole.save();
+        await new Protocole(data).save();
         res.json({ message: "Enregistré." });
     } catch (error) { res.status(500).json({ error: error.message }); }
 });
 
-app.put('/api/protocoles/:id', checkEdit, async (req, res) => {
-    await Protocole.findByIdAndUpdate(req.params.id, req.body);
-    res.json({ message: "Mis à jour." });
-});
+app.put('/api/protocoles/:id', checkEdit, async (req, res) => { await Protocole.findByIdAndUpdate(req.params.id, req.body); res.json({ message: "OK" }); });
 
 app.put('/api/protocoles/:id/valider', checkValidate, async (req, res) => {
     await Protocole.findByIdAndUpdate(req.params.id, { statut: 'Effectué' });
@@ -224,7 +191,7 @@ app.put('/api/protocoles/:id/valider', checkValidate, async (req, res) => {
         const tropVieux = historique.slice(30);
         await Protocole.deleteMany({ _id: { $in: tropVieux.map(p => p._id) } });
     }
-    res.json({ message: "Validé." });
+    res.json({ message: "OK" });
 });
 
 app.put('/api/protocoles/:id/restaurer', checkValidate, async (req, res) => {
@@ -232,7 +199,17 @@ app.put('/api/protocoles/:id/restaurer', checkValidate, async (req, res) => {
     let updateData = { statut: 'En Attente', date: Date.now() };
     if (tempsRestant) updateData.tempsRestant = tempsRestant;
     await Protocole.findByIdAndUpdate(req.params.id, updateData);
-    res.json({ message: "Restauré." });
+    res.json({ message: "OK" });
+});
+
+// NOUVELLE ROUTE : SUPPRESSION DÉFINITIVE (Admin Only)
+app.delete('/api/protocoles/:id', checkAdmin, async (req, res) => {
+    try {
+        await Protocole.findByIdAndDelete(req.params.id);
+        res.json({ message: "Protocole supprimé définitivement." });
+    } catch (error) {
+        res.status(500).json({ error: "Erreur serveur" });
+    }
 });
 
 const PORT = process.env.PORT || 3000;
