@@ -11,8 +11,8 @@ const { google } = require('googleapis');
 
 const app = express();
 
-// --- 1. CONFIGURATION PROXY (CRITIQUE POUR RENDER & MOBILE) ---
-app.set('trust proxy', 1);
+// --- CORRECTION CRITIQUE 1 : Faire confiance au Proxy Render ---
+app.set('trust proxy', 1); 
 
 // --- CONFIGURATION ---
 const MONGO_URI = process.env.MONGO_URI;
@@ -36,12 +36,10 @@ const googleAuth = new google.auth.GoogleAuth({
 const SUPER_ADMIN_USERS = ['517350911647940611']; 
 const SUPER_ADMIN_ROLES = ['1313599623004160082'];
 
-// --- CONNEXION DB ---
 mongoose.connect(MONGO_URI, { useNewUrlParser: true, useUnifiedTopology: true })
     .then(() => console.log("✅ Connecté à MongoDB"))
     .catch(err => console.error("❌ Erreur MongoDB:", err));
 
-// --- SCHEMAS ---
 const ConfigSchema = new mongoose.Schema({
     adminRoles: [String], adminUsers: [String], officerRoles: [String], marineRoles: [String], 
     regiments: [{ 
@@ -73,22 +71,21 @@ const ProtocoleSchema = new mongoose.Schema({
 });
 const Protocole = mongoose.model('Protocole', ProtocoleSchema);
 
-// --- MIDDLEWARES ---
 app.use(cors());
 app.use(bodyParser.json());
 app.use(express.static('public'));
 
-// --- SESSION SECURISÉE ---
+// --- CORRECTION CRITIQUE 2 : Configuration Session pour Mobile ---
 app.use(session({
     secret: SESSION_SECRET, 
     resave: false, 
     saveUninitialized: false,
-    proxy: true, // IMPORTANT
+    proxy: true, // OBLIGATOIRE pour que secure: true fonctionne sur Render
     store: MongoStore.create({ mongoUrl: MONGO_URI }), 
     cookie: { 
-        maxAge: 1000 * 60 * 60 * 24 * 7, 
-        secure: true, // HTTPS Requis
-        sameSite: 'none', // Auth Cross-site
+        maxAge: 1000 * 60 * 60 * 24 * 7, // 7 jours
+        secure: true, // OBLIGATOIRE sur Render (HTTPS)
+        sameSite: 'none', // OBLIGATOIRE pour le retour de Discord sur mobile
         httpOnly: true
     }
 }));
@@ -100,43 +97,32 @@ passport.serializeUser((user, done) => done(null, user));
 passport.deserializeUser((obj, done) => done(null, obj));
 
 passport.use(new DiscordStrategy({
-    clientID: CLIENT_ID,
-    clientSecret: CLIENT_SECRET,
-    callbackURL: CALLBACK_URL,
-    scope: ['identify', 'guilds', 'guilds.members.read'],
-    proxy: true
+    clientID: CLIENT_ID, clientSecret: CLIENT_SECRET, callbackURL: CALLBACK_URL, scope: ['identify', 'guilds', 'guilds.members.read']
 }, async (accessToken, refreshToken, profile, done) => {
     try {
         if (ALLOWED_GUILD_ID) {
-            try {
-                const response = await axios.get(`https://discord.com/api/users/@me/guilds/${ALLOWED_GUILD_ID}/member`, { 
-                    headers: { Authorization: `Bearer ${accessToken}` } 
-                });
-                profile.roles = response.data.roles;
-                profile.serverNick = response.data.nick || response.data.user.username;
-            } catch (guildError) {
-                console.error("L'utilisateur n'est pas dans le serveur autorisé.");
-                return done(null, false, { message: "Serveur Discord non rejoint." });
-            }
+            const response = await axios.get(`https://discord.com/api/users/@me/guilds/${ALLOWED_GUILD_ID}/member`, { headers: { Authorization: `Bearer ${accessToken}` } });
+            profile.roles = response.data.roles;
+            profile.serverNick = response.data.nick || response.data.user.username;
         }
         return done(null, profile);
-    } catch (error) {
-        console.error("Détails de l'erreur Auth:", error.response ? error.response.data : error.message);
-        return done(error, null);
+    } catch (error) { 
+        console.error("❌ ERREUR STRATEGIE DISCORD:", error); // Log l'erreur exacte
+        return done(null, profile); 
     }
 }));
 
-// ============================================================
-//  !!! FONCTIONS DE SÉCURITÉ DÉPLACÉES ICI (AVANT LES ROUTES) !!!
-// ============================================================
+// --- Middleware de Debug global ---
+app.use((err, req, res, next) => {
+    console.error("🔥 ERREUR INTERNE SERVEUR :", err.stack);
+    res.status(500).send('Erreur serveur. Regarde les logs Render.');
+});
 
 async function getPermissions(user) {
     if (!user || !user.roles) return { isAdmin: false, isOfficer: false, isMarine: false };
     const isAdmin = SUPER_ADMIN_USERS.includes(user.id) || user.roles.some(r => SUPER_ADMIN_ROLES.includes(r));
     if (isAdmin) return { isAdmin: true, isOfficer: true, isMarine: true };
     const config = await Config.findOne();
-    if (!config) return { isAdmin: false, isOfficer: false, isMarine: false };
-
     const isAdminDB = config.adminUsers.includes(user.id) || user.roles.some(r => config.adminRoles.includes(r));
     if (isAdminDB) return { isAdmin: true, isOfficer: true, isMarine: true };
     const isOfficer = user.roles.some(r => config.officerRoles.includes(r));
@@ -144,22 +130,15 @@ async function getPermissions(user) {
     return { isAdmin: false, isOfficer: isOfficer, isMarine: isMarine };
 }
 
-const checkAdmin = async (req, res, next) => { 
-    if (req.isAuthenticated() && (await getPermissions(req.user)).isAdmin) return next(); 
-    res.status(403).json({ message: "Admin Only." }); 
-};
-
+const checkAdmin = async (req, res, next) => { if (req.isAuthenticated() && (await getPermissions(req.user)).isAdmin) return next(); res.status(403).json({ message: "Admin Only." }); };
 const checkEdit = async (req, res, next) => { 
-    if (!req.isAuthenticated()) return res.status(401).json({ message: "Non connecté" });
     const perms = await getPermissions(req.user);
-    if (perms.isAdmin || perms.isOfficer || perms.isMarine) return next(); 
+    if (req.isAuthenticated() && (perms.isAdmin || perms.isOfficer || perms.isMarine)) return next(); 
     res.status(403).json({ message: "Accès refusé." }); 
 };
-
 const checkValidate = async (req, res, next) => { 
-    if (!req.isAuthenticated()) return res.status(401).json({ message: "Non connecté" });
     const perms = await getPermissions(req.user);
-    if (perms.isAdmin || perms.isOfficer) return next(); 
+    if (req.isAuthenticated() && (perms.isAdmin || perms.isOfficer)) return next(); 
     res.status(403).json({ message: "Officiers Only." }); 
 };
 
@@ -188,22 +167,16 @@ async function sendToGoogleSheet(protocole, shockName) {
     } catch (error) { console.error("❌ Erreur Google Sheet:", error); }
 }
 
-// ============================================================
-//  ROUTES
-// ============================================================
-
+// --- ROUTES ---
 app.get('/auth/discord', passport.authenticate('discord'));
 
-// Remplace le callback d'auth par celui-ci pour "voir" l'erreur
+// Modif route callback pour catcher les erreurs
 app.get('/auth/discord/callback', (req, res, next) => {
-    passport.authenticate('discord', (err, user, info) => {
-        if (err) {
-            // Cela va afficher l'erreur réelle dans ton navigateur pour le debug
-            return res.status(500).send(`Erreur Détaillée : ${err.message} | ${JSON.stringify(err)}`);
-        }
-        if (!user) return res.redirect('/');
+    passport.authenticate('discord', { failureRedirect: '/' }, (err, user, info) => {
+        if (err) { console.error("❌ Erreur Passport Callback:", err); return next(err); }
+        if (!user) { console.error("❌ Pas d'utilisateur retourné par Discord"); return res.redirect('/'); }
         req.logIn(user, (err) => {
-            if (err) return next(err);
+            if (err) { console.error("❌ Erreur req.logIn:", err); return next(err); }
             return res.redirect('/');
         });
     })(req, res, next);
@@ -212,7 +185,7 @@ app.get('/auth/discord/callback', (req, res, next) => {
 app.get('/auth/logout', (req, res, next) => { 
     req.logout((err) => { 
         if (err) return next(err); 
-        req.session.destroy();
+        req.session.destroy(); // Force la destruction session
         res.redirect('/'); 
     }); 
 });
@@ -306,5 +279,3 @@ app.delete('/api/protocoles/:id', checkAdmin, async (req, res) => {
 
 const PORT = process.env.PORT || 3000;
 app.listen(PORT, () => console.log(`Serveur lancé sur le port ${PORT}`));
-
-
