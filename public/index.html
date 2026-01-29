@@ -62,7 +62,6 @@
                 <div class="card-body p-4">
                     <div class="admin-section" style="border-color: #f1c40f;">
                         <h5>👑 Admins (Commandants) - Par Rôle</h5>
-                        <p class="small text-muted">Ont accès à ce panneau.</p>
                         <div class="d-flex gap-2 mb-2">
                             <input type="text" id="newAdminRole" class="form-control form-control-sm" placeholder="ID Rôle">
                             <button onclick="addConfig('adminRoles')" class="btn btn-sm btn-success">Ajouter</button>
@@ -72,7 +71,6 @@
 
                     <div class="admin-section" style="border-color: #f1c40f;">
                         <h5>👑 Admins (Commandants) - Par ID Utilisateur</h5>
-                        <p class="small text-muted">Pour donner les pleins droits à une personne spécifique.</p>
                         <div class="d-flex gap-2 mb-2">
                             <input type="text" id="newAdminUser" class="form-control form-control-sm" placeholder="ID Discord User">
                             <button onclick="addConfig('adminUsers')" class="btn btn-sm btn-success">Ajouter</button>
@@ -173,7 +171,6 @@
     <script>
         const API_URL = '/api/protocoles';
         
-        // Initialisation avec des tableaux vides par défaut pour éviter les bugs si la DB est vide
         let currentData = [];
         let configData = { adminRoles: [], adminUsers: [], officerRoles: [], marineRoles: [], regiments: [] };
         let editingId = null; 
@@ -231,19 +228,9 @@
         async function fetchConfig() {
             try {
                 const res = await fetch('/api/config');
-                const data = await res.json();
-                // On fusionne avec des tableaux vides pour garantir que rien n'est "undefined"
-                if(data) {
-                    configData = {
-                        adminRoles: data.adminRoles || [],
-                        adminUsers: data.adminUsers || [],
-                        officerRoles: data.officerRoles || [],
-                        marineRoles: data.marineRoles || [],
-                        regiments: data.regiments || []
-                    };
-                }
+                configData = await res.json();
                 renderRegimentsSelect();
-            } catch(e) { console.error("Config non chargée", e); }
+            } catch(e) {}
         }
 
         function renderRegimentsSelect() {
@@ -297,18 +284,11 @@
             const listMarine = document.getElementById('listMarineRoles');
             const listRegs = document.getElementById('listRegiments');
 
-            // Sécurité pour éviter erreur si array vide
-            const aRoles = configData.adminRoles || [];
-            const aUsers = configData.adminUsers || [];
-            const oRoles = configData.officerRoles || [];
-            const mRoles = configData.marineRoles || [];
-            const regs = configData.regiments || [];
-
-            listAdminR.innerHTML = aRoles.map(r => `<span class="badge bg-secondary">${r} <i class="fas fa-times tag-remove" onclick="removeConfig('adminRoles', '${r}')"></i></span>`).join('');
-            listAdminU.innerHTML = aUsers.map(r => `<span class="badge bg-secondary">${r} <i class="fas fa-times tag-remove" onclick="removeConfig('adminUsers', '${r}')"></i></span>`).join('');
-            listOfficer.innerHTML = oRoles.map(r => `<span class="badge bg-secondary">${r} <i class="fas fa-times tag-remove" onclick="removeConfig('officerRoles', '${r}')"></i></span>`).join('');
-            listMarine.innerHTML = mRoles.map(r => `<span class="badge bg-secondary">${r} <i class="fas fa-times tag-remove" onclick="removeConfig('marineRoles', '${r}')"></i></span>`).join('');
-            listRegs.innerHTML = regs.map(r => `<span class="badge bg-secondary">${r} <i class="fas fa-times tag-remove" onclick="removeConfig('regiments', '${r}')"></i></span>`).join('');
+            listAdminR.innerHTML = configData.adminRoles.map(r => `<span class="badge bg-secondary">${r} <i class="fas fa-times tag-remove" onclick="removeConfig('adminRoles', '${r}')"></i></span>`).join('');
+            listAdminU.innerHTML = configData.adminUsers.map(r => `<span class="badge bg-secondary">${r} <i class="fas fa-times tag-remove" onclick="removeConfig('adminUsers', '${r}')"></i></span>`).join('');
+            listOfficer.innerHTML = configData.officerRoles.map(r => `<span class="badge bg-secondary">${r} <i class="fas fa-times tag-remove" onclick="removeConfig('officerRoles', '${r}')"></i></span>`).join('');
+            listMarine.innerHTML = configData.marineRoles.map(r => `<span class="badge bg-secondary">${r} <i class="fas fa-times tag-remove" onclick="removeConfig('marineRoles', '${r}')"></i></span>`).join('');
+            listRegs.innerHTML = configData.regiments.map(r => `<span class="badge bg-secondary">${r} <i class="fas fa-times tag-remove" onclick="removeConfig('regiments', '${r}')"></i></span>`).join('');
         }
 
         function addConfig(key) {
@@ -318,18 +298,14 @@
             if(key === 'officerRoles') inputId = 'newOfficerRole';
             if(key === 'marineRoles') inputId = 'newMarineRole';
             if(key === 'regiments') inputId = 'newRegiment';
-            
             const val = document.getElementById(inputId).value.trim();
             if(!val) return;
-            
-            if(!configData[key]) configData[key] = [];
             configData[key].push(val);
             document.getElementById(inputId).value = '';
             renderAdminUI();
         }
 
         function removeConfig(key, val) {
-            if(!configData[key]) return;
             configData[key] = configData[key].filter(item => item !== val);
             renderAdminUI();
         }
@@ -406,11 +382,16 @@
                 const steamInfo = p.targetSteamID ? `<small class="text-muted d-block mt-1" style="font-size:0.7rem">${p.targetSteamID}</small>` : '';
                 const dateStr = new Date(p.date).toLocaleString().slice(0, -3);
 
+                // MODIF ICI : Affichage "Traité par : Matricule+Nom (PseudoDiscord)"
                 let validatorInfo = '';
                 if (p.statut === 'Effectué') {
-                    const vName = p.validatorManualName || (p.validatorNick || p.validatorUser);
-                    if (vName) {
-                        validatorInfo = `<div class="mt-2 small text-success border-top border-secondary pt-1"><i class="fas fa-check-circle"></i> Traité par : ${vName}</div>`;
+                    // On privilégie le nom manuel + pseudo discord
+                    if (p.validatorManualName && p.validatorUser) {
+                        validatorInfo = `<div class="mt-2 small text-success border-top border-secondary pt-1"><i class="fas fa-check-circle"></i> Traité par : ${p.validatorManualName} (${p.validatorUser})</div>`;
+                    } else {
+                        // Fallback ancien système
+                        const vName = p.validatorManualName || p.validatorNick || p.validatorUser;
+                        if(vName) validatorInfo = `<div class="mt-2 small text-success border-top border-secondary pt-1"><i class="fas fa-check-circle"></i> Traité par : ${vName}</div>`;
                     }
                 }
 
@@ -427,21 +408,18 @@
                         <div class="card-body">
                             <div class="row">
                                 <div class="col-md-9">
-                                    
                                     <div class="mb-2">
                                         <div class="p-2 bg-dark rounded border border-secondary">
                                             <small class="text-muted d-block ls-1">SANCTION</small>
                                             <span class="fw-bold text-danger">${p.protocoleType}</span>
                                         </div>
                                     </div>
-
                                     <div class="mb-2">
                                         <div class="p-2 bg-dark rounded border-start border-3 border-danger">
                                             <small class="text-muted d-block ls-1">RAISON</small>
                                             <span class="text-light">${p.raison}</span>
                                         </div>
                                     </div>
-
                                     ${p.details ? `
                                     <div class="mb-2">
                                         <div class="p-2 bg-dark rounded border-start border-3 border-warning">
@@ -449,7 +427,6 @@
                                             <span class="text-light">${p.details}</span>
                                         </div>
                                     </div>` : ''}
-
                                     ${p.targetSteamID ? `
                                     <div class="mb-2">
                                         <div class="p-2 bg-dark rounded border-start border-3 border-danger">
@@ -457,7 +434,6 @@
                                             <span class="text-light font-monospace">${p.targetSteamID}</span>
                                         </div>
                                     </div>` : ''}
-
                                     ${timeAlert}
                                 </div>
                                 <div class="col-md-3 border-start border-secondary ps-4 d-flex flex-column justify-content-center">
