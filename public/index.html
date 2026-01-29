@@ -212,6 +212,7 @@
                 const canEdit = user.isAdmin || user.isOfficer || user.isMarine;
                 const canValidate = user.isAdmin || user.isOfficer;
 
+                // LOGIQUE D'AFFICHAGE DES ONGLETS
                 document.getElementById('navAdmin').style.display = user.isAdmin ? 'block' : 'none';
                 document.getElementById('navSignalement').style.display = canValidate ? 'block' : 'none';
                 document.getElementById('navDelais').style.display = canValidate ? 'block' : 'none';
@@ -291,7 +292,7 @@
 
         // --- LOGIQUE DELAIS & RAPPELS ---
         async function chargerDelais() {
-            const res = await fetch('/api/protocoles'); // On récupère ceux en cours
+            const res = await fetch('/api/protocoles'); 
             const data = await res.json();
             const container = document.getElementById('listeProtocoles');
             container.innerHTML = '';
@@ -310,8 +311,19 @@
                 if (now > limitDate) {
                     count++;
                     
-                    // --- MODIF ICI : On passe la config régiment pour utiliser daysSanction dans la fonction de génération ---
-                    // On stocke les infos nécessaires dans le bouton pour les utiliser au clic
+                    // Calcul Date Sanction (Date Création + RappelDays + SanctionDays)
+                    const absoluteSanctionDate = new Date(dateCreation);
+                    absoluteSanctionDate.setDate(absoluteSanctionDate.getDate() + regConfig.rappelDays + regConfig.sanctionDays);
+                    
+                    // Affichage conditionnel de la bannière
+                    let sanctionBanner = '';
+                    if (now > absoluteSanctionDate) {
+                        sanctionBanner = `<div class="sanction-alert">${regConfig.sanctionText} À APPLIQUER</div>`;
+                    }
+
+                    // Calcul de la date du titre au clic (voir generateAndShow)
+                    
+                    // Stockage des infos pour le bouton
                     const btnGen = `<button class="btn btn-outline-light btn-sm w-100 mb-2" onclick="generateAndShow('${p._id}', '${p.cibleRegiment}', '${p.cibleGrade}', '${p.cibleNom}', '${p.auteurNom}', '${p.protocoleType}', '${p.raison}', '${p.details || ''}', '${p.targetSteamID || ''}', ${regConfig.sanctionDays}, '${regConfig.sanctionText}')">📄 Générer le Rapport Discord</button>`;
 
                     let statusPriseEnCharge = p.rappelPrisEnChargeBy 
@@ -326,9 +338,7 @@
                                 <small>Retard de ${(Math.floor((now - limitDate)/(1000*60*60*24)))+1} jours</small>
                             </div>
                             <div class="card-body">
-                                <div class="sanction-alert">
-                                    ${regConfig.sanctionText} À APPLIQUER
-                                </div>
+                                ${sanctionBanner}
                                 <div class="row">
                                     <div class="col-md-8">
                                         <p><strong>Cible :</strong> ${p.cibleGrade} ${p.cibleNom} (${p.cibleRegiment})<br>
