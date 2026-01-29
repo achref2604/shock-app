@@ -39,6 +39,8 @@
         .ls-1 { letter-spacing: 1px; font-weight: 600; font-size: 0.75rem; }
         .user-text { white-space: pre-wrap; word-wrap: break-word; word-break: break-word; overflow-wrap: break-word; display: block; }
         
+        .rappel-card { border: 1px solid #e74c3c; box-shadow: 0 0 10px rgba(231, 76, 60, 0.2); }
+        .rappel-header { background-color: rgba(231, 76, 60, 0.1); border-bottom: 1px solid #e74c3c; color: white; font-weight: bold; } /* TEXTE BLANC FORCÉ */
         .generated-box { background: #222; border: 1px dashed #666; padding: 10px; font-family: monospace; font-size: 0.85rem; color: #aaa; margin-top: 10px; cursor: pointer; }
         .generated-box:hover { border-color: #fff; color: #fff; }
         
@@ -46,6 +48,13 @@
         .sanction-alert { background-color: #c0392b; color: white; text-align: center; font-weight: bold; padding: 10px; border-radius: 5px; margin-bottom: 15px; text-transform: uppercase; animation: pulse-red 2s infinite; letter-spacing: 1px; box-shadow: 0 0 10px rgba(192, 57, 43, 0.5); }
     
         .main-wrapper { max-width: 1800px; margin: 0 auto; }
+
+        /* --- STYLES MODALES PERSONNALISÉES --- */
+        .modal-content { background-color: #1a1a1a; border: 1px solid #444; color: white; }
+        .modal-header { border-bottom: 1px solid #444; }
+        .modal-footer { border-top: 1px solid #444; }
+        .modal-title { color: var(--shock-red); font-weight: bold; letter-spacing: 1px; }
+        .btn-close { filter: invert(1); }
     </style>
 </head>
 <body class="container-fluid py-5 px-5">
@@ -195,6 +204,56 @@
 
     </div>
 
+    <div class="modal fade" id="customAlertModal" tabindex="-1" aria-hidden="true">
+        <div class="modal-dialog modal-dialog-centered">
+            <div class="modal-content">
+                <div class="modal-header">
+                    <h5 class="modal-title">INFORMATION</h5>
+                    <button type="button" class="btn-close" data-bs-dismiss="modal"></button>
+                </div>
+                <div class="modal-body" id="customAlertBody"></div>
+                <div class="modal-footer">
+                    <button type="button" class="btn btn-shock" data-bs-dismiss="modal">OK</button>
+                </div>
+            </div>
+        </div>
+    </div>
+
+    <div class="modal fade" id="customConfirmModal" tabindex="-1" aria-hidden="true">
+        <div class="modal-dialog modal-dialog-centered">
+            <div class="modal-content">
+                <div class="modal-header">
+                    <h5 class="modal-title">CONFIRMATION</h5>
+                    <button type="button" class="btn-close" data-bs-dismiss="modal"></button>
+                </div>
+                <div class="modal-body" id="customConfirmBody"></div>
+                <div class="modal-footer">
+                    <button type="button" class="btn btn-secondary" data-bs-dismiss="modal" id="btnConfirmNo">Annuler</button>
+                    <button type="button" class="btn btn-shock" id="btnConfirmYes">Confirmer</button>
+                </div>
+            </div>
+        </div>
+    </div>
+
+    <div class="modal fade" id="customPromptModal" tabindex="-1" aria-hidden="true">
+        <div class="modal-dialog modal-dialog-centered">
+            <div class="modal-content">
+                <div class="modal-header">
+                    <h5 class="modal-title" id="customPromptTitle">SAISIE REQUISE</h5>
+                    <button type="button" class="btn-close" data-bs-dismiss="modal"></button>
+                </div>
+                <div class="modal-body">
+                    <p id="customPromptBody" class="mb-2"></p>
+                    <input type="text" id="customPromptInput" class="form-control" autocomplete="off">
+                </div>
+                <div class="modal-footer">
+                    <button type="button" class="btn btn-secondary" data-bs-dismiss="modal" id="btnPromptCancel">Annuler</button>
+                    <button type="button" class="btn btn-shock" id="btnPromptOk">Valider</button>
+                </div>
+            </div>
+        </div>
+    </div>
+
     <script src="https://cdn.jsdelivr.net/npm/bootstrap@5.3.2/dist/js/bootstrap.bundle.min.js"></script>
     <script>
         const API_URL = '/api/protocoles';
@@ -202,6 +261,63 @@
         let configData = { adminRoles: [], adminUsers: [], officerRoles: [], marineRoles: [], regiments: [] };
         let editingId = null; 
         let user = { connecte: false, id: null, isAdmin: false, isOfficer: false, isMarine: false };
+
+        // --- UTILITAIRES MODALES CUSTOM ---
+        const alertModal = new bootstrap.Modal(document.getElementById('customAlertModal'));
+        const confirmModal = new bootstrap.Modal(document.getElementById('customConfirmModal'));
+        const promptModal = new bootstrap.Modal(document.getElementById('customPromptModal'));
+
+        function customAlert(message) {
+            document.getElementById('customAlertBody').innerText = message;
+            alertModal.show();
+        }
+
+        function customConfirm(message) {
+            return new Promise((resolve) => {
+                document.getElementById('customConfirmBody').innerText = message;
+                const btnYes = document.getElementById('btnConfirmYes');
+                const btnNo = document.getElementById('btnConfirmNo');
+                
+                // Nettoyage des anciens listeners
+                const newYes = btnYes.cloneNode(true);
+                const newNo = btnNo.cloneNode(true);
+                btnYes.parentNode.replaceChild(newYes, btnYes);
+                btnNo.parentNode.replaceChild(newNo, btnNo);
+
+                newYes.onclick = () => { confirmModal.hide(); resolve(true); };
+                newNo.onclick = () => { confirmModal.hide(); resolve(false); };
+                
+                confirmModal.show();
+            });
+        }
+
+        function customPrompt(message, title = "SAISIE REQUISE") {
+            return new Promise((resolve) => {
+                document.getElementById('customPromptTitle').innerText = title;
+                document.getElementById('customPromptBody').innerText = message;
+                const input = document.getElementById('customPromptInput');
+                input.value = '';
+                
+                const btnOk = document.getElementById('btnPromptOk');
+                const btnCancel = document.getElementById('btnPromptCancel');
+
+                // Nettoyage
+                const newOk = btnOk.cloneNode(true);
+                const newCancel = btnCancel.cloneNode(true);
+                btnOk.parentNode.replaceChild(newOk, btnOk);
+                btnCancel.parentNode.replaceChild(newCancel, btnCancel);
+
+                newOk.onclick = () => { promptModal.hide(); resolve(input.value); };
+                newCancel.onclick = () => { promptModal.hide(); resolve(null); };
+
+                // Focus sur l'input à l'ouverture
+                document.getElementById('customPromptModal').addEventListener('shown.bs.modal', () => {
+                    input.focus();
+                }, { once: true });
+
+                promptModal.show();
+            });
+        }
 
         async function init() { await fetchConfig(); await checkUserStatus(); }
 
@@ -227,7 +343,6 @@
                     document.getElementById('userZone').innerHTML = `<div class="d-flex align-items-center gap-2"><img src="${data.avatar}" class="avatar"><span class="fw-bold">${data.nickname}</span>${badge}<a href="/auth/logout" class="btn btn-sm btn-outline-danger"><i class="fas fa-sign-out-alt"></i></a></div>`;
                     document.getElementById('loginWarning').style.display = 'none';
                     
-                    // PAR DÉFAUT : SIGNALEMENT DIRECT
                     if(canValidate) changerOnglet('signalement');
                     else chargerEnCours();
 
@@ -280,7 +395,7 @@
             document.getElementById('btnAdminZone').style.display = 'none';
 
             if(type === 'admin') {
-                if(!user.isAdmin) return alert("Accès refusé");
+                if(!user.isAdmin) return customAlert("Accès refusé");
                 document.getElementById('listeSection').style.display = 'none';
                 document.getElementById('adminConfigPanel').style.display = 'block';
                 renderAdminUI();
@@ -355,12 +470,11 @@
         }
 
         function afficherRappels(container, p, regConfig, retardJours, sanctionBanner, deadlineText) {
-            // MODIFICATION ICI : Récupération et application de la couleur du régiment
             const regColor = getRegimentColor(p.cibleRegiment);
             
-            // On applique la couleur au border de la carte et au fond du header
+            // MODIFICATION ICI : color: white; pour le texte du header
             const cardStyle = `border: 1px solid ${regColor}; box-shadow: 0 0 10px ${regColor}33;`; 
-            const headerStyle = `background-color: ${regColor}20; border-bottom: 1px solid ${regColor}; color: ${regColor}; font-weight: bold;`;
+            const headerStyle = `background-color: ${regColor}20; border-bottom: 1px solid ${regColor}; color: white; font-weight: bold;`;
 
             const btnGen = `<button class="btn btn-outline-light btn-sm w-100 mb-2" onclick="generateAndShow('${p._id}', '${p.cibleRegiment}', '${p.cibleGrade}', '${p.cibleNom}', '${p.auteurNom}', '${p.protocoleType}', '${p.raison}', '${p.details || ''}', '${p.targetSteamID || ''}', ${regConfig.sanctionDays}, '${regConfig.sanctionText}')">📄 Générer le Rapport Discord</button>`;
 
@@ -384,8 +498,8 @@
                                 <strong>Date Ordre :</strong> ${new Date(p.date).toLocaleDateString('fr-FR')}</p>
                                 ${btnGen}
                                 <div id="gen-${p._id}" style="display:none;">
-                                    <div class="generated-box mb-2" id="title-${p._id}" onclick="navigator.clipboard.writeText(this.innerText); alert('Titre copié !');"></div>
-                                    <div class="generated-box mb-2" id="body-${p._id}" onclick="navigator.clipboard.writeText(this.innerText); alert('Contenu copié !');"></div>
+                                    <div class="generated-box mb-2" id="title-${p._id}" onclick="copyText(this.innerText)"></div>
+                                    <div class="generated-box mb-2" id="body-${p._id}" onclick="copyText(this.innerText)"></div>
                                     <div class="d-flex gap-2">
                                         <button onclick="validerRappel('${p._id}')" class="btn btn-success btn-sm flex-grow-1">✅ Valider Prise en Charge</button>
                                         <button onclick="toggleBox('${p._id}')" class="btn btn-secondary btn-sm">Annuler</button>
@@ -407,6 +521,11 @@
             return reg && reg.color ? reg.color : '#c0392b';
         }
 
+        function copyText(text) {
+            navigator.clipboard.writeText(text);
+            customAlert('Texte copié !');
+        }
+
         function afficherMandats(data, estEnCours) {
             const container = document.getElementById('listeProtocoles');
             container.innerHTML = '';
@@ -418,7 +537,8 @@
                 const badge = isDone ? '<span class="badge badge-done rounded-pill px-3 py-2">✅ EFFECTUÉ</span>' : '<span class="badge badge-pending rounded-pill px-3 py-2">⏳ EN ATTENTE</span>';
                 
                 const regColor = getRegimentColor(p.cibleRegiment);
-                const headerStyle = `background-color: ${regColor}20; border-bottom: 2px solid ${regColor};`;
+                // MODIFICATION ICI AUSSI : color: white
+                const headerStyle = `background-color: ${regColor}20; border-bottom: 2px solid ${regColor}; color: white; font-weight: bold;`;
 
                 let actionButtons = '';
                 const canEdit = user.isAdmin || user.isOfficer || user.isMarine;
@@ -453,7 +573,7 @@
                 <div class="col-12" style="${estEnCours ? '' : 'opacity:0.8; filter:grayscale(20%);'}">
                     <div class="card h-100">
                         <div class="card-header d-flex justify-content-between align-items-center" style="${headerStyle}">
-                            <div><span class="fw-bold text-white fs-5">${p.cibleNom}</span> <span class="small text-muted ms-2">${p.cibleGrade} - ${p.cibleRegiment}</span></div>
+                            <div><span class="fs-5">${p.cibleNom}</span> <span class="small ms-2" style="opacity:0.8">${p.cibleGrade} - ${p.cibleRegiment}</span></div>
                             <div class="d-flex align-items-center gap-2">${badge}${deleteBtn}</div>
                         </div>
                         <div class="card-body">
@@ -490,7 +610,8 @@
             afficherMandats(currentData, false);
         }
 
-        // --- RESTE DU CODE ---
+        // --- RESTE DU CODE (ADMIN, BUTTONS, ETC.) ---
+        
         function generateAndShow(id, reg, grade, nom, auteur, proto, raison, details, steam, sanctionDays, sanctionText) {
             const dateFinale = new Date();
             dateFinale.setDate(dateFinale.getDate() + parseInt(sanctionDays));
@@ -503,21 +624,54 @@
         }
 
         function toggleBox(id) { const el = document.getElementById(`gen-${id}`); el.style.display = el.style.display === 'none' ? 'block' : 'none'; }
-        async function validerRappel(id) { if(!confirm("Confirmer que vous prenez en charge ce rappel sur le forum ?")) return; try { const res = await fetch(`${API_URL}/${id}/rappel`, { method: 'PUT' }); if(res.ok) chargerDelais(); } catch(e) { alert("Erreur réseau"); } }
-        async function envoyerSignalement() { const body = { validatorManualName: document.getElementById('sigShockName').value, cibleNom: document.getElementById('sigCibleNom').value, cibleGrade: document.getElementById('sigCibleGrade').value, cibleRegiment: document.getElementById('sigCibleRegiment').value, protocoleType: document.getElementById('sigProtocole').value, auteurNom: document.getElementById('sigOrderedBy').value, raison: document.getElementById('sigRaison').value, details: document.getElementById('sigDetails').value, targetSteamID: document.getElementById('sigSteamID').value }; if(!body.validatorManualName || !body.cibleNom || !body.cibleGrade || !body.cibleRegiment || !body.protocoleType || !body.raison) return alert("Champs obligatoires manquants."); try { const res = await fetch('/api/protocoles/direct', { method: 'POST', headers: { 'Content-Type': 'application/json' }, body: JSON.stringify(body) }); if(res.ok) { alert("Enregistré !"); document.querySelectorAll('#signalementPanel input, #signalementPanel textarea, #signalementPanel select').forEach(i => i.value = ''); document.querySelectorAll('.nav-link')[3].click(); } else alert("Erreur"); } catch(e) { alert("Erreur connexion"); } }
+        async function validerRappel(id) { 
+            const confirm = await customConfirm("Confirmer que vous prenez en charge ce rappel sur le forum ?");
+            if(!confirm) return; 
+            try { const res = await fetch(`${API_URL}/${id}/rappel`, { method: 'PUT' }); if(res.ok) chargerDelais(); } catch(e) { customAlert("Erreur réseau"); } 
+        }
+        
+        async function envoyerSignalement() { 
+            const body = { validatorManualName: document.getElementById('sigShockName').value, cibleNom: document.getElementById('sigCibleNom').value, cibleGrade: document.getElementById('sigCibleGrade').value, cibleRegiment: document.getElementById('sigCibleRegiment').value, protocoleType: document.getElementById('sigProtocole').value, auteurNom: document.getElementById('sigOrderedBy').value, raison: document.getElementById('sigRaison').value, details: document.getElementById('sigDetails').value, targetSteamID: document.getElementById('sigSteamID').value }; 
+            if(!body.validatorManualName || !body.cibleNom || !body.cibleGrade || !body.cibleRegiment || !body.protocoleType || !body.raison) return customAlert("Champs obligatoires manquants."); 
+            try { const res = await fetch('/api/protocoles/direct', { method: 'POST', headers: { 'Content-Type': 'application/json' }, body: JSON.stringify(body) }); if(res.ok) { customAlert("Enregistré !"); document.querySelectorAll('#signalementPanel input, #signalementPanel textarea, #signalementPanel select').forEach(i => i.value = ''); document.querySelectorAll('.nav-link')[3].click(); } else customAlert("Erreur"); } catch(e) { customAlert("Erreur connexion"); } 
+        }
+        
         function renderAdminUI() { const listAdminR = document.getElementById('listAdminRoles'); const listAdminU = document.getElementById('listAdminUsers'); const listOfficer = document.getElementById('listOfficerRoles'); const listMarine = document.getElementById('listMarineRoles'); listAdminR.innerHTML = (configData.adminRoles||[]).map(r => `<span class="badge bg-secondary">${r} <i class="fas fa-times tag-remove" onclick="removeConfig('adminRoles', '${r}')"></i></span>`).join(''); listAdminU.innerHTML = (configData.adminUsers||[]).map(r => `<span class="badge bg-secondary">${r} <i class="fas fa-times tag-remove" onclick="removeConfig('adminUsers', '${r}')"></i></span>`).join(''); listOfficer.innerHTML = (configData.officerRoles||[]).map(r => `<span class="badge bg-secondary">${r} <i class="fas fa-times tag-remove" onclick="removeConfig('officerRoles', '${r}')"></i></span>`).join(''); listMarine.innerHTML = (configData.marineRoles||[]).map(r => `<span class="badge bg-secondary">${r} <i class="fas fa-times tag-remove" onclick="removeConfig('marineRoles', '${r}')"></i></span>`).join(''); const regList = document.getElementById('regimentConfigList'); regList.innerHTML = ''; (configData.regiments || []).forEach((reg, index) => { const currentColor = reg.color || '#c0392b'; regList.innerHTML += `<div class="col-md-6 col-lg-4"><div class="card border-secondary h-100"><div class="card-header d-flex justify-content-between align-items-center py-2" style="border-bottom: 3px solid ${currentColor}"><span class="fw-bold">${reg.name}</span><button class="btn btn-sm btn-outline-danger" onclick="removeRegiment(${index})">🗑️</button></div><div class="card-body p-2"><div class="input-group input-group-sm mb-1"><span class="input-group-text bg-dark text-white border-secondary">Rappel (j)</span><input type="number" class="form-control" value="${reg.rappelDays}" onchange="updateRegiment(${index}, 'rappelDays', this.value)"></div><div class="input-group input-group-sm mb-1"><span class="input-group-text bg-dark text-white border-secondary">Sanction (j)</span><input type="number" class="form-control" value="${reg.sanctionDays}" onchange="updateRegiment(${index}, 'sanctionDays', this.value)"></div><div class="input-group input-group-sm mb-2"><span class="input-group-text bg-dark text-white border-secondary">Sanction</span><input type="text" class="form-control" value="${reg.sanctionText}" onchange="updateRegiment(${index}, 'sanctionText', this.value)"></div><div class="d-flex align-items-center gap-2"><small class="text-muted">Couleur Bandeau :</small><input type="color" class="form-control form-control-color" value="${currentColor}" onchange="updateRegiment(${index}, 'color', this.value)" title="Choisir la couleur"></div></div></div></div>`; }); }
         function addNewRegiment() { const name = document.getElementById('newRegimentName').value.trim(); if(!name) return; if(!configData.regiments) configData.regiments = []; configData.regiments.push({ name: name, rappelDays: 7, sanctionDays: 3, sanctionText: 'Arrêts', color: '#c0392b' }); document.getElementById('newRegimentName').value = ''; renderAdminUI(); }
         function updateRegiment(index, field, value) { if(field === 'rappelDays' || field === 'sanctionDays') value = parseInt(value); configData.regiments[index][field] = value; }
         function removeRegiment(index) { if(!confirm("Supprimer ce régiment ?")) return; configData.regiments.splice(index, 1); renderAdminUI(); }
         function addConfig(key) { let inputId = (key==='adminRoles')?'newAdminRole':(key==='adminUsers')?'newAdminUser':(key==='officerRoles')?'newOfficerRole':'newMarineRole'; const val = document.getElementById(inputId).value.trim(); if(!val) return; if(!configData[key]) configData[key] = []; configData[key].push(val); document.getElementById(inputId).value = ''; renderAdminUI(); }
         function removeConfig(key, val) { configData[key] = configData[key].filter(item => item !== val); renderAdminUI(); }
-        async function saveConfig() { await fetch('/api/config', { method: 'PUT', headers: { 'Content-Type': 'application/json' }, body: JSON.stringify(configData) }); alert("Configuration sauvegardée !"); renderRegimentsSelect(); }
+        async function saveConfig() { await fetch('/api/config', { method: 'PUT', headers: { 'Content-Type': 'application/json' }, body: JSON.stringify(configData) }); customAlert("Configuration sauvegardée !"); renderRegimentsSelect(); }
+        
         function preparerAction(id, mode) { const item = currentData.find(p => p._id === id); document.getElementById('auteurNom').value = item.auteurNom; document.getElementById('cibleNom').value = item.cibleNom; document.getElementById('cibleGrade').value = item.cibleGrade; document.getElementById('cibleRegiment').value = item.cibleRegiment; document.getElementById('steamid').value = item.targetSteamID || ''; document.getElementById('protocole').value = item.protocoleType; document.getElementById('raison').value = item.raison; document.getElementById('details').value = item.details; document.getElementById('tempsRestant').value = item.tempsRestant || ''; document.getElementById('protocolFormPanel').style.display = 'block'; document.getElementById('protocolFormPanel').scrollIntoView({ behavior: 'smooth' }); if(mode === 'modifier') { editingId = id; document.getElementById('formTitle').innerText = "📝 MODIFICATION"; document.getElementById('btnSubmit').innerText = "Sauvegarder"; document.getElementById('btnSubmit').className = "btn btn-warning btn-lg px-5"; document.getElementById('btnCancel').style.display = "inline-block"; } else { editingId = null; document.getElementById('formTitle').innerText = "📋 DUPLICATION"; document.getElementById('btnSubmit').innerText = "Créer la copie"; document.getElementById('btnSubmit').className = "btn btn-shock btn-lg px-5"; document.getElementById('btnCancel').style.display = "inline-block"; } }
         function resetForm() { editingId = null; document.getElementById('formTitle').innerText = "⚠️ ORDONNER UN NOUVEAU PROTOCOLE"; document.getElementById('btnSubmit').innerText = "Transmettre"; document.getElementById('btnSubmit').className = "btn btn-shock btn-lg px-5"; document.getElementById('btnCancel').style.display = "none"; document.getElementById('cibleNom').value = ''; document.getElementById('cibleGrade').value = ''; document.getElementById('cibleRegiment').value = ''; document.getElementById('steamid').value = ''; document.getElementById('protocole').value = ''; document.getElementById('raison').value = ''; document.getElementById('details').value = ''; document.getElementById('tempsRestant').value = ''; }
-        async function envoyerProtocole() { const body = { auteurNom: document.getElementById('auteurNom').value, cibleNom: document.getElementById('cibleNom').value, cibleGrade: document.getElementById('cibleGrade').value, cibleRegiment: document.getElementById('cibleRegiment').value, targetSteamID: document.getElementById('steamid').value, protocoleType: document.getElementById('protocole').value, raison: document.getElementById('raison').value, details: document.getElementById('details').value, tempsRestant: document.getElementById('tempsRestant').value }; if(!body.cibleNom || !body.cibleGrade || !body.cibleRegiment || !body.protocoleType || !body.raison || !body.auteurNom) return alert("Champs obligatoires manquants."); const method = editingId ? 'PUT' : 'POST'; const url = editingId ? `${API_URL}/${editingId}` : API_URL; try { const res = await fetch(url, { method: method, headers: { 'Content-Type': 'application/json' }, body: JSON.stringify(body) }); if(res.ok) { alert('✅ OK'); resetForm(); chargerEnCours(); if(!editingId) toggleForm(); } else { if(res.status === 403) alert("Seul l'auteur ou l'admin peut modifier."); else alert('Erreur ou Permissions insuffisantes.'); } } catch(e) { alert("Erreur réseau"); } }
-        async function valider(id) { const validatorName = prompt("Veuillez entrer votre Matricule + Nom pour confirmer l'archivage :"); if (validatorName === null || validatorName.trim() === "") return; try { const res = await fetch(`${API_URL}/${id}/valider`, { method: 'PUT', headers: { 'Content-Type': 'application/json' }, body: JSON.stringify({ validatorName: validatorName }) }); if(res.ok) chargerEnCours(); else alert("Erreur validation"); } catch(e) { alert("Erreur connexion"); } }
-        async function restaurer(id) { const temps = prompt("Temps restant ?"); const res = await fetch(`${API_URL}/${id}/restaurer`, { method: 'PUT', headers: { 'Content-Type': 'application/json' }, body: JSON.stringify({ tempsRestant: temps }) }); if(res.ok) chargerHistorique(); else alert("Permission refusée"); }
-        async function supprimer(id) { if(!confirm("⚠️ SUPPRESSION DÉFINITIVE ⚠️")) return; try { const res = await fetch(`${API_URL}/${id}`, { method: 'DELETE' }); if(res.ok) { const activeTab = document.querySelector('.nav-link.active').getAttribute('onclick'); if(activeTab.includes('encours')) chargerEnCours(); else chargerHistorique(); } else alert("Erreur : Seul l'Admin peut supprimer."); } catch(e) { alert("Erreur serveur"); } }
+        
+        async function envoyerProtocole() { 
+            const body = { auteurNom: document.getElementById('auteurNom').value, cibleNom: document.getElementById('cibleNom').value, cibleGrade: document.getElementById('cibleGrade').value, cibleRegiment: document.getElementById('cibleRegiment').value, targetSteamID: document.getElementById('steamid').value, protocoleType: document.getElementById('protocole').value, raison: document.getElementById('raison').value, details: document.getElementById('details').value, tempsRestant: document.getElementById('tempsRestant').value }; 
+            if(!body.cibleNom || !body.cibleGrade || !body.cibleRegiment || !body.protocoleType || !body.raison || !body.auteurNom) return customAlert("Champs obligatoires manquants."); 
+            const method = editingId ? 'PUT' : 'POST'; const url = editingId ? `${API_URL}/${editingId}` : API_URL; 
+            try { const res = await fetch(url, { method: method, headers: { 'Content-Type': 'application/json' }, body: JSON.stringify(body) }); if(res.ok) { customAlert('✅ OK'); resetForm(); chargerEnCours(); if(!editingId) toggleForm(); } else { if(res.status === 403) customAlert("Seul l'auteur ou l'admin peut modifier."); else customAlert('Erreur ou Permissions insuffisantes.'); } } catch(e) { customAlert("Erreur réseau"); } 
+        }
+        
+        async function valider(id) { 
+            const validatorName = await customPrompt("Veuillez entrer votre Matricule + Nom pour confirmer l'archivage :"); 
+            if (validatorName === null || validatorName.trim() === "") return; 
+            try { const res = await fetch(`${API_URL}/${id}/valider`, { method: 'PUT', headers: { 'Content-Type': 'application/json' }, body: JSON.stringify({ validatorName: validatorName }) }); if(res.ok) chargerEnCours(); else customAlert("Erreur validation"); } catch(e) { customAlert("Erreur connexion"); } 
+        }
+        
+        async function restaurer(id) { 
+            const temps = await customPrompt("Temps restant ?"); 
+            const res = await fetch(`${API_URL}/${id}/restaurer`, { method: 'PUT', headers: { 'Content-Type': 'application/json' }, body: JSON.stringify({ tempsRestant: temps }) }); 
+            if(res.ok) chargerHistorique(); else customAlert("Permission refusée"); 
+        }
+        
+        async function supprimer(id) { 
+            const confirm = await customConfirm("⚠️ SUPPRESSION DÉFINITIVE ⚠️\nÊtes-vous sûr ?");
+            if(!confirm) return; 
+            try { const res = await fetch(`${API_URL}/${id}`, { method: 'DELETE' }); if(res.ok) { const activeTab = document.querySelector('.nav-link.active').getAttribute('onclick'); if(activeTab.includes('encours')) chargerEnCours(); else chargerHistorique(); } else customAlert("Erreur : Seul l'Admin peut supprimer."); } catch(e) { customAlert("Erreur serveur"); } 
+        }
+        
         init();
     </script>
 </body>
