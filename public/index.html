@@ -8,8 +8,24 @@
     <link href="https://fonts.googleapis.com/css2?family=Rajdhani:wght@400;600;700&display=swap" rel="stylesheet">
     <link rel="stylesheet" href="https://cdnjs.cloudflare.com/ajax/libs/font-awesome/6.4.0/css/all.min.css">
     <style>
-        :root { --shock-red: #c0392b; --signal-orange: #e67e22; --bg-dark: #0a0a0a; --card-bg: #161616; }
-        body { font-family: 'Rajdhani', sans-serif; background-color: var(--bg-dark); color: #e0e0e0; background-image: radial-gradient(circle at center, #1a1a1a 0%, #0a0a0a 100%); }
+        /* --- AJUSTEMENT SUBTIL DU THÈME SOMBRE --- */
+        :root { 
+            --shock-red: #c0392b; 
+            --signal-orange: #e67e22; 
+            /* Fond global légèrement éclairci (était #0a0a0a) */
+            --bg-dark: #141414; 
+            /* Fond des cartes légèrement éclairci pour le contraste (était #161616) */
+            --card-bg: #1e1e1e; 
+        }
+        body { 
+            font-family: 'Rajdhani', sans-serif; 
+            background-color: var(--bg-dark); 
+            color: #e0e0e0; 
+            /* Gradient ajusté pour être moins "noir profond" */
+            background-image: radial-gradient(circle at center, #252525 0%, #141414 100%);
+        }
+        /* ---------------------------------------- */
+
         h1, h2, h3, h4, h5, .nav-link, .btn { text-transform: uppercase; letter-spacing: 1px; }
         
         .text-shock { color: var(--shock-red) !important; text-shadow: 0 0 10px rgba(192, 57, 43, 0.3); }
@@ -23,8 +39,8 @@
 
         .card { background-color: var(--card-bg); border: 1px solid #333; box-shadow: 0 4px 6px rgba(0,0,0,0.3); }
         .card-header { border-bottom: 1px solid #333; background-color: rgba(192, 57, 43, 0.1); }
-        .form-control, .form-select { background-color: #222; border: 1px solid #444; color: #fff; }
-        .form-control:focus, .form-select:focus { background-color: #2a2a2a; border-color: var(--shock-red); color: #fff; }
+        .form-control, .form-select { background-color: #2a2a2a; border: 1px solid #444; color: #fff; } /* Input un peu plus clair aussi */
+        .form-control:focus, .form-select:focus { background-color: #333; border-color: var(--shock-red); color: #fff; }
         .nav-tabs { border-bottom: 2px solid #333; }
         .nav-link { color: #888; border: none; padding: 1rem 1.5rem; font-weight: 600; transition: all 0.3s; }
         .nav-link:hover { color: var(--shock-red); }
@@ -39,10 +55,9 @@
         .ls-1 { letter-spacing: 1px; font-weight: 600; font-size: 0.75rem; }
         .user-text { white-space: pre-wrap; word-wrap: break-word; word-break: break-word; overflow-wrap: break-word; display: block; }
         
-        /* Styles spécifiques aux Rappels (CONTOUR ROUGE FIXE) */
         .rappel-card { border: 1px solid #c0392b !important; box-shadow: 0 0 10px rgba(192, 57, 43, 0.2); }
         .rappel-header { border-bottom: 1px solid #c0392b !important; color: white; font-weight: bold; }
-        .generated-box { background: #222; border: 1px dashed #666; padding: 10px; font-family: monospace; font-size: 0.85rem; color: #aaa; margin-top: 10px; cursor: pointer; }
+        .generated-box { background: #2a2a2a; border: 1px dashed #666; padding: 10px; font-family: monospace; font-size: 0.85rem; color: #aaa; margin-top: 10px; cursor: pointer; }
         .generated-box:hover { border-color: #fff; color: #fff; }
         
         @keyframes pulse-red { 0% { opacity: 1; } 50% { opacity: 0.7; } 100% { opacity: 1; } }
@@ -51,7 +66,7 @@
         .main-wrapper { max-width: 1800px; margin: 0 auto; }
 
         /* MODALES */
-        .modal-content { background-color: #1a1a1a; border: 1px solid #444; color: white; }
+        .modal-content { background-color: var(--card-bg); border: 1px solid #444; color: white; }
         .modal-header { border-bottom: 1px solid #444; }
         .modal-footer { border-top: 1px solid #444; }
         .modal-title { color: var(--shock-red); font-weight: bold; letter-spacing: 1px; }
@@ -407,8 +422,6 @@
 
         function afficherRappels(container, p, regConfig, retardJours, sanctionBanner, deadlineText) {
             const regColor = getRegimentColor(p.cibleRegiment);
-            
-            // MODIFICATION ICI : BORDURE ROUGE FIXE POUR LE CONTOUR, FOND COLORÉ POUR LE TITRE, TEXTE ROUGE POUR RETARD
             const headerStyle = `background-color: ${regColor}33; border-bottom: 1px solid #c0392b; color: white; font-weight: bold;`;
 
             const btnGen = `<button class="btn btn-outline-light btn-sm w-100 mb-2" onclick="generateAndShow('${p._id}', '${p.cibleRegiment}', '${p.cibleGrade}', '${p.cibleNom}', '${p.auteurNom}', '${p.protocoleType}', '${p.raison}', '${p.details || ''}', '${p.targetSteamID || ''}', ${regConfig.sanctionDays}, '${regConfig.sanctionText}')">📄 Générer le Rapport Discord</button>`;
@@ -419,7 +432,8 @@
 
             container.innerHTML += `
             <div class="col-12">
-                <div class="card h-100 rappel-card"> <div class="card-header d-flex justify-content-between align-items-center" style="${headerStyle}">
+                <div class="card h-100 rappel-card">
+                    <div class="card-header d-flex justify-content-between align-items-center" style="${headerStyle}">
                         <span>⚠️ RAPPEL NÉCESSAIRE : ${p.cibleNom}</span>
                         <small style="color:#e74c3c; font-weight:bold;">Retard de ${retardJours} jours</small>
                     </div>
