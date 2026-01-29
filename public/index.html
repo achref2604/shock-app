@@ -8,21 +8,14 @@
     <link href="https://fonts.googleapis.com/css2?family=Rajdhani:wght@400;600;700&display=swap" rel="stylesheet">
     <link rel="stylesheet" href="https://cdnjs.cloudflare.com/ajax/libs/font-awesome/6.4.0/css/all.min.css">
     <style>
-        :root { 
-            --shock-red: #c0392b; 
-            --signal-orange: #e67e22; /* NOUVELLE COULEUR SIGNALEMENT */
-            --bg-dark: #0a0a0a; 
-            --card-bg: #161616; 
-        }
+        :root { --shock-red: #c0392b; --signal-orange: #e67e22; --bg-dark: #0a0a0a; --card-bg: #161616; }
         body { font-family: 'Rajdhani', sans-serif; background-color: var(--bg-dark); color: #e0e0e0; background-image: radial-gradient(circle at center, #1a1a1a 0%, #0a0a0a 100%); }
         h1, h2, h3, h4, h5, .nav-link, .btn { text-transform: uppercase; letter-spacing: 1px; }
         
-        /* SHOCK RED THEME */
         .text-shock { color: var(--shock-red) !important; text-shadow: 0 0 10px rgba(192, 57, 43, 0.3); }
         .btn-shock { background-color: var(--shock-red); border: none; color: white; font-weight: 600; }
         .btn-shock:hover { background-color: #a93226; box-shadow: 0 0 15px rgba(192, 57, 43, 0.5); color: white; }
         
-        /* SIGNAL ORANGE THEME (NOUVEAU) */
         .text-signal { color: var(--signal-orange) !important; text-shadow: 0 0 10px rgba(230, 126, 34, 0.3); }
         .border-signal { border-color: var(--signal-orange) !important; }
         .btn-signal { background-color: var(--signal-orange); border: none; color: white; font-weight: 600; }
@@ -44,6 +37,15 @@
         .admin-section { border-left: 2px solid var(--shock-red); padding-left: 15px; margin-bottom: 20px; }
         .tag-remove { cursor: pointer; color: #e74c3c; margin-left: 5px; }
         .ls-1 { letter-spacing: 1px; font-weight: 600; font-size: 0.75rem; }
+
+        /* NOUVEAU STYLE POUR LE TEXTE UTILISATEUR (Retour à la ligne) */
+        .user-text {
+            white-space: pre-wrap;       /* Garde les retours à la ligne de l'input */
+            word-wrap: break-word;       /* Coupe les mots si trop longs */
+            word-break: break-word;      /* Force la coupure si nécessaire */
+            overflow-wrap: break-word;   /* Standard moderne */
+            display: block;              /* Assure que ça prend la largeur */
+        }
     </style>
 </head>
 <body class="container py-5">
@@ -112,19 +114,14 @@
                     <div class="row g-3">
                         <div class="col-md-3 border-end border-secondary pe-md-4">
                             <h5 class="text-muted mb-3"><i class="fas fa-user-shield"></i> Le Shock</h5>
-                            <div class="mb-3">
-                                <label class="small text-muted">Identification du Shock*</label>
-                                <input type="text" id="sigShockName" class="form-control fw-bold text-signal" placeholder="Matricule + Nom">
-                            </div>
+                            <div class="mb-3"><label class="small text-muted">Identification du Shock*</label><input type="text" id="sigShockName" class="form-control fw-bold text-signal" placeholder="Matricule + Nom"></div>
                         </div>
                         <div class="col-md-9 ps-md-4">
                             <h5 class="text-muted mb-3"><i class="fas fa-bullseye"></i> Clone Sanctionné</h5>
                             <div class="mb-2"><label class="small text-muted">Identité Cible*</label><input type="text" id="sigCibleNom" class="form-control"></div>
                             <div class="row g-2 mb-2">
                                 <div class="col-6"><label class="small text-muted">Grade*</label><input type="text" id="sigCibleGrade" class="form-control"></div>
-                                <div class="col-6"><label class="small text-muted">Régiment*</label>
-                                    <select id="sigCibleRegiment" class="form-select"><option value="" disabled selected>Chargement...</option></select>
-                                </div>
+                                <div class="col-6"><label class="small text-muted">Régiment*</label><select id="sigCibleRegiment" class="form-select"><option value="" disabled selected>Chargement...</option></select></div>
                             </div>
                             <div class="row g-2 mb-2">
                                 <div class="col-6"><label class="small text-muted">Protocole (1-10)*</label>
@@ -166,9 +163,7 @@
                             <div class="mb-2"><label class="small text-muted">Identité*</label><input type="text" id="cibleNom" class="form-control" placeholder="Matricule + Nom"></div>
                             <div class="row g-2 mb-2">
                                 <div class="col-6"><label class="small text-muted">Grade*</label><input type="text" id="cibleGrade" class="form-control"></div>
-                                <div class="col-6"><label class="small text-muted">Régiment*</label>
-                                    <select id="cibleRegiment" class="form-select"><option value="" disabled selected>Chargement...</option></select>
-                                </div>
+                                <div class="col-6"><label class="small text-muted">Régiment*</label><select id="cibleRegiment" class="form-select"><option value="" disabled selected>Chargement...</option></select></div>
                             </div>
                             <div class="row g-2 mb-2">
                                 <div class="col-6"><label class="small text-muted">Protocole*</label>
@@ -181,9 +176,9 @@
                                 <div class="col-6"><label class="small text-muted">Temps (Opt.)</label><input type="text" id="tempsRestant" class="form-control border-warning text-warning"></div>
                             </div>
                             <div class="mb-2"><label class="small text-muted">Raison*</label><input type="text" id="raison" class="form-control"></div>
-                            <div class="mb-2"><input type="text" id="steamid" class="form-control form-control-sm text-secondary border-secondary" placeholder="SteamID64 (Facultatif)"></div>
                             <h5 class="text-muted mb-2 mt-4">Détails</h5>
                             <textarea id="details" class="form-control" rows="4"></textarea>
+                            <input type="text" id="steamid" class="form-control form-control-sm text-secondary border-secondary mt-3" placeholder="SteamID64 (Facultatif)">
                         </div>
                     </div>
                     <div class="text-center mt-4 pt-3 border-top border-secondary">
@@ -211,17 +206,13 @@
         let editingId = null; 
         let user = { connecte: false, id: null, isAdmin: false, isOfficer: false, isMarine: false };
 
-        async function init() {
-            await fetchConfig(); 
-            await checkUserStatus();
-        }
+        async function init() { await fetchConfig(); await checkUserStatus(); }
 
         async function checkUserStatus() {
             try {
                 const res = await fetch('/auth/user');
                 const data = await res.json();
                 user = data;
-
                 const userZone = document.getElementById('userZone');
                 const btnZone = document.getElementById('btnAdminZone');
                 const warning = document.getElementById('loginWarning');
@@ -321,18 +312,12 @@
             }
 
             try {
-                const res = await fetch('/api/protocoles/direct', {
-                    method: 'POST',
-                    headers: { 'Content-Type': 'application/json' },
-                    body: JSON.stringify(body)
-                });
+                const res = await fetch('/api/protocoles/direct', { method: 'POST', headers: { 'Content-Type': 'application/json' }, body: JSON.stringify(body) });
                 if(res.ok) {
                     alert("Signalement enregistré et archivé !");
                     document.querySelectorAll('#signalementPanel input, #signalementPanel textarea, #signalementPanel select').forEach(i => i.value = '');
                     document.querySelectorAll('.nav-link')[1].click(); 
-                } else {
-                    alert("Erreur");
-                }
+                } else { alert("Erreur"); }
             } catch(e) { alert("Erreur connexion"); }
         }
 
@@ -461,8 +446,8 @@
                             <div class="row">
                                 <div class="col-md-9">
                                     <div class="mb-2"><div class="p-2 bg-dark rounded border border-secondary"><small class="text-muted d-block ls-1">SANCTION</small><span class="fw-bold text-danger">${p.protocoleType}</span></div></div>
-                                    <div class="mb-2"><div class="p-2 bg-dark rounded border-start border-3 border-danger"><small class="text-muted d-block ls-1">RAISON</small><span class="text-light">${p.raison}</span></div></div>
-                                    ${p.details ? `<div class="mb-2"><div class="p-2 bg-dark rounded border-start border-3 border-warning"><small class="text-muted d-block ls-1">DÉTAILS</small><span class="text-light">${p.details}</span></div></div>` : ''}
+                                    <div class="mb-2"><div class="p-2 bg-dark rounded border-start border-3 border-danger"><small class="text-muted d-block ls-1">RAISON</small><span class="text-light user-text">${p.raison}</span></div></div>
+                                    ${p.details ? `<div class="mb-2"><div class="p-2 bg-dark rounded border-start border-3 border-warning"><small class="text-muted d-block ls-1">DÉTAILS</small><span class="text-light user-text">${p.details}</span></div></div>` : ''}
                                     ${p.targetSteamID ? `<div class="mb-2"><div class="p-2 bg-dark rounded border-start border-3 border-danger"><small class="text-muted d-block ls-1">STEAM ID</small><span class="text-light font-monospace">${p.targetSteamID}</span></div></div>` : ''}
                                     ${timeAlert}
                                 </div>
