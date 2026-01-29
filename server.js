@@ -11,7 +11,7 @@ const { google } = require('googleapis');
 
 const app = express();
 
-// --- FIX MOBILE & RENDER (OBLIGATOIRE) ---
+// --- INDISPENSABLE POUR RENDER & MOBILE ---
 app.set('trust proxy', 1); 
 
 // --- CONFIGURATION ---
@@ -75,17 +75,17 @@ app.use(cors());
 app.use(bodyParser.json());
 app.use(express.static('public'));
 
-// --- SESSION SECURISÉE POUR MOBILE ---
+// --- SESSION SECURISÉE ---
 app.use(session({
     secret: SESSION_SECRET, 
     resave: false, 
     saveUninitialized: false,
-    proxy: true, // INDISPENSABLE
+    proxy: true, // IMPORTANT POUR MOBILE
     store: MongoStore.create({ mongoUrl: MONGO_URI }), 
     cookie: { 
         maxAge: 1000 * 60 * 60 * 24 * 7,
-        secure: true, // HTTPS OBLIGATOIRE
-        sameSite: 'none', // CROSS-SITE OBLIGATOIRE
+        secure: true, 
+        sameSite: 'none', 
         httpOnly: true
     }
 }));
@@ -116,7 +116,7 @@ passport.use(new DiscordStrategy({
     }
 }));
 
-// --- FONCTIONS DE PERMISSIONS & MIDDLEWARES ---
+// --- FONCTIONS DE SÉCURITÉ (DÉFINIES AVANT LES ROUTES) ---
 
 async function getPermissions(user) {
     if (!user || !user.roles) return { isAdmin: false, isOfficer: false, isMarine: false };
@@ -130,7 +130,6 @@ async function getPermissions(user) {
     return { isAdmin: false, isOfficer: isOfficer, isMarine: isMarine };
 }
 
-// C'EST ICI QUE CA MANQUAIT DANS LA VERSION PRECEDENTE :
 const checkAdmin = async (req, res, next) => { 
     if (req.isAuthenticated() && (await getPermissions(req.user)).isAdmin) return next(); 
     res.status(403).json({ message: "Admin Only." }); 
