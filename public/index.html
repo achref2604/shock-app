@@ -44,152 +44,159 @@
         .rappel-header { background-color: rgba(231, 76, 60, 0.1); border-bottom: 1px solid #e74c3c; color: #e74c3c; font-weight: bold; }
         .generated-box { background: #222; border: 1px dashed #666; padding: 10px; font-family: monospace; font-size: 0.85rem; color: #aaa; margin-top: 10px; cursor: pointer; }
         .generated-box:hover { border-color: #fff; color: #fff; }
+        
+        /* Animation Clignotement Sanction */
+        @keyframes pulse-red { 0% { opacity: 1; } 50% { opacity: 0.7; } 100% { opacity: 1; } }
+        .sanction-alert { background-color: #c0392b; color: white; text-align: center; font-weight: bold; padding: 10px; border-radius: 5px; margin-bottom: 15px; text-transform: uppercase; animation: pulse-red 2s infinite; letter-spacing: 1px; box-shadow: 0 0 10px rgba(192, 57, 43, 0.5); }
+    
+        /* MISE EN PAGE : Largeur Max */
+        .main-wrapper { max-width: 1800px; margin: 0 auto; }
     </style>
 </head>
-<body class="container-fluid py-5 px-4">
+<body class="container-fluid py-5 px-5">
 
-    <div class="user-bar" id="userZone"></div>
+    <div class="main-wrapper">
 
-    <header class="text-center mb-5 mt-4">
-        <h1 class="display-4 fw-bold text-shock">Coruscant Guard</h1>
-        <p class="lead text-muted">Système de Gestion des Détentions</p>
-    </header>
+        <div class="user-bar" id="userZone"></div>
 
-    <ul class="nav nav-tabs mb-4 justify-content-center">
-        <li class="nav-item"><a class="nav-link active" href="#" onclick="changerOnglet('encours')">📡 Mandats</a></li>
-        <li class="nav-item" id="navDelais" style="display:none;"><a class="nav-link" href="#" onclick="changerOnglet('delais')">⏳ Délais & Rappels</a></li>
-        <li class="nav-item"><a class="nav-link" href="#" onclick="changerOnglet('historique')">💾 Archives</a></li>
-        <li class="nav-item" id="navSignalement" style="display:none;"><a class="nav-link" href="#" onclick="changerOnglet('signalement')">⚡ Signalement Direct</a></li>
-        <li class="nav-item" id="navAdmin" style="display:none;"><a class="nav-link" href="#" onclick="changerOnglet('admin')">⚙️ Admin (Fox)</a></li>
-    </ul>
+        <header class="text-center mb-5 mt-4">
+            <h1 class="display-4 fw-bold text-shock">Coruscant Guard</h1>
+            <p class="lead text-muted">Système de Gestion des Détentions</p>
+        </header>
 
-    <div id="btnAdminZone" class="text-center mb-4" style="display:none;">
-        <button class="btn btn-outline-danger btn-sm px-4 py-2" onclick="toggleForm()">⚠️ Ordonner un Protocole (Différé)</button>
-    </div>
+        <ul class="nav nav-tabs mb-4 justify-content-center">
+            <li class="nav-item"><a class="nav-link active" href="#" onclick="changerOnglet('encours')">📡 Mandats</a></li>
+            <li class="nav-item" id="navDelais" style="display:none;"><a class="nav-link" href="#" onclick="changerOnglet('delais')">⏳ Délais & Rappels</a></li>
+            <li class="nav-item"><a class="nav-link" href="#" onclick="changerOnglet('historique')">💾 Archives</a></li>
+            <li class="nav-item" id="navSignalement" style="display:none;"><a class="nav-link" href="#" onclick="changerOnglet('signalement')">⚡ Signalement Direct</a></li>
+            <li class="nav-item" id="navAdmin" style="display:none;"><a class="nav-link" href="#" onclick="changerOnglet('admin')">⚙️ Admin (Fox)</a></li>
+        </ul>
 
-    <div id="loginWarning" class="text-center mb-4 text-muted fst-italic">
-        <small>Connexion requise.</small>
-    </div>
-
-    <div id="adminConfigPanel" class="row" style="display: none;">
-        <div class="col-12 mb-5">
-            <div class="card border-warning">
-                <div class="card-header text-center text-warning fw-bold py-3">CONFIGURATION SYSTÈME (ADMIN ONLY)</div>
-                <div class="card-body p-4">
-                    <div class="row">
-                        <div class="col-md-4">
-                            <div class="admin-section" style="border-color: #f1c40f;">
-                                <h5>👑 Admins</h5>
-                                <div class="d-flex gap-2 mb-2"><input type="text" id="newAdminRole" class="form-control form-control-sm" placeholder="Rôle"><button onclick="addConfig('adminRoles')" class="btn btn-sm btn-success">+</button></div>
-                                <div id="listAdminRoles" class="d-flex flex-wrap gap-2 mb-2"></div>
-                                <div class="d-flex gap-2 mb-2"><input type="text" id="newAdminUser" class="form-control form-control-sm" placeholder="User ID"><button onclick="addConfig('adminUsers')" class="btn btn-sm btn-success">+</button></div>
-                                <div id="listAdminUsers" class="d-flex flex-wrap gap-2"></div>
-                            </div>
-                        </div>
-                        <div class="col-md-4">
-                            <div class="admin-section">
-                                <h5>👮 Officiers / Marines</h5>
-                                <div class="d-flex gap-2 mb-2"><input type="text" id="newOfficerRole" class="form-control form-control-sm" placeholder="ID Rôle Officier"><button onclick="addConfig('officerRoles')" class="btn btn-sm btn-success">+</button></div>
-                                <div id="listOfficerRoles" class="d-flex flex-wrap gap-2 mb-3"></div>
-                                <div class="d-flex gap-2 mb-2"><input type="text" id="newMarineRole" class="form-control form-control-sm" placeholder="ID Rôle Marine"><button onclick="addConfig('marineRoles')" class="btn btn-sm btn-success">+</button></div>
-                                <div id="listMarineRoles" class="d-flex flex-wrap gap-2"></div>
-                            </div>
-                        </div>
-                        <div class="col-md-4">
-                            <div class="admin-section">
-                                <h5>🏴 Ajouter Régiment</h5>
-                                <div class="d-flex gap-2 mb-2"><input type="text" id="newRegimentName" class="form-control form-control-sm" placeholder="Nom (Ex: 104th)"><button onclick="addNewRegiment()" class="btn btn-sm btn-success">Créer</button></div>
-                                <p class="small text-muted">Configurez les détails ci-dessous.</p>
-                            </div>
-                        </div>
-                    </div>
-
-                    <hr>
-                    <h5 class="text-center text-muted mb-3">CONFIGURATIONS DES RÉGIMENTS (Délais & Sanctions)</h5>
-                    <div id="regimentConfigList" class="row g-3"></div>
-
-                    <div class="text-end mt-4"><button onclick="saveConfig()" class="btn btn-warning fw-bold px-5">SAUVEGARDER TOUTE LA CONFIG</button></div>
-                </div>
-            </div>
+        <div id="btnAdminZone" class="text-center mb-4" style="display:none;">
+            <button class="btn btn-outline-danger btn-sm px-4 py-2" onclick="toggleForm()">⚠️ Ordonner un Protocole (Différé)</button>
         </div>
-    </div>
 
-    <div class="row" id="signalementPanel" style="display: none;">
-        <div class="col-12 mb-5">
-            <div class="card border-signal">
-                <div class="card-header text-center text-signal fw-bold py-3">⚡ SIGNALEMENT PROTOCOLE (DIRECT & EFFECTUÉ)</div>
-                <div class="card-body p-4">
-                    <div class="row g-3">
-                        <div class="col-md-3 border-end border-secondary pe-md-4">
-                            <h5 class="text-muted mb-3"><i class="fas fa-user-shield"></i> Le Shock</h5>
-                            <div class="mb-3"><label class="small text-muted">Identification du Shock*</label><input type="text" id="sigShockName" class="form-control fw-bold text-signal" placeholder="Matricule + Nom"></div>
-                        </div>
-                        <div class="col-md-9 ps-md-4">
-                            <h5 class="text-muted mb-3"><i class="fas fa-bullseye"></i> Clone Sanctionné</h5>
-                            <div class="mb-2"><label class="small text-muted">Identité Cible*</label><input type="text" id="sigCibleNom" class="form-control"></div>
-                            <div class="row g-2 mb-2">
-                                <div class="col-6"><label class="small text-muted">Grade*</label><input type="text" id="sigCibleGrade" class="form-control"></div>
-                                <div class="col-6"><label class="small text-muted">Régiment*</label><select id="sigCibleRegiment" class="form-select"><option value="" disabled selected>Chargement...</option></select></div>
-                            </div>
-                            <div class="row g-2 mb-2">
-                                <div class="col-6"><label class="small text-muted">Protocole (1-10)*</label><select id="sigProtocole" class="form-select"><option value="" selected disabled>Choisir...</option><option>Protocole 1</option><option>Protocole 2</option><option>Protocole 3</option><option>Protocole 4</option><option>Protocole 5</option><option>Protocole 6</option><option>Protocole 7</option><option>Protocole 8</option><option>Protocole 9</option><option>Protocole 10</option></select></div>
-                                <div class="col-6"><label class="small text-muted">Ordonné par (Opt.)</label><input type="text" id="sigOrderedBy" class="form-control"></div>
-                            </div>
-                            <div class="mb-2"><label class="small text-muted">Raison*</label><textarea id="sigRaison" class="form-control" rows="2"></textarea></div>
-                            <div class="mb-2"><label class="small text-muted">Détails</label><textarea id="sigDetails" class="form-control" rows="4"></textarea></div>
-                            <div class="mb-2"><label class="small text-muted">SteamID64 (Facultatif)</label><input type="text" id="sigSteamID" class="form-control form-control-sm text-secondary border-secondary"></div>
-                        </div>
-                    </div>
-                    <div class="text-center mt-4 pt-3 border-top border-secondary"><button onclick="envoyerSignalement()" class="btn btn-signal btn-lg px-5 fw-bold">Enregistrer et Archiver</button></div>
-                </div>
-            </div>
+        <div id="loginWarning" class="text-center mb-4 text-muted fst-italic">
+            <small>Connexion requise.</small>
         </div>
-    </div>
 
-    <div class="row" id="protocolFormPanel" style="display: none;">
-        <div class="col-12 mb-5"> 
-            <div class="card border-danger">
-                <div class="card-header text-center text-shock fw-bold py-3" id="formTitle">⚠️ ORDONNER UN NOUVEAU PROTOCOLE</div>
-                <div class="card-body p-4">
-                    <div class="row g-3">
-                        <div class="col-md-3 border-end border-secondary pe-md-4">
-                            <h5 class="text-muted mb-3"><i class="fas fa-user-shield"></i> L'Officier</h5>
-                            <div class="mb-3"><label class="small text-muted">Votre Nom*</label><input type="text" id="auteurNom" class="form-control"></div>
-                        </div>
-                        <div class="col-md-9 ps-md-4">
-                            <h5 class="text-muted mb-3"><i class="fas fa-bullseye"></i> Informations Cible</h5>
-                            <div class="mb-2"><label class="small text-muted">Identité*</label><input type="text" id="cibleNom" class="form-control" placeholder="Matricule + Nom"></div>
-                            <div class="row g-2 mb-2">
-                                <div class="col-6"><label class="small text-muted">Grade*</label><input type="text" id="cibleGrade" class="form-control"></div>
-                                <div class="col-6"><label class="small text-muted">Régiment*</label><select id="cibleRegiment" class="form-select"><option value="" disabled selected>Chargement...</option></select></div>
+        <div id="adminConfigPanel" class="row" style="display: none;">
+            <div class="col-12 mb-5">
+                <div class="card border-warning">
+                    <div class="card-header text-center text-warning fw-bold py-3">CONFIGURATION SYSTÈME (ADMIN ONLY)</div>
+                    <div class="card-body p-4">
+                        <div class="row">
+                            <div class="col-md-4">
+                                <div class="admin-section" style="border-color: #f1c40f;">
+                                    <h5>👑 Admins</h5>
+                                    <div class="d-flex gap-2 mb-2"><input type="text" id="newAdminRole" class="form-control form-control-sm" placeholder="Rôle"><button onclick="addConfig('adminRoles')" class="btn btn-sm btn-success">+</button></div>
+                                    <div id="listAdminRoles" class="d-flex flex-wrap gap-2 mb-2"></div>
+                                    <div class="d-flex gap-2 mb-2"><input type="text" id="newAdminUser" class="form-control form-control-sm" placeholder="User ID"><button onclick="addConfig('adminUsers')" class="btn btn-sm btn-success">+</button></div>
+                                    <div id="listAdminUsers" class="d-flex flex-wrap gap-2"></div>
+                                </div>
                             </div>
-                            <div class="row g-2 mb-2">
-                                <div class="col-6"><label class="small text-muted">Protocole*</label><select id="protocole" class="form-select"><option value="" selected disabled>Choisir...</option><option>Protocole 1</option><option>Protocole 2</option><option>Protocole 3</option><option>Protocole 4</option><option>Protocole 5</option><option>Protocole 6</option><option>Protocole 7</option><option>Protocole 8</option></select></div>
-                                <div class="col-6"><label class="small text-muted">Temps (Opt.)</label><input type="text" id="tempsRestant" class="form-control border-warning text-warning"></div>
+                            <div class="col-md-4">
+                                <div class="admin-section">
+                                    <h5>👮 Officiers / Marines</h5>
+                                    <div class="d-flex gap-2 mb-2"><input type="text" id="newOfficerRole" class="form-control form-control-sm" placeholder="ID Rôle Officier"><button onclick="addConfig('officerRoles')" class="btn btn-sm btn-success">+</button></div>
+                                    <div id="listOfficerRoles" class="d-flex flex-wrap gap-2 mb-3"></div>
+                                    <div class="d-flex gap-2 mb-2"><input type="text" id="newMarineRole" class="form-control form-control-sm" placeholder="ID Rôle Marine"><button onclick="addConfig('marineRoles')" class="btn btn-sm btn-success">+</button></div>
+                                    <div id="listMarineRoles" class="d-flex flex-wrap gap-2"></div>
+                                </div>
                             </div>
-                            <div class="mb-2"><label class="small text-muted">Raison*</label><textarea id="raison" class="form-control" rows="2"></textarea></div>
-                            <div class="mb-2"><label class="small text-muted">Détails</label><textarea id="details" class="form-control" rows="4"></textarea></div>
-                            <div class="mb-2"><label class="small text-muted">SteamID64 (Facultatif)</label><input type="text" id="steamid" class="form-control form-control-sm text-secondary border-secondary"></div>
+                            <div class="col-md-4">
+                                <div class="admin-section">
+                                    <h5>🏴 Ajouter Régiment</h5>
+                                    <div class="d-flex gap-2 mb-2"><input type="text" id="newRegimentName" class="form-control form-control-sm" placeholder="Nom (Ex: 104th)"><button onclick="addNewRegiment()" class="btn btn-sm btn-success">Créer</button></div>
+                                    <p class="small text-muted">Configurez les détails ci-dessous.</p>
+                                </div>
+                            </div>
                         </div>
-                    </div>
-                    <div class="text-center mt-4 pt-3 border-top border-secondary">
-                        <button id="btnSubmit" onclick="envoyerProtocole()" class="btn btn-shock btn-lg px-5">Transmettre</button>
-                        <button id="btnCancel" onclick="resetForm()" class="btn btn-outline-secondary btn-lg px-3 ms-2" style="display:none;">Annuler</button>
+                        <hr>
+                        <h5 class="text-center text-muted mb-3">CONFIGURATIONS DES RÉGIMENTS (Délais & Sanctions)</h5>
+                        <div id="regimentConfigList" class="row g-3"></div>
+                        <div class="text-end mt-4"><button onclick="saveConfig()" class="btn btn-warning fw-bold px-5">SAUVEGARDER TOUTE LA CONFIG</button></div>
                     </div>
                 </div>
             </div>
         </div>
-    </div>
 
-    <div id="listeSection">
-        <div class="d-flex justify-content-between align-items-center mb-4 border-bottom border-secondary pb-2">
-            <h4 id="titreListe" class="m-0"><span class="text-shock">►</span> Liste</h4>
-            <span class="badge bg-secondary" id="compteur">0 dossiers</span>
+        <div class="row" id="signalementPanel" style="display: none;">
+            <div class="col-12 mb-5">
+                <div class="card border-signal">
+                    <div class="card-header text-center text-signal fw-bold py-3">⚡ SIGNALEMENT PROTOCOLE (DIRECT & EFFECTUÉ)</div>
+                    <div class="card-body p-4">
+                        <div class="row g-3">
+                            <div class="col-md-3 border-end border-secondary pe-md-4">
+                                <h5 class="text-muted mb-3"><i class="fas fa-user-shield"></i> Le Shock</h5>
+                                <div class="mb-3"><label class="small text-muted">Identification du Shock*</label><input type="text" id="sigShockName" class="form-control fw-bold text-signal" placeholder="Matricule + Nom"></div>
+                            </div>
+                            <div class="col-md-9 ps-md-4">
+                                <h5 class="text-muted mb-3"><i class="fas fa-bullseye"></i> Clone Sanctionné</h5>
+                                <div class="mb-2"><label class="small text-muted">Identité Cible*</label><input type="text" id="sigCibleNom" class="form-control"></div>
+                                <div class="row g-2 mb-2">
+                                    <div class="col-6"><label class="small text-muted">Grade*</label><input type="text" id="sigCibleGrade" class="form-control"></div>
+                                    <div class="col-6"><label class="small text-muted">Régiment*</label><select id="sigCibleRegiment" class="form-select"><option value="" disabled selected>Chargement...</option></select></div>
+                                </div>
+                                <div class="row g-2 mb-2">
+                                    <div class="col-6"><label class="small text-muted">Protocole (1-10)*</label><select id="sigProtocole" class="form-select"><option value="" selected disabled>Choisir...</option><option>Protocole 1</option><option>Protocole 2</option><option>Protocole 3</option><option>Protocole 4</option><option>Protocole 5</option><option>Protocole 6</option><option>Protocole 7</option><option>Protocole 8</option><option>Protocole 9</option><option>Protocole 10</option></select></div>
+                                    <div class="col-6"><label class="small text-muted">Ordonné par (Opt.)</label><input type="text" id="sigOrderedBy" class="form-control"></div>
+                                </div>
+                                <div class="mb-2"><label class="small text-muted">Raison*</label><textarea id="sigRaison" class="form-control" rows="2"></textarea></div>
+                                <div class="mb-2"><label class="small text-muted">Détails</label><textarea id="sigDetails" class="form-control" rows="4"></textarea></div>
+                                <div class="mb-2"><label class="small text-muted">SteamID64 (Facultatif)</label><input type="text" id="sigSteamID" class="form-control form-control-sm text-secondary border-secondary"></div>
+                            </div>
+                        </div>
+                        <div class="text-center mt-4 pt-3 border-top border-secondary"><button onclick="envoyerSignalement()" class="btn btn-signal btn-lg px-5 fw-bold">Enregistrer et Archiver</button></div>
+                    </div>
+                </div>
+            </div>
         </div>
-        <div id="listeProtocoles" class="row g-4"></div>
-    </div>
 
-    <script src="https://cdn.jsdelivr.net/npm/bootstrap@5.3.2/dist/js/bootstrap.bundle.min.js"></script>
+        <div class="row" id="protocolFormPanel" style="display: none;">
+            <div class="col-12 mb-5"> 
+                <div class="card border-danger">
+                    <div class="card-header text-center text-shock fw-bold py-3" id="formTitle">⚠️ ORDONNER UN NOUVEAU PROTOCOLE</div>
+                    <div class="card-body p-4">
+                        <div class="row g-3">
+                            <div class="col-md-3 border-end border-secondary pe-md-4">
+                                <h5 class="text-muted mb-3"><i class="fas fa-user-shield"></i> L'Officier</h5>
+                                <div class="mb-3"><label class="small text-muted">Votre Nom*</label><input type="text" id="auteurNom" class="form-control"></div>
+                            </div>
+                            <div class="col-md-9 ps-md-4">
+                                <h5 class="text-muted mb-3"><i class="fas fa-bullseye"></i> Informations Cible</h5>
+                                <div class="mb-2"><label class="small text-muted">Identité*</label><input type="text" id="cibleNom" class="form-control" placeholder="Matricule + Nom"></div>
+                                <div class="row g-2 mb-2">
+                                    <div class="col-6"><label class="small text-muted">Grade*</label><input type="text" id="cibleGrade" class="form-control"></div>
+                                    <div class="col-6"><label class="small text-muted">Régiment*</label><select id="cibleRegiment" class="form-select"><option value="" disabled selected>Chargement...</option></select></div>
+                                </div>
+                                <div class="row g-2 mb-2">
+                                    <div class="col-6"><label class="small text-muted">Protocole*</label><select id="protocole" class="form-select"><option value="" selected disabled>Choisir...</option><option>Protocole 1</option><option>Protocole 2</option><option>Protocole 3</option><option>Protocole 4</option><option>Protocole 5</option><option>Protocole 6</option><option>Protocole 7</option><option>Protocole 8</option></select></div>
+                                    <div class="col-6"><label class="small text-muted">Temps (Opt.)</label><input type="text" id="tempsRestant" class="form-control border-warning text-warning"></div>
+                                </div>
+                                <div class="mb-2"><label class="small text-muted">Raison*</label><textarea id="raison" class="form-control" rows="2"></textarea></div>
+                                <div class="mb-2"><label class="small text-muted">Détails</label><textarea id="details" class="form-control" rows="4"></textarea></div>
+                                <div class="mb-2"><label class="small text-muted">SteamID64 (Facultatif)</label><input type="text" id="steamid" class="form-control form-control-sm text-secondary border-secondary"></div>
+                            </div>
+                        </div>
+                        <div class="text-center mt-4 pt-3 border-top border-secondary">
+                            <button id="btnSubmit" onclick="envoyerProtocole()" class="btn btn-shock btn-lg px-5">Transmettre</button>
+                            <button id="btnCancel" onclick="resetForm()" class="btn btn-outline-secondary btn-lg px-3 ms-2" style="display:none;">Annuler</button>
+                        </div>
+                    </div>
+                </div>
+            </div>
+        </div>
+
+        <div id="listeSection">
+            <div class="d-flex justify-content-between align-items-center mb-4 border-bottom border-secondary pb-2">
+                <h4 id="titreListe" class="m-0"><span class="text-shock">►</span> Liste</h4>
+                <span class="badge bg-secondary" id="compteur">0 dossiers</span>
+            </div>
+            <div id="listeProtocoles" class="row g-4"></div>
+        </div>
+
+    </div> <script src="https://cdn.jsdelivr.net/npm/bootstrap@5.3.2/dist/js/bootstrap.bundle.min.js"></script>
     <script>
         const API_URL = '/api/protocoles';
         let currentData = [];
@@ -208,10 +215,9 @@
                 const canEdit = user.isAdmin || user.isOfficer || user.isMarine;
                 const canValidate = user.isAdmin || user.isOfficer;
 
-                // Affichage conditionnel des onglets
                 document.getElementById('navAdmin').style.display = user.isAdmin ? 'block' : 'none';
                 document.getElementById('navSignalement').style.display = canValidate ? 'block' : 'none';
-                document.getElementById('navDelais').style.display = canValidate ? 'block' : 'none'; // Uniquement Officiers/Admin
+                document.getElementById('navDelais').style.display = canValidate ? 'block' : 'none';
                 document.getElementById('btnAdminZone').style.display = canEdit ? 'block' : 'none';
 
                 if (user.connecte) {
@@ -235,7 +241,6 @@
                 const res = await fetch('/api/config');
                 const data = await res.json();
                 if(data) configData = { ...configData, ...data };
-                // Conversion old string array to object array if needed
                 if(configData.regiments.length > 0 && typeof configData.regiments[0] === 'string') {
                     configData.regiments = configData.regiments.map(r => ({ name: r, rappelDays: 7, sanctionDays: 3, sanctionText: 'Sanction par défaut' }));
                 }
@@ -249,7 +254,6 @@
             document.getElementById('sigCibleRegiment').innerHTML = '<option value="" disabled selected>Choisir...</option>' + opts;
         }
 
-        // --- NAVIGATION ---
         function toggleForm() {
             const panel = document.getElementById('protocolFormPanel');
             panel.style.display = panel.style.display === 'none' ? 'block' : 'none';
@@ -276,7 +280,6 @@
                 document.getElementById('signalementPanel').style.display = 'block';
                 document.getElementById('titreListe').innerHTML = '<span class="text-signal">⚡</span> Signalement Direct';
             } else if(type === 'delais') {
-                // PAGE DÉLAIS & RAPPELS
                 document.getElementById('titreListe').innerHTML = '<span class="text-danger">⏳</span> Rappels à effectuer';
                 chargerDelais();
             } else if(type === 'encours') {
@@ -290,7 +293,6 @@
         }
 
         // --- LOGIQUE DELAIS & RAPPELS ---
-        // --- LOGIQUE DELAIS & RAPPELS ---
         async function chargerDelais() {
             const res = await fetch('/api/protocoles'); // On récupère ceux en cours
             const data = await res.json();
@@ -301,33 +303,28 @@
             const now = new Date();
 
             data.forEach(p => {
-                // Trouver la config du régiment
                 const regConfig = configData.regiments.find(r => r.name === p.cibleRegiment);
-                if(!regConfig) return; // Si pas de config, on ignore
+                if(!regConfig) return;
 
                 const dateCreation = new Date(p.date);
-                // Date Limite Rappel = Date Création + Jours Rappel
                 const limitDate = new Date(dateCreation);
                 limitDate.setDate(limitDate.getDate() + regConfig.rappelDays);
 
-                // Si on a dépassé la date limite
                 if (now > limitDate) {
                     count++;
-                    
-                    // Calcul de la Date Limite (Date du jour + Délai sanction)
                     const dateSanction = new Date(); 
                     dateSanction.setDate(dateSanction.getDate() + regConfig.sanctionDays);
                     const dateSanctionStr = dateSanction.toLocaleDateString('fr-FR');
 
-                    // MODIFICATION ICI : On met directement la date calculée dans le titre
+                    // Calcul de la date du titre
                     const titlePost = `${p.cibleRegiment} ${p.cibleGrade} ${p.cibleNom} -> ${dateSanctionStr}`;
-                    
                     const bodyPost = `<:FlecheVert:990651262976528414> Protocole à effectuer avant le ${dateSanctionStr} sinon : ${regConfig.sanctionText}\n<:FlecheVert:990651262976528414> Reçu\n\n...........................................................................\n\n- **Qui l'a ordonné :** ${p.auteurNom}\n- **Protocole :** ${p.protocoleType.replace(/Protocole\s+/i, '')}\n- **Raison :** ${p.raison}${p.details ? `\n- **Détails :** ${p.details}` : ''}${p.targetSteamID ? `\n- **Steam ID :** ${p.targetSteamID}` : ''}`;
 
                     let statusPriseEnCharge = p.rappelPrisEnChargeBy 
                         ? `<div class="text-success fw-bold mt-2"><i class="fas fa-check"></i> Pris en charge par ${p.rappelPrisEnChargeBy}</div>` 
                         : `<div class="text-warning fw-bold mt-2"><i class="fas fa-clock"></i> Pas encore pris en charge</div>`;
 
+                    // MODIFICATION ICI : Ajout de l'alerte SANCTION
                     container.innerHTML += `
                     <div class="col-12">
                         <div class="card rappel-card h-100">
@@ -336,6 +333,9 @@
                                 <small>Retard de ${(Math.floor((now - limitDate)/(1000*60*60*24)))+1} jours</small>
                             </div>
                             <div class="card-body">
+                                <div class="sanction-alert">
+                                    ${regConfig.sanctionText} À APPLIQUER
+                                </div>
                                 <div class="row">
                                     <div class="col-md-8">
                                         <p><strong>Cible :</strong> ${p.cibleGrade} ${p.cibleNom} (${p.cibleRegiment})<br>
@@ -403,9 +403,8 @@
             } catch(e) { alert("Erreur connexion"); }
         }
 
-        // --- GESTION ADMIN UI (NOUVEAU) ---
+        // --- GESTION ADMIN UI ---
         function renderAdminUI() {
-            // Listes existantes
             const listAdminR = document.getElementById('listAdminRoles');
             const listAdminU = document.getElementById('listAdminUsers');
             const listOfficer = document.getElementById('listOfficerRoles');
@@ -416,7 +415,6 @@
             listOfficer.innerHTML = (configData.officerRoles||[]).map(r => `<span class="badge bg-secondary">${r} <i class="fas fa-times tag-remove" onclick="removeConfig('officerRoles', '${r}')"></i></span>`).join('');
             listMarine.innerHTML = (configData.marineRoles||[]).map(r => `<span class="badge bg-secondary">${r} <i class="fas fa-times tag-remove" onclick="removeConfig('marineRoles', '${r}')"></i></span>`).join('');
 
-            // LISTE REGIMENTS AVEC INPUTS
             const regList = document.getElementById('regimentConfigList');
             regList.innerHTML = '';
             (configData.regiments || []).forEach((reg, index) => {
@@ -428,18 +426,9 @@
                             <button class="btn btn-sm btn-outline-danger" onclick="removeRegiment(${index})">🗑️</button>
                         </div>
                         <div class="card-body p-2">
-                            <div class="input-group input-group-sm mb-1">
-                                <span class="input-group-text bg-dark text-white border-secondary">Rappel (j)</span>
-                                <input type="number" class="form-control" value="${reg.rappelDays}" onchange="updateRegiment(${index}, 'rappelDays', this.value)">
-                            </div>
-                            <div class="input-group input-group-sm mb-1">
-                                <span class="input-group-text bg-dark text-white border-secondary">Sanction (j)</span>
-                                <input type="number" class="form-control" value="${reg.sanctionDays}" onchange="updateRegiment(${index}, 'sanctionDays', this.value)">
-                            </div>
-                            <div class="input-group input-group-sm">
-                                <span class="input-group-text bg-dark text-white border-secondary">Sanction</span>
-                                <input type="text" class="form-control" value="${reg.sanctionText}" onchange="updateRegiment(${index}, 'sanctionText', this.value)">
-                            </div>
+                            <div class="input-group input-group-sm mb-1"><span class="input-group-text bg-dark text-white border-secondary">Rappel (j)</span><input type="number" class="form-control" value="${reg.rappelDays}" onchange="updateRegiment(${index}, 'rappelDays', this.value)"></div>
+                            <div class="input-group input-group-sm mb-1"><span class="input-group-text bg-dark text-white border-secondary">Sanction (j)</span><input type="number" class="form-control" value="${reg.sanctionDays}" onchange="updateRegiment(${index}, 'sanctionDays', this.value)"></div>
+                            <div class="input-group input-group-sm"><span class="input-group-text bg-dark text-white border-secondary">Sanction</span><input type="text" class="form-control" value="${reg.sanctionText}" onchange="updateRegiment(${index}, 'sanctionText', this.value)"></div>
                         </div>
                     </div>
                 </div>`;
@@ -466,7 +455,6 @@
             renderAdminUI();
         }
 
-        // Gestion générique Add/Remove pour les autres listes
         function addConfig(key) {
             let inputId = (key==='adminRoles')?'newAdminRole':(key==='adminUsers')?'newAdminUser':(key==='officerRoles')?'newOfficerRole':'newMarineRole';
             const val = document.getElementById(inputId).value.trim();
@@ -487,7 +475,6 @@
             renderRegimentsSelect();
         }
 
-        // --- FONCTIONS STANDARD ---
         async function chargerEnCours() {
             const res = await fetch('/api/protocoles');
             currentData = await res.json();
