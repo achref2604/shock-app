@@ -112,6 +112,7 @@
         let currentData = [];
         let editingId = null; 
         let userConnecte = false;
+        let isOfficier = false; // Variable globale pour stocker si c'est un officier ou non
 
         // --- GESTION DE LA CONNEXION ---
         async function checkUserStatus() {
@@ -124,18 +125,34 @@
 
                 if (data.connecte) {
                     userConnecte = true;
+                    isOfficier = data.isOfficier; // On récupère le droit depuis le serveur
+
+                    // Affichage avatar + Badge Officier/Soldat
                     userZone.innerHTML = `
                         <div class="d-flex align-items-center gap-2">
                             <img src="${data.avatar}" class="avatar" alt="Avatar">
                             <span class="fw-bold">${data.username}</span>
+                            ${isOfficier ? '<span class="badge bg-danger">OFFICIER</span>' : '<span class="badge bg-secondary">SOLDAT</span>'}
                             <a href="/auth/logout" class="btn btn-sm btn-outline-danger"><i class="fas fa-sign-out-alt"></i></a>
                         </div>`;
-                    btnZone.style.display = 'block';
+                    
+                    // On affiche le bouton "Panneau Officier" SEULEMENT si c'est un officier
+                    btnZone.style.display = isOfficier ? 'block' : 'none';
                     warning.style.display = 'none';
+                    
+                    // Si connecté mais pas officier, on met un petit message
+                    if(!isOfficier) {
+                         warning.innerHTML = "<small>Vous êtes connecté, mais vous n'avez pas les droits pour modifier les protocoles.</small>";
+                         warning.style.display = 'block';
+                    }
+
                 } else {
+                    // Si pas connecté du tout
                     userConnecte = false;
+                    isOfficier = false;
                     userZone.innerHTML = `<a href="/auth/discord" class="btn btn-outline-light btn-sm"><i class="fab fa-discord"></i> Connexion Officier</a>`;
                     btnZone.style.display = 'none';
+                    warning.innerHTML = "<small>Connectez-vous pour accéder au système.</small>";
                     warning.style.display = 'block';
                     document.getElementById('adminPanel').style.display = 'none';
                 }
@@ -143,7 +160,7 @@
             } catch (e) { console.error("Erreur auth check", e); }
         }
 
-        // --- RESTE DU CODE ---
+        // --- FONCTIONS UTILITAIRES ---
         function toggleAdmin() {
             const panel = document.getElementById('adminPanel');
             panel.style.display = panel.style.display === 'none' ? 'block' : 'none';
@@ -159,8 +176,8 @@
 
             if(type === 'encours') {
                 titre.innerHTML = '<span class="text-shock">►</span> Mandats en Cours';
-                // Affiche le bouton admin seulement si connecté
-                btnZone.style.display = userConnecte ? 'block' : 'none';
+                // Affiche le bouton admin seulement si c'est un Officier
+                btnZone.style.display = isOfficier ? 'block' : 'none';
                 chargerEnCours();
             } else {
                 titre.innerHTML = '<span class="text-shock">►</span> Archives des Traitements';
@@ -249,7 +266,8 @@
                 // Si l'utilisateur n'est pas connecté, il ne voit AUCUN bouton d'action
                 let actionButtons = '';
 
-                if (userConnecte) {
+                // ICI C'EST IMPORTANT : On vérifie (Connecté ET Officier)
+                if (userConnecte && isOfficier) {
                     if(estEnCours) {
                         actionButtons = `
                         <div class="card-footer bg-transparent border-top-0 pt-0 d-flex gap-2">
@@ -270,7 +288,6 @@
                     timeAlert = `<div class="alert-time p-2 rounded mb-2 text-center fw-bold">⚠️ RESTANT : ${p.tempsRestant}</div>`;
                 }
 
-                // Info Discord user
                 const discordInfo = p.discordUser ? `<br><small class="text-secondary"><i class="fab fa-discord"></i> Log: ${p.discordUser}</small>` : '';
 
                 const cardStyle = estEnCours ? '' : 'opacity: 0.8; filter: grayscale(20%);';
@@ -309,8 +326,6 @@
         }
         
         async function envoyerProtocole() {
-            // Plus besoin d'authCode, l'utilisateur est checké par le cookie de session
-            
             const body = {
                 auteurMatricule: document.getElementById('matricule').value,
                 auteurNom: document.getElementById('nom').value,
@@ -338,8 +353,10 @@
                     chargerEnCours();
                     if(!editingId) toggleAdmin();
                 } else if (response.status === 401) {
-                    alert('❌ Session expirée, reconnectez-vous via Discord.');
+                    alert('❌ Session expirée ou Droits insuffisants.');
                     window.location.reload();
+                } else if (response.status === 403) {
+                     alert('⛔ Vous n\'avez pas la permission Officier.');
                 } else { 
                     alert('❌ Erreur serveur.'); 
                 }
@@ -350,7 +367,7 @@
             if(!confirm("Valider ce protocole ?")) return;
             try {
                 const res = await fetch(`${API_URL}/${id}/valider`, { method: 'PUT' });
-                if(res.status === 401) return alert("Reconnectez-vous");
+                if(res.status === 401 || res.status === 403) return alert("Droits insuffisants");
                 chargerEnCours();
             } catch(e) {}
         }
@@ -363,7 +380,7 @@
                     headers: { 'Content-Type': 'application/json' },
                     body: JSON.stringify({ tempsRestant: nouveauTemps })
                 });
-                if(res.status === 401) return alert("Reconnectez-vous");
+                if(res.status === 401 || res.status === 403) return alert("Droits insuffisants");
                 chargerHistorique();
             } catch(e) { console.error(e); }
         }
