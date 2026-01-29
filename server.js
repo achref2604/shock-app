@@ -158,39 +158,51 @@ const checkValidate = async (req, res, next) => {
 };
 
 // --- FONCTION ENVOI GOOGLE SHEET ---
+// --- FONCTION ENVOI GOOGLE SHEET (CORRIGÉE) ---
 async function sendToGoogleSheet(protocole, validatorName) {
     try {
         const sheets = google.sheets({ version: 'v4', auth: googleAuth });
         
-        // Formatage Date : JJ/MM/AA à HH:MM
+        // 1. On lit UNIQUEMENT la colonne A pour trouver la dernière ligne remplie
+        const result = await sheets.spreadsheets.values.get({
+            spreadsheetId: SPREADSHEET_ID,
+            range: `${SHEET_NAME}!A:A`, // On scanne la colonne A
+        });
+
+        // Si result.data.values existe, on prend sa longueur, sinon 0.
+        // On ajoute +1 pour écrire sur la ligne suivante.
+        const numRows = result.data.values ? result.data.values.length : 0;
+        const nextRow = numRows + 1;
+
+        // Formatage Date
         const now = new Date();
         const dateStr = now.toLocaleDateString('fr-FR', { day: '2-digit', month: '2-digit', year: '2-digit' }) + 
                         ' à ' + now.toLocaleTimeString('fr-FR', { hour: '2-digit', minute: '2-digit' });
 
-        // Nettoyage Protocole (Ex: "Protocole 4" -> "4")
         const protoNum = protocole.protocoleType.replace(/Protocole\s+/i, '');
 
-        // Préparation de la ligne (A -> J)
         const values = [[
-            dateStr,                    // A: Date/Heure
-            validatorName,              // B: Validateur (Matricule + Nom)
-            protocole.cibleRegiment,    // C: Régiment
-            protocole.cibleGrade,       // D: Grade
-            protocole.cibleNom,         // E: Identification Cible
-            protoNum,                   // F: Numéro Protocole
-            protocole.raison,           // G: Raison
-            protocole.auteurNom,        // H: Officier auteur
-            protocole.details || "",    // I: Détails
-            protocole.targetSteamID || "" // J: SteamID
+            dateStr,                    // A
+            validatorName,              // B
+            protocole.cibleRegiment,    // C
+            protocole.cibleGrade,       // D
+            protocole.cibleNom,         // E
+            protoNum,                   // F
+            protocole.raison,           // G
+            protocole.auteurNom,        // H
+            protocole.details || "",    // I
+            protocole.targetSteamID || "" // J
         ]];
 
-        await sheets.spreadsheets.values.append({
+        // 2. On écrit (UPDATE) spécifiquement sur la ligne calculée (ex: A21)
+        await sheets.spreadsheets.values.update({
             spreadsheetId: SPREADSHEET_ID,
-            range: `${SHEET_NAME}!A:J`,
+            range: `${SHEET_NAME}!A${nextRow}`, // Cible la première ligne vide de A
             valueInputOption: 'USER_ENTERED',
             resource: { values },
         });
-        console.log("📝 Ligne ajoutée au Google Sheet.");
+        
+        console.log(`📝 Ligne ajoutée au Google Sheet ligne ${nextRow}.`);
     } catch (error) {
         console.error("❌ Erreur Google Sheet:", error);
     }
@@ -310,3 +322,4 @@ app.delete('/api/protocoles/:id', checkAdmin, async (req, res) => {
 
 const PORT = process.env.PORT || 3000;
 app.listen(PORT, () => console.log(`Serveur lancé sur le port ${PORT}`));
+
