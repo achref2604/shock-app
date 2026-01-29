@@ -39,17 +39,14 @@
         .ls-1 { letter-spacing: 1px; font-weight: 600; font-size: 0.75rem; }
         .user-text { white-space: pre-wrap; word-wrap: break-word; word-break: break-word; overflow-wrap: break-word; display: block; }
         
-        /* Styles spécifiques aux Rappels */
         .rappel-card { border: 1px solid #e74c3c; box-shadow: 0 0 10px rgba(231, 76, 60, 0.2); }
         .rappel-header { background-color: rgba(231, 76, 60, 0.1); border-bottom: 1px solid #e74c3c; color: #e74c3c; font-weight: bold; }
         .generated-box { background: #222; border: 1px dashed #666; padding: 10px; font-family: monospace; font-size: 0.85rem; color: #aaa; margin-top: 10px; cursor: pointer; }
         .generated-box:hover { border-color: #fff; color: #fff; }
         
-        /* Animation Clignotement Sanction */
         @keyframes pulse-red { 0% { opacity: 1; } 50% { opacity: 0.7; } 100% { opacity: 1; } }
         .sanction-alert { background-color: #c0392b; color: white; text-align: center; font-weight: bold; padding: 10px; border-radius: 5px; margin-bottom: 15px; text-transform: uppercase; animation: pulse-red 2s infinite; letter-spacing: 1px; box-shadow: 0 0 10px rgba(192, 57, 43, 0.5); }
     
-        /* MISE EN PAGE : Largeur Max */
         .main-wrapper { max-width: 1800px; margin: 0 auto; }
     </style>
 </head>
@@ -65,10 +62,10 @@
         </header>
 
         <ul class="nav nav-tabs mb-4 justify-content-center">
+            <li class="nav-item" id="navSignalement" style="display:none;"><a class="nav-link" href="#" onclick="changerOnglet('signalement')">⚡ Signalement Direct</a></li>
             <li class="nav-item"><a class="nav-link active" href="#" onclick="changerOnglet('encours')">📡 Mandats</a></li>
             <li class="nav-item" id="navDelais" style="display:none;"><a class="nav-link" href="#" onclick="changerOnglet('delais')">⏳ Délais & Rappels</a></li>
             <li class="nav-item"><a class="nav-link" href="#" onclick="changerOnglet('historique')">💾 Archives</a></li>
-            <li class="nav-item" id="navSignalement" style="display:none;"><a class="nav-link" href="#" onclick="changerOnglet('signalement')">⚡ Signalement Direct</a></li>
             <li class="nav-item" id="navAdmin" style="display:none;"><a class="nav-link" href="#" onclick="changerOnglet('admin')">⚙️ Admin (Fox)</a></li>
         </ul>
 
@@ -312,19 +309,15 @@
 
                 if (now > limitDate) {
                     count++;
-                    const dateSanction = new Date(); 
-                    dateSanction.setDate(dateSanction.getDate() + regConfig.sanctionDays);
-                    const dateSanctionStr = dateSanction.toLocaleDateString('fr-FR');
-
-                    // Calcul de la date du titre
-                    const titlePost = `${p.cibleRegiment} ${p.cibleGrade} ${p.cibleNom} -> ${dateSanctionStr}`;
-                    const bodyPost = `<:FlecheVert:990651262976528414> Protocole à effectuer avant le ${dateSanctionStr} sinon : ${regConfig.sanctionText}\n<:FlecheVert:990651262976528414> Reçu\n\n...........................................................................\n\n- **Qui l'a ordonné :** ${p.auteurNom}\n- **Protocole :** ${p.protocoleType.replace(/Protocole\s+/i, '')}\n- **Raison :** ${p.raison}${p.details ? `\n- **Détails :** ${p.details}` : ''}${p.targetSteamID ? `\n- **Steam ID :** ${p.targetSteamID}` : ''}`;
+                    
+                    // --- MODIF ICI : On passe la config régiment pour utiliser daysSanction dans la fonction de génération ---
+                    // On stocke les infos nécessaires dans le bouton pour les utiliser au clic
+                    const btnGen = `<button class="btn btn-outline-light btn-sm w-100 mb-2" onclick="generateAndShow('${p._id}', '${p.cibleRegiment}', '${p.cibleGrade}', '${p.cibleNom}', '${p.auteurNom}', '${p.protocoleType}', '${p.raison}', '${p.details || ''}', '${p.targetSteamID || ''}', ${regConfig.sanctionDays}, '${regConfig.sanctionText}')">📄 Générer le Rapport Discord</button>`;
 
                     let statusPriseEnCharge = p.rappelPrisEnChargeBy 
                         ? `<div class="text-success fw-bold mt-2"><i class="fas fa-check"></i> Pris en charge par ${p.rappelPrisEnChargeBy}</div>` 
                         : `<div class="text-warning fw-bold mt-2"><i class="fas fa-clock"></i> Pas encore pris en charge</div>`;
 
-                    // MODIFICATION ICI : Ajout de l'alerte SANCTION
                     container.innerHTML += `
                     <div class="col-12">
                         <div class="card rappel-card h-100">
@@ -342,18 +335,14 @@
                                         <strong>Protocole :</strong> ${p.protocoleType}<br>
                                         <strong>Date Ordre :</strong> ${new Date(p.date).toLocaleDateString('fr-FR')}</p>
                                         
-                                        <button class="btn btn-outline-light btn-sm w-100 mb-2" onclick="toggleGen('${p._id}')">📄 Générer le Rapport Discord</button>
+                                        ${btnGen}
                                         
                                         <div id="gen-${p._id}" style="display:none;">
-                                            <div class="generated-box mb-2" onclick="navigator.clipboard.writeText(this.innerText); alert('Titre copié !');">
-                                                ${titlePost}
-                                            </div>
-                                            <div class="generated-box mb-2" onclick="navigator.clipboard.writeText(this.innerText); alert('Contenu copié !');">
-                                                ${bodyPost.replace(/\n/g, '<br>')}
-                                            </div>
+                                            <div class="generated-box mb-2" id="title-${p._id}" onclick="navigator.clipboard.writeText(this.innerText); alert('Titre copié !');"></div>
+                                            <div class="generated-box mb-2" id="body-${p._id}" onclick="navigator.clipboard.writeText(this.innerText); alert('Contenu copié !');"></div>
                                             <div class="d-flex gap-2">
                                                 <button onclick="validerRappel('${p._id}')" class="btn btn-success btn-sm flex-grow-1">✅ Valider Prise en Charge</button>
-                                                <button onclick="toggleGen('${p._id}')" class="btn btn-secondary btn-sm">Annuler</button>
+                                                <button onclick="toggleBox('${p._id}')" class="btn btn-secondary btn-sm">Annuler</button>
                                             </div>
                                         </div>
                                     </div>
@@ -370,7 +359,23 @@
             if(count === 0) container.innerHTML = `<div class="col-12 text-center py-5 text-muted"><h3>✅ Aucun rappel nécessaire.</h3></div>`;
         }
 
-        function toggleGen(id) {
+        // Fonction appelée AU MOMENT DU CLIC sur "Générer"
+        function generateAndShow(id, reg, grade, nom, auteur, proto, raison, details, steam, sanctionDays, sanctionText) {
+            // Calcul date dynamique (Maintenant + Jours Sanction)
+            const dateFinale = new Date();
+            dateFinale.setDate(dateFinale.getDate() + parseInt(sanctionDays));
+            const dateFinaleStr = dateFinale.toLocaleDateString('fr-FR');
+
+            const titlePost = `${reg} ${grade} ${nom} -> ${dateFinaleStr}`;
+            const bodyPost = `<:FlecheVert:990651262976528414> Protocole à effectuer avant le ${dateFinaleStr} sinon : ${sanctionText}\n<:FlecheVert:990651262976528414> Reçu\n\n...........................................................................\n\n- **Qui l'a ordonné :** ${auteur}\n- **Protocole :** ${proto.replace(/Protocole\s+/i, '')}\n- **Raison :** ${raison}${details ? `\n- **Détails :** ${details}` : ''}${steam ? `\n- **Steam ID :** ${steam}` : ''}`;
+
+            document.getElementById(`title-${id}`).innerText = titlePost;
+            document.getElementById(`body-${id}`).innerText = bodyPost;
+            
+            toggleBox(id);
+        }
+
+        function toggleBox(id) {
             const el = document.getElementById(`gen-${id}`);
             el.style.display = el.style.display === 'none' ? 'block' : 'none';
         }
@@ -399,7 +404,7 @@
             if(!body.validatorManualName || !body.cibleNom || !body.cibleGrade || !body.cibleRegiment || !body.protocoleType || !body.raison) return alert("Champs obligatoires manquants.");
             try {
                 const res = await fetch('/api/protocoles/direct', { method: 'POST', headers: { 'Content-Type': 'application/json' }, body: JSON.stringify(body) });
-                if(res.ok) { alert("Enregistré !"); document.querySelectorAll('#signalementPanel input, #signalementPanel textarea, #signalementPanel select').forEach(i => i.value = ''); document.querySelectorAll('.nav-link')[2].click(); } else alert("Erreur");
+                if(res.ok) { alert("Enregistré !"); document.querySelectorAll('#signalementPanel input, #signalementPanel textarea, #signalementPanel select').forEach(i => i.value = ''); document.querySelectorAll('.nav-link')[3].click(); /* Aller Archives */ } else alert("Erreur");
             } catch(e) { alert("Erreur connexion"); }
         }
 
@@ -409,11 +414,18 @@
             const listAdminU = document.getElementById('listAdminUsers');
             const listOfficer = document.getElementById('listOfficerRoles');
             const listMarine = document.getElementById('listMarineRoles');
-            
-            listAdminR.innerHTML = (configData.adminRoles||[]).map(r => `<span class="badge bg-secondary">${r} <i class="fas fa-times tag-remove" onclick="removeConfig('adminRoles', '${r}')"></i></span>`).join('');
-            listAdminU.innerHTML = (configData.adminUsers||[]).map(r => `<span class="badge bg-secondary">${r} <i class="fas fa-times tag-remove" onclick="removeConfig('adminUsers', '${r}')"></i></span>`).join('');
-            listOfficer.innerHTML = (configData.officerRoles||[]).map(r => `<span class="badge bg-secondary">${r} <i class="fas fa-times tag-remove" onclick="removeConfig('officerRoles', '${r}')"></i></span>`).join('');
-            listMarine.innerHTML = (configData.marineRoles||[]).map(r => `<span class="badge bg-secondary">${r} <i class="fas fa-times tag-remove" onclick="removeConfig('marineRoles', '${r}')"></i></span>`).join('');
+            const listRegs = document.getElementById('listRegiments');
+
+            const aRoles = configData.adminRoles || [];
+            const aUsers = configData.adminUsers || [];
+            const oRoles = configData.officerRoles || [];
+            const mRoles = configData.marineRoles || [];
+            const regs = configData.regiments || [];
+
+            listAdminR.innerHTML = aRoles.map(r => `<span class="badge bg-secondary">${r} <i class="fas fa-times tag-remove" onclick="removeConfig('adminRoles', '${r}')"></i></span>`).join('');
+            listAdminU.innerHTML = aUsers.map(r => `<span class="badge bg-secondary">${r} <i class="fas fa-times tag-remove" onclick="removeConfig('adminUsers', '${r}')"></i></span>`).join('');
+            listOfficer.innerHTML = oRoles.map(r => `<span class="badge bg-secondary">${r} <i class="fas fa-times tag-remove" onclick="removeConfig('officerRoles', '${r}')"></i></span>`).join('');
+            listMarine.innerHTML = mRoles.map(r => `<span class="badge bg-secondary">${r} <i class="fas fa-times tag-remove" onclick="removeConfig('marineRoles', '${r}')"></i></span>`).join('');
 
             const regList = document.getElementById('regimentConfigList');
             regList.innerHTML = '';
@@ -465,6 +477,7 @@
             renderAdminUI();
         }
         function removeConfig(key, val) {
+            if(!configData[key]) return;
             configData[key] = configData[key].filter(item => item !== val);
             renderAdminUI();
         }
