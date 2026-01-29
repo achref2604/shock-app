@@ -22,9 +22,7 @@
         .btn-signal:hover { background-color: #d35400; box-shadow: 0 0 15px rgba(230, 126, 34, 0.5); color: white; }
 
         .card { background-color: var(--card-bg); border: 1px solid #333; box-shadow: 0 4px 6px rgba(0,0,0,0.3); }
-        /* Style de base, sera écrasé par le style en ligne pour les couleurs dynamiques */
         .card-header { border-bottom: 1px solid #333; background-color: rgba(192, 57, 43, 0.1); }
-        
         .form-control, .form-select { background-color: #222; border: 1px solid #444; color: #fff; }
         .form-control:focus, .form-select:focus { background-color: #2a2a2a; border-color: var(--shock-red); color: #fff; }
         .nav-tabs { border-bottom: 2px solid #333; }
@@ -64,8 +62,8 @@
         </header>
 
         <ul class="nav nav-tabs mb-4 justify-content-center">
-            <li class="nav-item" id="navSignalement" style="display:none;"><a class="nav-link active" href="#" onclick="changerOnglet('signalement')">⚡ Signalement Direct</a></li>
-            <li class="nav-item"><a class="nav-link" href="#" onclick="changerOnglet('encours')">📡 Mandats</a></li>
+            <li class="nav-item" id="navSignalement" style="display:none;"><a class="nav-link" href="#" onclick="changerOnglet('signalement')">⚡ Signalement Direct</a></li>
+            <li class="nav-item"><a class="nav-link active" href="#" onclick="changerOnglet('encours')">📡 Mandats</a></li>
             <li class="nav-item" id="navDelais" style="display:none;"><a class="nav-link" href="#" onclick="changerOnglet('delais')">⏳ Délais & Rappels</a></li>
             <li class="nav-item"><a class="nav-link" href="#" onclick="changerOnglet('historique')">💾 Archives</a></li>
             <li class="nav-item" id="navAdmin" style="display:none;"><a class="nav-link" href="#" onclick="changerOnglet('admin')">⚙️ Admin (Fox)</a></li>
@@ -112,7 +110,7 @@
                             </div>
                         </div>
                         <hr>
-                        <h5 class="text-center text-muted mb-3">CONFIGURATIONS DES RÉGIMENTS (Délais, Sanctions, Couleurs)</h5>
+                        <h5 class="text-center text-muted mb-3">CONFIGURATIONS DES RÉGIMENTS (Délais & Sanctions)</h5>
                         <div id="regimentConfigList" class="row g-3"></div>
                         <div class="text-end mt-4"><button onclick="saveConfig()" class="btn btn-warning fw-bold px-5">SAUVEGARDER TOUTE LA CONFIG</button></div>
                     </div>
@@ -146,7 +144,9 @@
                                 <div class="mb-2"><label class="small text-muted">SteamID64 (Facultatif)</label><input type="text" id="sigSteamID" class="form-control form-control-sm text-secondary border-secondary"></div>
                             </div>
                         </div>
-                        <div class="text-center mt-4 pt-3 border-top border-secondary"><button onclick="envoyerSignalement()" class="btn btn-signal btn-lg px-5 fw-bold">Enregistrer et Archiver</button></div>
+                        <div class="text-center mt-4 pt-3 border-top border-secondary">
+                            <button type="button" onclick="envoyerSignalement()" class="btn btn-signal btn-lg px-5 fw-bold">Enregistrer et Archiver</button>
+                        </div>
                     </div>
                 </div>
             </div>
@@ -179,8 +179,8 @@
                             </div>
                         </div>
                         <div class="text-center mt-4 pt-3 border-top border-secondary">
-                            <button id="btnSubmit" onclick="envoyerProtocole()" class="btn btn-shock btn-lg px-5">Transmettre</button>
-                            <button id="btnCancel" onclick="resetForm()" class="btn btn-outline-secondary btn-lg px-3 ms-2" style="display:none;">Annuler</button>
+                            <button type="button" id="btnSubmit" onclick="envoyerProtocole()" class="btn btn-shock btn-lg px-5">Transmettre</button>
+                            <button type="button" id="btnCancel" onclick="resetForm()" class="btn btn-outline-secondary btn-lg px-3 ms-2" style="display:none;">Annuler</button>
                         </div>
                     </div>
                 </div>
@@ -229,13 +229,9 @@
                     document.getElementById('userZone').innerHTML = `<div class="d-flex align-items-center gap-2"><img src="${data.avatar}" class="avatar"><span class="fw-bold">${data.nickname}</span>${badge}<a href="/auth/logout" class="btn btn-sm btn-outline-danger"><i class="fas fa-sign-out-alt"></i></a></div>`;
                     document.getElementById('loginWarning').style.display = 'none';
                     
-                    // --- MODIFICATION DÉMARRAGE PAR DÉFAUT ---
-                    // Si on a les droits pour voir Signalement, on va dessus, sinon Mandats
-                    if(canValidate) {
-                        changerOnglet('signalement');
-                    } else {
-                        chargerEnCours(); // Reste sur Mandats
-                    }
+                    // PAR DÉFAUT : SIGNALEMENT DIRECT
+                    if(canValidate) changerOnglet('signalement');
+                    else chargerEnCours();
 
                 } else {
                     document.getElementById('userZone').innerHTML = `<a href="/auth/discord" class="btn btn-outline-light btn-sm"><i class="fab fa-discord"></i> Connexion</a>`;
@@ -251,7 +247,6 @@
                 const res = await fetch('/api/config');
                 const data = await res.json();
                 if(data) configData = { ...configData, ...data };
-                // Ensure default structure
                 if(configData.regiments.length > 0 && typeof configData.regiments[0] === 'string') {
                     configData.regiments = configData.regiments.map(r => ({ name: r, rappelDays: 7, sanctionDays: 3, sanctionText: 'Sanction par défaut', color: '#c0392b' }));
                 }
@@ -274,7 +269,6 @@
             resetForm();
             document.querySelectorAll('.nav-link').forEach(el => el.classList.remove('active'));
             
-            // Gestion Active Tab via sélecteurs spécifiques car l'ordre a changé
             if(type === 'signalement') document.querySelector('a[onclick="changerOnglet(\'signalement\')"]').classList.add('active');
             if(type === 'encours') document.querySelector('a[onclick="changerOnglet(\'encours\')"]').classList.add('active');
             if(type === 'delais') document.querySelector('a[onclick="changerOnglet(\'delais\')"]').classList.add('active');
@@ -309,6 +303,7 @@
             }
         }
 
+        // --- AFFICHAGE DELAIS ---
         async function chargerDelais() {
             const res = await fetch('/api/protocoles'); 
             const data = await res.json();
@@ -325,14 +320,15 @@
                 const dateCreation = new Date(p.date);
                 const limitDate = new Date(dateCreation);
                 limitDate.setDate(limitDate.getDate() + regConfig.rappelDays);
+                const triggerRappel = new Date(limitDate);
+                triggerRappel.setDate(triggerRappel.getDate() + 1);
+                triggerRappel.setHours(0, 0, 0, 0);
 
-                if (now > limitDate) {
+                if (now >= triggerRappel) {
                     count++;
                     let sanctionBanner = '';
                     let deadlineText = '';
 
-                    // --- CORRECTION BUG ---
-                    // On affiche le texte de délai UNIQUEMENT si rappelDate (date du clic) existe
                     if (p.rappelDate) {
                         const datePriseEnCharge = new Date(p.rappelDate);
                         const deadline = new Date(datePriseEnCharge);
@@ -353,56 +349,61 @@
                     const retardMs = now - limitDate;
                     const retardJours = Math.floor(retardMs / (1000 * 60 * 60 * 24)) + 1;
 
-                    const btnGen = `<button class="btn btn-outline-light btn-sm w-100 mb-2" onclick="generateAndShow('${p._id}', '${p.cibleRegiment}', '${p.cibleGrade}', '${p.cibleNom}', '${p.auteurNom}', '${p.protocoleType}', '${p.raison}', '${p.details || ''}', '${p.targetSteamID || ''}', ${regConfig.sanctionDays}, '${regConfig.sanctionText}')">📄 Générer le Rapport Discord</button>`;
-
-                    let statusPriseEnCharge = p.rappelPrisEnChargeBy 
-                        ? `<div class="text-success fw-bold mt-2"><i class="fas fa-check"></i> Pris en charge par ${p.rappelPrisEnChargeBy}</div>${deadlineText}` 
-                        : `<div class="text-warning fw-bold mt-2"><i class="fas fa-clock"></i> Pas encore pris en charge</div>`;
-
-                    container.innerHTML += `
-                    <div class="col-12">
-                        <div class="card rappel-card h-100">
-                            <div class="card-header rappel-header d-flex justify-content-between align-items-center">
-                                <span>⚠️ RAPPEL NÉCESSAIRE : ${p.cibleNom}</span>
-                                <small>Retard de ${retardJours} jours</small>
-                            </div>
-                            <div class="card-body">
-                                ${sanctionBanner}
-                                <div class="row">
-                                    <div class="col-md-8">
-                                        <p><strong>Cible :</strong> ${p.cibleGrade} ${p.cibleNom} (${p.cibleRegiment})<br>
-                                        <strong>Protocole :</strong> ${p.protocoleType}<br>
-                                        <strong>Date Ordre :</strong> ${new Date(p.date).toLocaleDateString('fr-FR')}</p>
-                                        ${btnGen}
-                                        <div id="gen-${p._id}" style="display:none;">
-                                            <div class="generated-box mb-2" id="title-${p._id}" onclick="navigator.clipboard.writeText(this.innerText); alert('Titre copié !');"></div>
-                                            <div class="generated-box mb-2" id="body-${p._id}" onclick="navigator.clipboard.writeText(this.innerText); alert('Contenu copié !');"></div>
-                                            <div class="d-flex gap-2">
-                                                <button onclick="validerRappel('${p._id}')" class="btn btn-success btn-sm flex-grow-1">✅ Valider Prise en Charge</button>
-                                                <button onclick="toggleBox('${p._id}')" class="btn btn-secondary btn-sm">Annuler</button>
-                                            </div>
-                                        </div>
-                                    </div>
-                                    <div class="col-md-4 border-start border-secondary d-flex align-items-center justify-content-center flex-column">
-                                        ${statusPriseEnCharge}
-                                    </div>
-                                </div>
-                            </div>
-                        </div>
-                    </div>`;
+                    afficherRappels(container, p, regConfig, retardJours, sanctionBanner, deadlineText);
                 }
             });
             document.getElementById('compteur').innerText = `${count} rappels`;
             if(count === 0) container.innerHTML = `<div class="col-12 text-center py-5 text-muted"><h3>✅ Aucun rappel nécessaire.</h3></div>`;
         }
 
-        // --- FONCTION GESTION COULEURS ---
-        function getRegimentColor(regimentName) {
-            const reg = configData.regiments.find(r => r.name === regimentName);
-            return reg && reg.color ? reg.color : '#c0392b'; // Rouge par défaut
+        // --- RENDU CARTE RAPPEL (SÉPARÉ) ---
+        function afficherRappels(container, p, regConfig, retardJours, sanctionBanner, deadlineText) {
+            const btnGen = `<button class="btn btn-outline-light btn-sm w-100 mb-2" onclick="generateAndShow('${p._id}', '${p.cibleRegiment}', '${p.cibleGrade}', '${p.cibleNom}', '${p.auteurNom}', '${p.protocoleType}', '${p.raison}', '${p.details || ''}', '${p.targetSteamID || ''}', ${regConfig.sanctionDays}, '${regConfig.sanctionText}')">📄 Générer le Rapport Discord</button>`;
+
+            let statusPriseEnCharge = p.rappelPrisEnChargeBy 
+                ? `<div class="text-success fw-bold mt-2"><i class="fas fa-check"></i> Pris en charge par ${p.rappelPrisEnChargeBy}</div>${deadlineText}` 
+                : `<div class="text-warning fw-bold mt-2"><i class="fas fa-clock"></i> Pas encore pris en charge</div>`;
+
+            container.innerHTML += `
+            <div class="col-12">
+                <div class="card rappel-card h-100">
+                    <div class="card-header rappel-header d-flex justify-content-between align-items-center">
+                        <span>⚠️ RAPPEL NÉCESSAIRE : ${p.cibleNom}</span>
+                        <small>Retard de ${retardJours} jours</small>
+                    </div>
+                    <div class="card-body">
+                        ${sanctionBanner}
+                        <div class="row">
+                            <div class="col-md-8">
+                                <p><strong>Cible :</strong> ${p.cibleGrade} ${p.cibleNom} (${p.cibleRegiment})<br>
+                                <strong>Protocole :</strong> ${p.protocoleType}<br>
+                                <strong>Date Ordre :</strong> ${new Date(p.date).toLocaleDateString('fr-FR')}</p>
+                                ${btnGen}
+                                <div id="gen-${p._id}" style="display:none;">
+                                    <div class="generated-box mb-2" id="title-${p._id}" onclick="navigator.clipboard.writeText(this.innerText); alert('Titre copié !');"></div>
+                                    <div class="generated-box mb-2" id="body-${p._id}" onclick="navigator.clipboard.writeText(this.innerText); alert('Contenu copié !');"></div>
+                                    <div class="d-flex gap-2">
+                                        <button onclick="validerRappel('${p._id}')" class="btn btn-success btn-sm flex-grow-1">✅ Valider Prise en Charge</button>
+                                        <button onclick="toggleBox('${p._id}')" class="btn btn-secondary btn-sm">Annuler</button>
+                                    </div>
+                                </div>
+                            </div>
+                            <div class="col-md-4 border-start border-secondary d-flex align-items-center justify-content-center flex-column">
+                                ${statusPriseEnCharge}
+                            </div>
+                        </div>
+                    </div>
+                </div>
+            </div>`;
         }
 
-        function afficherCartes(data, estEnCours) {
+        // --- RENDU CARTE MANDATS (SÉPARÉ) ---
+        function getRegimentColor(regimentName) {
+            const reg = configData.regiments.find(r => r.name === regimentName);
+            return reg && reg.color ? reg.color : '#c0392b';
+        }
+
+        function afficherMandats(data, estEnCours) {
             const container = document.getElementById('listeProtocoles');
             container.innerHTML = '';
             document.getElementById('compteur').innerText = `${data.length} dossiers`;
@@ -412,9 +413,8 @@
                 const isDone = p.statut === 'Effectué';
                 const badge = isDone ? '<span class="badge badge-done rounded-pill px-3 py-2">✅ EFFECTUÉ</span>' : '<span class="badge badge-pending rounded-pill px-3 py-2">⏳ EN ATTENTE</span>';
                 
-                // COULEUR PERSONNALISÉE
                 const regColor = getRegimentColor(p.cibleRegiment);
-                const headerStyle = `background-color: ${regColor}20; border-bottom: 2px solid ${regColor};`; // 20 = Transparence hex
+                const headerStyle = `background-color: ${regColor}20; border-bottom: 2px solid ${regColor};`;
 
                 let actionButtons = '';
                 const canEdit = user.isAdmin || user.isOfficer || user.isMarine;
@@ -475,46 +475,42 @@
             });
         }
 
-        // --- GESTION ADMIN UI (MODIFIÉE POUR COULEUR) ---
-        function renderAdminUI() {
-            // ... (Codes rôles identiques)
-            const listAdminR = document.getElementById('listAdminRoles'); const listAdminU = document.getElementById('listAdminUsers'); const listOfficer = document.getElementById('listOfficerRoles'); const listMarine = document.getElementById('listMarineRoles'); listAdminR.innerHTML = (configData.adminRoles||[]).map(r => `<span class="badge bg-secondary">${r} <i class="fas fa-times tag-remove" onclick="removeConfig('adminRoles', '${r}')"></i></span>`).join(''); listAdminU.innerHTML = (configData.adminUsers||[]).map(r => `<span class="badge bg-secondary">${r} <i class="fas fa-times tag-remove" onclick="removeConfig('adminUsers', '${r}')"></i></span>`).join(''); listOfficer.innerHTML = (configData.officerRoles||[]).map(r => `<span class="badge bg-secondary">${r} <i class="fas fa-times tag-remove" onclick="removeConfig('officerRoles', '${r}')"></i></span>`).join(''); listMarine.innerHTML = (configData.marineRoles||[]).map(r => `<span class="badge bg-secondary">${r} <i class="fas fa-times tag-remove" onclick="removeConfig('marineRoles', '${r}')"></i></span>`).join('');
-
-            const regList = document.getElementById('regimentConfigList');
-            regList.innerHTML = '';
-            (configData.regiments || []).forEach((reg, index) => {
-                const currentColor = reg.color || '#c0392b';
-                regList.innerHTML += `
-                <div class="col-md-6 col-lg-4">
-                    <div class="card border-secondary h-100">
-                        <div class="card-header d-flex justify-content-between align-items-center py-2" style="border-bottom: 3px solid ${currentColor}">
-                            <span class="fw-bold">${reg.name}</span>
-                            <button class="btn btn-sm btn-outline-danger" onclick="removeRegiment(${index})">🗑️</button>
-                        </div>
-                        <div class="card-body p-2">
-                            <div class="input-group input-group-sm mb-1"><span class="input-group-text bg-dark text-white border-secondary">Rappel (j)</span><input type="number" class="form-control" value="${reg.rappelDays}" onchange="updateRegiment(${index}, 'rappelDays', this.value)"></div>
-                            <div class="input-group input-group-sm mb-1"><span class="input-group-text bg-dark text-white border-secondary">Sanction (j)</span><input type="number" class="form-control" value="${reg.sanctionDays}" onchange="updateRegiment(${index}, 'sanctionDays', this.value)"></div>
-                            <div class="input-group input-group-sm mb-2"><span class="input-group-text bg-dark text-white border-secondary">Sanction</span><input type="text" class="form-control" value="${reg.sanctionText}" onchange="updateRegiment(${index}, 'sanctionText', this.value)"></div>
-                            <div class="d-flex align-items-center gap-2">
-                                <small class="text-muted">Couleur Bandeau :</small>
-                                <input type="color" class="form-control form-control-color" value="${currentColor}" onchange="updateRegiment(${index}, 'color', this.value)" title="Choisir la couleur">
-                            </div>
-                        </div>
-                    </div>
-                </div>`;
-            });
+        async function chargerEnCours() {
+            const res = await fetch('/api/protocoles');
+            currentData = await res.json();
+            afficherMandats(currentData, true);
+        }
+        async function chargerHistorique() {
+            const res = await fetch('/api/historique');
+            currentData = await res.json();
+            afficherMandats(currentData, false);
         }
 
-        function updateRegiment(index, field, value) {
-            if(field === 'rappelDays' || field === 'sanctionDays') value = parseInt(value);
-            configData.regiments[index][field] = value;
+        // --- RESTE DU CODE (ADMIN, BUTTONS, ETC.) ---
+        
+        function generateAndShow(id, reg, grade, nom, auteur, proto, raison, details, steam, sanctionDays, sanctionText) {
+            const dateFinale = new Date();
+            dateFinale.setDate(dateFinale.getDate() + parseInt(sanctionDays));
+            const dateFinaleStr = dateFinale.toLocaleDateString('fr-FR');
+            const titlePost = `${reg} ${grade} ${nom} -> ${dateFinaleStr}`;
+            const bodyPost = `<:FlecheVert:990651262976528414> Protocole à effectuer avant le ${dateFinaleStr} sinon : ${sanctionText}\n<:FlecheVert:990651262976528414> Reçu\n\n...........................................................................\n\n- **Qui l'a ordonné :** ${auteur}\n- **Protocole :** ${proto.replace(/Protocole\s+/i, '')}\n- **Raison :** ${raison}${details ? `\n- **Détails :** ${details}` : ''}${steam ? `\n- **Steam ID :** ${steam}` : ''}`;
+            document.getElementById(`title-${id}`).innerText = titlePost;
+            document.getElementById(`body-${id}`).innerText = bodyPost;
+            toggleBox(id);
         }
 
-        function generateAndShow(id, reg, grade, nom, auteur, proto, raison, details, steam, sanctionDays, sanctionText) { const dateFinale = new Date(); dateFinale.setDate(dateFinale.getDate() + parseInt(sanctionDays)); const dateFinaleStr = dateFinale.toLocaleDateString('fr-FR'); const titlePost = `${reg} ${grade} ${nom} -> ${dateFinaleStr}`; const bodyPost = `<:FlecheVert:990651262976528414> Protocole à effectuer avant le ${dateFinaleStr} sinon : ${sanctionText}\n<:FlecheVert:990651262976528414> Reçu\n\n...........................................................................\n\n- **Qui l'a ordonné :** ${auteur}\n- **Protocole :** ${proto.replace(/Protocole\s+/i, '')}\n- **Raison :** ${raison}${details ? `\n- **Détails :** ${details}` : ''}${steam ? `\n- **Steam ID :** ${steam}` : ''}`; document.getElementById(`title-${id}`).innerText = titlePost; document.getElementById(`body-${id}`).innerText = bodyPost; toggleBox(id); }
         function toggleBox(id) { const el = document.getElementById(`gen-${id}`); el.style.display = el.style.display === 'none' ? 'block' : 'none'; }
         async function validerRappel(id) { if(!confirm("Confirmer que vous prenez en charge ce rappel sur le forum ?")) return; try { const res = await fetch(`${API_URL}/${id}/rappel`, { method: 'PUT' }); if(res.ok) chargerDelais(); } catch(e) { alert("Erreur réseau"); } }
-        async function envoyerSignalement() { const body = { validatorManualName: document.getElementById('sigShockName').value, cibleNom: document.getElementById('sigCibleNom').value, cibleGrade: document.getElementById('sigCibleGrade').value, cibleRegiment: document.getElementById('sigCibleRegiment').value, protocoleType: document.getElementById('sigProtocole').value, auteurNom: document.getElementById('sigOrderedBy').value, raison: document.getElementById('sigRaison').value, details: document.getElementById('sigDetails').value, targetSteamID: document.getElementById('sigSteamID').value }; if(!body.validatorManualName || !body.cibleNom || !body.cibleGrade || !body.cibleRegiment || !body.protocoleType || !body.raison) return alert("Champs obligatoires manquants."); try { const res = await fetch('/api/protocoles/direct', { method: 'POST', headers: { 'Content-Type': 'application/json' }, body: JSON.stringify(body) }); if(res.ok) { alert("Enregistré !"); document.querySelectorAll('#signalementPanel input, #signalementPanel textarea, #signalementPanel select').forEach(i => i.value = ''); document.querySelectorAll('.nav-link')[3].click(); } else alert("Erreur"); } catch(e) { alert("Erreur connexion"); } }
+        
+        async function envoyerSignalement() { 
+            const body = { validatorManualName: document.getElementById('sigShockName').value, cibleNom: document.getElementById('sigCibleNom').value, cibleGrade: document.getElementById('sigCibleGrade').value, cibleRegiment: document.getElementById('sigCibleRegiment').value, protocoleType: document.getElementById('sigProtocole').value, auteurNom: document.getElementById('sigOrderedBy').value, raison: document.getElementById('sigRaison').value, details: document.getElementById('sigDetails').value, targetSteamID: document.getElementById('sigSteamID').value }; 
+            if(!body.validatorManualName || !body.cibleNom || !body.cibleGrade || !body.cibleRegiment || !body.protocoleType || !body.raison) return alert("Champs obligatoires manquants."); 
+            try { const res = await fetch('/api/protocoles/direct', { method: 'POST', headers: { 'Content-Type': 'application/json' }, body: JSON.stringify(body) }); if(res.ok) { alert("Enregistré !"); document.querySelectorAll('#signalementPanel input, #signalementPanel textarea, #signalementPanel select').forEach(i => i.value = ''); document.querySelectorAll('.nav-link')[3].click(); } else alert("Erreur"); } catch(e) { alert("Erreur connexion"); } 
+        }
+        
+        function renderAdminUI() { const listAdminR = document.getElementById('listAdminRoles'); const listAdminU = document.getElementById('listAdminUsers'); const listOfficer = document.getElementById('listOfficerRoles'); const listMarine = document.getElementById('listMarineRoles'); listAdminR.innerHTML = (configData.adminRoles||[]).map(r => `<span class="badge bg-secondary">${r} <i class="fas fa-times tag-remove" onclick="removeConfig('adminRoles', '${r}')"></i></span>`).join(''); listAdminU.innerHTML = (configData.adminUsers||[]).map(r => `<span class="badge bg-secondary">${r} <i class="fas fa-times tag-remove" onclick="removeConfig('adminUsers', '${r}')"></i></span>`).join(''); listOfficer.innerHTML = (configData.officerRoles||[]).map(r => `<span class="badge bg-secondary">${r} <i class="fas fa-times tag-remove" onclick="removeConfig('officerRoles', '${r}')"></i></span>`).join(''); listMarine.innerHTML = (configData.marineRoles||[]).map(r => `<span class="badge bg-secondary">${r} <i class="fas fa-times tag-remove" onclick="removeConfig('marineRoles', '${r}')"></i></span>`).join(''); const regList = document.getElementById('regimentConfigList'); regList.innerHTML = ''; (configData.regiments || []).forEach((reg, index) => { const currentColor = reg.color || '#c0392b'; regList.innerHTML += `<div class="col-md-6 col-lg-4"><div class="card border-secondary h-100"><div class="card-header d-flex justify-content-between align-items-center py-2" style="border-bottom: 3px solid ${currentColor}"><span class="fw-bold">${reg.name}</span><button class="btn btn-sm btn-outline-danger" onclick="removeRegiment(${index})">🗑️</button></div><div class="card-body p-2"><div class="input-group input-group-sm mb-1"><span class="input-group-text bg-dark text-white border-secondary">Rappel (j)</span><input type="number" class="form-control" value="${reg.rappelDays}" onchange="updateRegiment(${index}, 'rappelDays', this.value)"></div><div class="input-group input-group-sm mb-1"><span class="input-group-text bg-dark text-white border-secondary">Sanction (j)</span><input type="number" class="form-control" value="${reg.sanctionDays}" onchange="updateRegiment(${index}, 'sanctionDays', this.value)"></div><div class="input-group input-group-sm mb-2"><span class="input-group-text bg-dark text-white border-secondary">Sanction</span><input type="text" class="form-control" value="${reg.sanctionText}" onchange="updateRegiment(${index}, 'sanctionText', this.value)"></div><div class="d-flex align-items-center gap-2"><small class="text-muted">Couleur Bandeau :</small><input type="color" class="form-control form-control-color" value="${currentColor}" onchange="updateRegiment(${index}, 'color', this.value)" title="Choisir la couleur"></div></div></div></div>`; }); }
         function addNewRegiment() { const name = document.getElementById('newRegimentName').value.trim(); if(!name) return; if(!configData.regiments) configData.regiments = []; configData.regiments.push({ name: name, rappelDays: 7, sanctionDays: 3, sanctionText: 'Arrêts', color: '#c0392b' }); document.getElementById('newRegimentName').value = ''; renderAdminUI(); }
+        function updateRegiment(index, field, value) { if(field === 'rappelDays' || field === 'sanctionDays') value = parseInt(value); configData.regiments[index][field] = value; }
         function removeRegiment(index) { if(!confirm("Supprimer ce régiment ?")) return; configData.regiments.splice(index, 1); renderAdminUI(); }
         function addConfig(key) { let inputId = (key==='adminRoles')?'newAdminRole':(key==='adminUsers')?'newAdminUser':(key==='officerRoles')?'newOfficerRole':'newMarineRole'; const val = document.getElementById(inputId).value.trim(); if(!val) return; if(!configData[key]) configData[key] = []; configData[key].push(val); document.getElementById(inputId).value = ''; renderAdminUI(); }
         function removeConfig(key, val) { configData[key] = configData[key].filter(item => item !== val); renderAdminUI(); }
@@ -525,7 +521,6 @@
         async function valider(id) { const validatorName = prompt("Veuillez entrer votre Matricule + Nom pour confirmer l'archivage :"); if (validatorName === null || validatorName.trim() === "") return; try { const res = await fetch(`${API_URL}/${id}/valider`, { method: 'PUT', headers: { 'Content-Type': 'application/json' }, body: JSON.stringify({ validatorName: validatorName }) }); if(res.ok) chargerEnCours(); else alert("Erreur validation"); } catch(e) { alert("Erreur connexion"); } }
         async function restaurer(id) { const temps = prompt("Temps restant ?"); const res = await fetch(`${API_URL}/${id}/restaurer`, { method: 'PUT', headers: { 'Content-Type': 'application/json' }, body: JSON.stringify({ tempsRestant: temps }) }); if(res.ok) chargerHistorique(); else alert("Permission refusée"); }
         async function supprimer(id) { if(!confirm("⚠️ SUPPRESSION DÉFINITIVE ⚠️")) return; try { const res = await fetch(`${API_URL}/${id}`, { method: 'DELETE' }); if(res.ok) { const activeTab = document.querySelector('.nav-link.active').getAttribute('onclick'); if(activeTab.includes('encours')) chargerEnCours(); else chargerHistorique(); } else alert("Erreur : Seul l'Admin peut supprimer."); } catch(e) { alert("Erreur serveur"); } }
-        
         init();
     </script>
 </body>
