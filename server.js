@@ -11,8 +11,8 @@ const { google } = require('googleapis');
 
 const app = express();
 
-// --- CORRECTION CRITIQUE 1 : Faire confiance au Proxy Render ---
-app.set('trust proxy', 1); 
+// --- 1. CONFIGURATION PROXY (CRITIQUE POUR RENDER & MOBILE) ---
+app.set('trust proxy', 1);
 
 // --- CONFIGURATION ---
 const MONGO_URI = process.env.MONGO_URI;
@@ -36,10 +36,12 @@ const googleAuth = new google.auth.GoogleAuth({
 const SUPER_ADMIN_USERS = ['517350911647940611']; 
 const SUPER_ADMIN_ROLES = ['1313599623004160082'];
 
+// --- CONNEXION DB ---
 mongoose.connect(MONGO_URI, { useNewUrlParser: true, useUnifiedTopology: true })
     .then(() => console.log("✅ Connecté à MongoDB"))
     .catch(err => console.error("❌ Erreur MongoDB:", err));
 
+// --- SCHEMAS ---
 const ConfigSchema = new mongoose.Schema({
     adminRoles: [String], adminUsers: [String], officerRoles: [String], marineRoles: [String], 
     regiments: [{ 
@@ -71,11 +73,12 @@ const ProtocoleSchema = new mongoose.Schema({
 });
 const Protocole = mongoose.model('Protocole', ProtocoleSchema);
 
+// --- MIDDLEWARES ---
 app.use(cors());
 app.use(bodyParser.json());
 app.use(express.static('public'));
 
-// --- CORRECTION CRITIQUE 2 : Configuration Session ---
+// --- SESSION SECURISÉE ---
 app.use(session({
     secret: SESSION_SECRET, 
     resave: false, 
@@ -83,9 +86,9 @@ app.use(session({
     proxy: true, // IMPORTANT
     store: MongoStore.create({ mongoUrl: MONGO_URI }), 
     cookie: { 
-        maxAge: 1000 * 60 * 60 * 24 * 7,
-        secure: true, 
-        sameSite: 'none', 
+        maxAge: 1000 * 60 * 60 * 24 * 7, 
+        secure: true, // HTTPS Requis
+        sameSite: 'none', // Auth Cross-site
         httpOnly: true
     }
 }));
@@ -111,19 +114,13 @@ passport.use(new DiscordStrategy({
         }
         return done(null, profile);
     } catch (error) { 
-        console.error("❌ ERREUR STRATEGIE DISCORD:", error);
+        console.error("Auth Error:", error);
         return done(null, profile); 
     }
 }));
 
-// --- Middleware de Debug ---
-app.use((err, req, res, next) => {
-    console.error("🔥 ERREUR INTERNE SERVEUR :", err.stack);
-    res.status(500).send('Erreur serveur. Regarde les logs Render.');
-});
-
 // ============================================================
-//  FONCTIONS DE SÉCURITÉ (DÉPLACÉES ICI - AVANT LES ROUTES)
+//  !!! FONCTIONS DE SÉCURITÉ DÉPLACÉES ICI (AVANT LES ROUTES) !!!
 // ============================================================
 
 async function getPermissions(user) {
@@ -131,6 +128,8 @@ async function getPermissions(user) {
     const isAdmin = SUPER_ADMIN_USERS.includes(user.id) || user.roles.some(r => SUPER_ADMIN_ROLES.includes(r));
     if (isAdmin) return { isAdmin: true, isOfficer: true, isMarine: true };
     const config = await Config.findOne();
+    if (!config) return { isAdmin: false, isOfficer: false, isMarine: false };
+
     const isAdminDB = config.adminUsers.includes(user.id) || user.roles.some(r => config.adminRoles.includes(r));
     if (isAdminDB) return { isAdmin: true, isOfficer: true, isMarine: true };
     const isOfficer = user.roles.some(r => config.officerRoles.includes(r));
@@ -144,14 +143,16 @@ const checkAdmin = async (req, res, next) => {
 };
 
 const checkEdit = async (req, res, next) => { 
+    if (!req.isAuthenticated()) return res.status(401).json({ message: "Non connecté" });
     const perms = await getPermissions(req.user);
-    if (req.isAuthenticated() && (perms.isAdmin || perms.isOfficer || perms.isMarine)) return next(); 
+    if (perms.isAdmin || perms.isOfficer || perms.isMarine) return next(); 
     res.status(403).json({ message: "Accès refusé." }); 
 };
 
 const checkValidate = async (req, res, next) => { 
+    if (!req.isAuthenticated()) return res.status(401).json({ message: "Non connecté" });
     const perms = await getPermissions(req.user);
-    if (req.isAuthenticated() && (perms.isAdmin || perms.isOfficer)) return next(); 
+    if (perms.isAdmin || perms.isOfficer) return next(); 
     res.status(403).json({ message: "Officiers Only." }); 
 };
 
@@ -181,17 +182,18 @@ async function sendToGoogleSheet(protocole, shockName) {
 }
 
 // ============================================================
-//  ROUTES (MAINTENANT ELLES PEUVENT UTILISER checkAdmin)
+//  ROUTES
 // ============================================================
 
 app.get('/auth/discord', passport.authenticate('discord'));
 
 app.get('/auth/discord/callback', (req, res, next) => {
     passport.authenticate('discord', { failureRedirect: '/' }, (err, user, info) => {
-        if (err) return next(err);
-        if (!user) return res.redirect('/');
+        if (err) { console.error("Passport Err:", err); return next(err); }
+        if (!user) { console.error("No User returned"); return res.redirect('/'); }
         req.logIn(user, (err) => {
-            if (err) return next(err);
+            if (err) { console.error("Login Err:", err); return next(err); }
+            console.log("✅ Session OK : " + user.username);
             return res.redirect('/');
         });
     })(req, res, next);
