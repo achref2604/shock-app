@@ -290,6 +290,7 @@
         }
 
         // --- LOGIQUE DELAIS & RAPPELS ---
+        // --- LOGIQUE DELAIS & RAPPELS ---
         async function chargerDelais() {
             const res = await fetch('/api/protocoles'); // On récupère ceux en cours
             const data = await res.json();
@@ -312,12 +313,15 @@
                 // Si on a dépassé la date limite
                 if (now > limitDate) {
                     count++;
-                    const dateSanction = new Date(); // Date du clic (maintenant)
+                    
+                    // Calcul de la Date Limite (Date du jour + Délai sanction)
+                    const dateSanction = new Date(); 
                     dateSanction.setDate(dateSanction.getDate() + regConfig.sanctionDays);
                     const dateSanctionStr = dateSanction.toLocaleDateString('fr-FR');
 
-                    // Construction du texte Discord
-                    const titlePost = `${p.cibleRegiment} ${p.cibleGrade} ${p.cibleNom} -> ${new Date().toLocaleDateString('fr-FR')} + ${regConfig.sanctionDays}j`;
+                    // MODIFICATION ICI : On met directement la date calculée dans le titre
+                    const titlePost = `${p.cibleRegiment} ${p.cibleGrade} ${p.cibleNom} -> ${dateSanctionStr}`;
+                    
                     const bodyPost = `<:FlecheVert:990651262976528414> Protocole à effectuer avant le ${dateSanctionStr} sinon : ${regConfig.sanctionText}\n<:FlecheVert:990651262976528414> Reçu\n\n...........................................................................\n\n- **Qui l'a ordonné :** ${p.auteurNom}\n- **Protocole :** ${p.protocoleType.replace(/Protocole\s+/i, '')}\n- **Raison :** ${p.raison}${p.details ? `\n- **Détails :** ${p.details}` : ''}${p.targetSteamID ? `\n- **Steam ID :** ${p.targetSteamID}` : ''}`;
 
                     let statusPriseEnCharge = p.rappelPrisEnChargeBy 
