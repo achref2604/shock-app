@@ -18,8 +18,8 @@ const CALLBACK_URL = process.env.DISCORD_CALLBACK_URL;
 const SESSION_SECRET = process.env.SESSION_SECRET || 'secretSuperShock';
 const ALLOWED_GUILD_ID = process.env.ALLOWED_GUILD_ID;
 
-const SUPER_ADMIN_USERS = ['517350911647940611']; 
-const SUPER_ADMIN_ROLES = ['1313599623004160082'];
+// LE PROPRIÉTAIRE (Toi) - Indéboulonnable
+const OWNER_ID = '517350911647940611';
 
 // --- BASE DE DONNÉES ---
 mongoose.connect(MONGO_URI, { useNewUrlParser: true, useUnifiedTopology: true })
@@ -27,6 +27,8 @@ mongoose.connect(MONGO_URI, { useNewUrlParser: true, useUnifiedTopology: true })
     .catch(err => console.error("❌ Erreur MongoDB:", err));
 
 const ConfigSchema = new mongoose.Schema({
+    adminRoles: [String],   // NOUVEAU : Rôles qui donnent les droits Admin
+    adminUsers: [String],   // NOUVEAU : ID Utilisateurs spécifiques qui sont Admin
     officerRoles: [String], 
     marineRoles: [String],  
     regiments: [String]     
@@ -36,35 +38,33 @@ const Config = mongoose.model('Config', ConfigSchema);
 async function initConfig() {
     const exists = await Config.findOne();
     if (!exists) {
-        await new Config({ officerRoles: [], marineRoles: [], regiments: ['Shock', '501st'] }).save();
+        await new Config({ 
+            adminRoles: [], 
+            adminUsers: [], 
+            officerRoles: [], 
+            marineRoles: [], 
+            regiments: ['Shock', '501st'] 
+        }).save();
     }
 }
 initConfig();
 
 const ProtocoleSchema = new mongoose.Schema({
-    // Créateur
     auteurNom: String,
     discordUser: String,
     discordNick: String,
     discordId: String,
-    
-    // Cible
     cibleNom: String,
     cibleGrade: String,
     cibleRegiment: String,
     targetSteamID: String,
-    
-    // Détails
     protocoleType: String,
     raison: String,
     details: String,
     tempsRestant: String,
-    
-    // NOUVEAU : Validateur (Celui qui clique sur Confirmer/Effectué)
     validatorUser: String,
     validatorNick: String,
     validatorId: String,
-
     statut: { type: String, default: 'En Attente' },
     date: { type: Date, default: Date.now }
 });
@@ -110,18 +110,24 @@ passport.use(new DiscordStrategy({
     }
 }));
 
-// --- PERMISSIONS ---
+// --- PERMISSIONS (Logique mise à jour) ---
 async function getPermissions(user) {
-    if (!user || !user.roles) return { isAdmin: false, isOfficer: false, isMarine: false };
+    if (!user || !user.roles) return { isOwner: false, isAdmin: false, isOfficer: false, isMarine: false };
     
-    const isAdmin = SUPER_ADMIN_USERS.includes(user.id) || user.roles.some(r => SUPER_ADMIN_ROLES.includes(r));
-    if (isAdmin) return { isAdmin: true, isOfficer: true, isMarine: true };
+    // 1. Check PROPRIÉTAIRE (Hardcodé) - A tous les droits
+    if (user.id === OWNER_ID) return { isOwner: true, isAdmin: true, isOfficer: true, isMarine: true };
 
+    // 2. Check DB Config
     const config = await Config.findOne();
+    
+    // Est-ce un Admin (via Role ou ID User) ?
+    const isAdmin = config.adminUsers.includes(user.id) || user.roles.some(r => config.adminRoles.includes(r));
+    if (isAdmin) return { isOwner: false, isAdmin: true, isOfficer: true, isMarine: true };
+
     const isOfficer = user.roles.some(r => config.officerRoles.includes(r));
     const isMarine = user.roles.some(r => config.marineRoles.includes(r));
 
-    return { isAdmin: false, isOfficer: isOfficer, isMarine: isMarine };
+    return { isOwner: false, isAdmin: false, isOfficer: isOfficer, isMarine: isMarine };
 }
 
 const checkAdmin = async (req, res, next) => {
@@ -129,7 +135,7 @@ const checkAdmin = async (req, res, next) => {
         const perms = await getPermissions(req.user);
         if (perms.isAdmin) return next();
     }
-    res.status(403).json({ message: "Réservé à 1010 Fox." });
+    res.status(403).json({ message: "Réservé aux Admins (Fox)." });
 };
 
 const checkEdit = async (req, res, next) => {
@@ -164,6 +170,7 @@ app.get('/auth/user', async (req, res) => {
             username: req.user.username,
             nickname: req.user.serverNick,
             avatar: `https://cdn.discordapp.com/avatars/${req.user.id}/${req.user.avatar}.png`,
+            isOwner: perms.isOwner,
             isAdmin: perms.isAdmin,
             isOfficer: perms.isOfficer,
             isMarine: perms.isMarine
@@ -202,16 +209,13 @@ app.put('/api/protocoles/:id', checkEdit, async (req, res) => {
     } catch (error) { res.status(500).json({ error: "Erreur serveur" }); }
 });
 
-// ROUTE VALIDATION MODIFIÉE (Enregistre le validateur)
 app.put('/api/protocoles/:id/valider', checkValidate, async (req, res) => {
-    // On met à jour le statut ET on enregistre qui l'a fait
     const updateData = {
         statut: 'Effectué',
         validatorUser: req.user.username,
         validatorNick: req.user.serverNick,
         validatorId: req.user.id
     };
-
     await Protocole.findByIdAndUpdate(req.params.id, updateData);
     
     const historique = await Protocole.find({ statut: 'Effectué' }).sort({ date: -1 });
@@ -224,7 +228,6 @@ app.put('/api/protocoles/:id/valider', checkValidate, async (req, res) => {
 
 app.put('/api/protocoles/:id/restaurer', checkValidate, async (req, res) => {
     const { tempsRestant } = req.body;
-    // Quand on restaure, on enlève les infos du validateur car ce n'est plus "fait"
     let updateData = { 
         statut: 'En Attente', 
         date: Date.now(),
