@@ -37,29 +37,15 @@ mongoose.connect(MONGO_URI, { useNewUrlParser: true, useUnifiedTopology: true })
     .then(() => console.log("✅ Connecté à MongoDB"))
     .catch(err => console.error("❌ Erreur MongoDB:", err));
 
-// MODIFICATION CONFIG SCHEMA : Regiments devient un tableau d'objets
 const ConfigSchema = new mongoose.Schema({
-    adminRoles: [String], 
-    adminUsers: [String], 
-    officerRoles: [String], 
-    marineRoles: [String],  
-    regiments: [{
-        name: String,
-        rappelDays: { type: Number, default: 7 },
-        sanctionDays: { type: Number, default: 3 },
-        sanctionText: { type: String, default: "Sanction par défaut" }
-    }]     
+    adminRoles: [String], adminUsers: [String], officerRoles: [String], marineRoles: [String], 
+    regiments: [{ name: String, rappelDays: { type: Number, default: 7 }, sanctionDays: { type: Number, default: 3 }, sanctionText: { type: String, default: "Sanction par défaut" } }]     
 });
 const Config = mongoose.model('Config', ConfigSchema);
 
 async function initConfig() {
     const exists = await Config.findOne();
-    if (!exists) {
-        await new Config({ 
-            adminRoles: [], adminUsers: [], officerRoles: [], marineRoles: [], 
-            regiments: [{ name: 'Shock', rappelDays: 7, sanctionDays: 3, sanctionText: 'Arrêts' }] 
-        }).save();
-    }
+    if (!exists) { await new Config({ adminRoles: [], adminUsers: [], officerRoles: [], marineRoles: [], regiments: [{ name: 'Shock', rappelDays: 7, sanctionDays: 3, sanctionText: 'Arrêts' }] }).save(); }
 }
 initConfig();
 
@@ -70,8 +56,9 @@ const ProtocoleSchema = new mongoose.Schema({
     protocoleType: String, raison: String, details: String, tempsRestant: String,
     validatorUser: String, validatorNick: String, validatorId: String, validatorManualName: String,
     
-    // NOUVEAU : Qui a pris en charge le rappel
+    // --- NOUVEAUX CHAMPS RAPPEL ---
     rappelPrisEnChargeBy: String, 
+    rappelDate: Date, // Date à laquelle le Shock a validé le rappel
 
     statut: { type: String, default: 'En Attente' },
     date: { type: Date, default: Date.now }
@@ -225,17 +212,21 @@ app.put('/api/protocoles/:id/valider', checkValidate, async (req, res) => {
 
 app.put('/api/protocoles/:id/restaurer', checkValidate, async (req, res) => {
     const { tempsRestant } = req.body;
-    let updateData = { statut: 'En Attente', date: Date.now(), validatorUser: null, validatorNick: null, validatorId: null, validatorManualName: null, rappelPrisEnChargeBy: null };
+    // On reset aussi les infos de rappel
+    let updateData = { statut: 'En Attente', date: Date.now(), validatorUser: null, validatorNick: null, validatorId: null, validatorManualName: null, rappelPrisEnChargeBy: null, rappelDate: null };
     if (tempsRestant) updateData.tempsRestant = tempsRestant;
     await Protocole.findByIdAndUpdate(req.params.id, updateData);
     res.json({ message: "OK" });
 });
 
-// NOUVELLE ROUTE : PRISE EN CHARGE RAPPEL
+// ROUTE PRISE EN CHARGE RAPPEL (MODIFIÉE)
 app.put('/api/protocoles/:id/rappel', checkValidate, async (req, res) => {
-    // On sauvegarde le pseudo discord de celui qui clique
     const takenBy = `${req.user.serverNick} (${req.user.username})`;
-    await Protocole.findByIdAndUpdate(req.params.id, { rappelPrisEnChargeBy: takenBy });
+    // On enregistre la DATE de la prise en charge (Date.now())
+    await Protocole.findByIdAndUpdate(req.params.id, { 
+        rappelPrisEnChargeBy: takenBy,
+        rappelDate: Date.now() 
+    });
     res.json({ message: "OK", takenBy });
 });
 
