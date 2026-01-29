@@ -11,6 +11,10 @@ const { google } = require('googleapis');
 
 const app = express();
 
+// --- CORRECTION CRITIQUE POUR RENDER (Erreur 500) ---
+app.set('trust proxy', 1); 
+// ----------------------------------------------------
+
 // --- CONFIGURATION ---
 const MONGO_URI = process.env.MONGO_URI;
 const CLIENT_ID = process.env.DISCORD_CLIENT_ID;
@@ -71,10 +75,19 @@ const Protocole = mongoose.model('Protocole', ProtocoleSchema);
 app.use(cors());
 app.use(bodyParser.json());
 app.use(express.static('public'));
+
 app.use(session({
-    secret: SESSION_SECRET, resave: false, saveUninitialized: false,
-    store: MongoStore.create({ mongoUrl: MONGO_URI }), cookie: { maxAge: 1000 * 60 * 60 * 24 * 7 }
+    secret: SESSION_SECRET, 
+    resave: false, 
+    saveUninitialized: false,
+    store: MongoStore.create({ mongoUrl: MONGO_URI }), 
+    cookie: { 
+        maxAge: 1000 * 60 * 60 * 24 * 7,
+        secure: true, // Important pour Render avec trust proxy
+        sameSite: 'none' // Aide pour les iframes/mobiles parfois
+    }
 }));
+
 app.use(passport.initialize());
 app.use(passport.session());
 
@@ -91,7 +104,10 @@ passport.use(new DiscordStrategy({
             profile.serverNick = response.data.nick || response.data.user.username;
         }
         return done(null, profile);
-    } catch (error) { return done(null, profile); }
+    } catch (error) { 
+        console.error("❌ Erreur Auth Discord:", error.message); // Log pour débug
+        return done(null, profile); 
+    }
 }));
 
 async function getPermissions(user) {
