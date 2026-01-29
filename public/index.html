@@ -60,6 +60,28 @@
             <div class="card border-warning">
                 <div class="card-header text-center text-warning fw-bold py-3">CONFIGURATION SYSTÈME (ADMIN ONLY)</div>
                 <div class="card-body p-4">
+                    <div class="admin-section" style="border-color: #f1c40f;">
+                        <h5>👑 Admins (Commandants) - Par Rôle</h5>
+                        <p class="small text-muted">Ont accès à ce panneau.</p>
+                        <div class="d-flex gap-2 mb-2">
+                            <input type="text" id="newAdminRole" class="form-control form-control-sm" placeholder="ID Rôle">
+                            <button onclick="addConfig('adminRoles')" class="btn btn-sm btn-success">Ajouter</button>
+                        </div>
+                        <div id="listAdminRoles" class="d-flex flex-wrap gap-2"></div>
+                    </div>
+
+                    <div class="admin-section" style="border-color: #f1c40f;">
+                        <h5>👑 Admins (Commandants) - Par ID Utilisateur</h5>
+                        <p class="small text-muted">Pour donner les pleins droits à une personne spécifique.</p>
+                        <div class="d-flex gap-2 mb-2">
+                            <input type="text" id="newAdminUser" class="form-control form-control-sm" placeholder="ID Discord User">
+                            <button onclick="addConfig('adminUsers')" class="btn btn-sm btn-success">Ajouter</button>
+                        </div>
+                        <div id="listAdminUsers" class="d-flex flex-wrap gap-2"></div>
+                    </div>
+
+                    <hr>
+
                     <div class="admin-section">
                         <h5>👮 Rôles Officiers (Accès Total)</h5>
                         <div class="d-flex gap-2 mb-2">
@@ -68,6 +90,7 @@
                         </div>
                         <div id="listOfficerRoles" class="d-flex flex-wrap gap-2"></div>
                     </div>
+
                     <div class="admin-section">
                         <h5>🔫 Rôles Marines (Accès Restreint)</h5>
                         <div class="d-flex gap-2 mb-2">
@@ -76,6 +99,7 @@
                         </div>
                         <div id="listMarineRoles" class="d-flex flex-wrap gap-2"></div>
                     </div>
+
                     <div class="admin-section">
                         <h5>🏴 Régiments</h5>
                         <div class="d-flex gap-2 mb-2">
@@ -84,6 +108,7 @@
                         </div>
                         <div id="listRegiments" class="d-flex flex-wrap gap-2"></div>
                     </div>
+
                     <div class="text-end">
                         <button onclick="saveConfig()" class="btn btn-warning fw-bold">Sauvegarder la Configuration</button>
                     </div>
@@ -122,9 +147,9 @@
                                 <div class="col-6"><label class="small text-muted">Temps (Opt.)</label><input type="text" id="tempsRestant" class="form-control border-warning text-warning"></div>
                             </div>
                             <div class="mb-2"><label class="small text-muted">Raison*</label><input type="text" id="raison" class="form-control"></div>
-                            <div class="mb-2"><input type="text" id="steamid" class="form-control form-control-sm text-secondary border-secondary" placeholder="SteamID64 (Facultatif)"></div>
                             <h5 class="text-muted mb-2 mt-4">Détails</h5>
-                            <textarea id="details" class="form-control" rows="4"></textarea>
+                            <textarea id="details" class="form-control mb-3" rows="4"></textarea>
+                            <input type="text" id="steamid" class="form-control form-control-sm text-secondary border-secondary" placeholder="SteamID64 (Facultatif)">
                         </div>
                     </div>
                     <div class="text-center mt-4 pt-3 border-top border-secondary">
@@ -148,8 +173,9 @@
     <script>
         const API_URL = '/api/protocoles';
         
+        // Initialisation avec des tableaux vides par défaut pour éviter les bugs si la DB est vide
         let currentData = [];
-        let configData = { officerRoles: [], marineRoles: [], regiments: [] };
+        let configData = { adminRoles: [], adminUsers: [], officerRoles: [], marineRoles: [], regiments: [] };
         let editingId = null; 
         
         let user = { connecte: false, id: null, isAdmin: false, isOfficer: false, isMarine: false };
@@ -205,9 +231,19 @@
         async function fetchConfig() {
             try {
                 const res = await fetch('/api/config');
-                configData = await res.json();
+                const data = await res.json();
+                // On fusionne avec des tableaux vides pour garantir que rien n'est "undefined"
+                if(data) {
+                    configData = {
+                        adminRoles: data.adminRoles || [],
+                        adminUsers: data.adminUsers || [],
+                        officerRoles: data.officerRoles || [],
+                        marineRoles: data.marineRoles || [],
+                        regiments: data.regiments || []
+                    };
+                }
                 renderRegimentsSelect();
-            } catch(e) {}
+            } catch(e) { console.error("Config non chargée", e); }
         }
 
         function renderRegimentsSelect() {
@@ -255,28 +291,45 @@
         }
 
         function renderAdminUI() {
+            const listAdminR = document.getElementById('listAdminRoles');
+            const listAdminU = document.getElementById('listAdminUsers');
             const listOfficer = document.getElementById('listOfficerRoles');
             const listMarine = document.getElementById('listMarineRoles');
             const listRegs = document.getElementById('listRegiments');
 
-            listOfficer.innerHTML = configData.officerRoles.map(r => `<span class="badge bg-secondary">${r} <i class="fas fa-times tag-remove" onclick="removeConfig('officerRoles', '${r}')"></i></span>`).join('');
-            listMarine.innerHTML = configData.marineRoles.map(r => `<span class="badge bg-secondary">${r} <i class="fas fa-times tag-remove" onclick="removeConfig('marineRoles', '${r}')"></i></span>`).join('');
-            listRegs.innerHTML = configData.regiments.map(r => `<span class="badge bg-secondary">${r} <i class="fas fa-times tag-remove" onclick="removeConfig('regiments', '${r}')"></i></span>`).join('');
+            // Sécurité pour éviter erreur si array vide
+            const aRoles = configData.adminRoles || [];
+            const aUsers = configData.adminUsers || [];
+            const oRoles = configData.officerRoles || [];
+            const mRoles = configData.marineRoles || [];
+            const regs = configData.regiments || [];
+
+            listAdminR.innerHTML = aRoles.map(r => `<span class="badge bg-secondary">${r} <i class="fas fa-times tag-remove" onclick="removeConfig('adminRoles', '${r}')"></i></span>`).join('');
+            listAdminU.innerHTML = aUsers.map(r => `<span class="badge bg-secondary">${r} <i class="fas fa-times tag-remove" onclick="removeConfig('adminUsers', '${r}')"></i></span>`).join('');
+            listOfficer.innerHTML = oRoles.map(r => `<span class="badge bg-secondary">${r} <i class="fas fa-times tag-remove" onclick="removeConfig('officerRoles', '${r}')"></i></span>`).join('');
+            listMarine.innerHTML = mRoles.map(r => `<span class="badge bg-secondary">${r} <i class="fas fa-times tag-remove" onclick="removeConfig('marineRoles', '${r}')"></i></span>`).join('');
+            listRegs.innerHTML = regs.map(r => `<span class="badge bg-secondary">${r} <i class="fas fa-times tag-remove" onclick="removeConfig('regiments', '${r}')"></i></span>`).join('');
         }
 
         function addConfig(key) {
             let inputId = '';
+            if(key === 'adminRoles') inputId = 'newAdminRole';
+            if(key === 'adminUsers') inputId = 'newAdminUser';
             if(key === 'officerRoles') inputId = 'newOfficerRole';
             if(key === 'marineRoles') inputId = 'newMarineRole';
             if(key === 'regiments') inputId = 'newRegiment';
+            
             const val = document.getElementById(inputId).value.trim();
             if(!val) return;
+            
+            if(!configData[key]) configData[key] = [];
             configData[key].push(val);
             document.getElementById(inputId).value = '';
             renderAdminUI();
         }
 
         function removeConfig(key, val) {
+            if(!configData[key]) return;
             configData[key] = configData[key].filter(item => item !== val);
             renderAdminUI();
         }
@@ -353,10 +406,8 @@
                 const steamInfo = p.targetSteamID ? `<small class="text-muted d-block mt-1" style="font-size:0.7rem">${p.targetSteamID}</small>` : '';
                 const dateStr = new Date(p.date).toLocaleString().slice(0, -3);
 
-                // AFFICHAGE DU VALIDATEUR
                 let validatorInfo = '';
                 if (p.statut === 'Effectué') {
-                    // On utilise d'abord le nom manuel si dispo, sinon le nom Discord
                     const vName = p.validatorManualName || (p.validatorNick || p.validatorUser);
                     if (vName) {
                         validatorInfo = `<div class="mt-2 small text-success border-top border-secondary pt-1"><i class="fas fa-check-circle"></i> Traité par : ${vName}</div>`;
@@ -507,14 +558,9 @@
             } catch(e) { alert("Erreur réseau"); }
         }
 
-        // --- NOUVEAU VALIDATION AVEC PROMPT ---
         async function valider(id) {
             const validatorName = prompt("Veuillez entrer votre Matricule + Nom pour confirmer l'archivage :");
-            
-            // Si l'utilisateur clique sur Annuler ou laisse vide, on arrête
-            if (validatorName === null || validatorName.trim() === "") {
-                return; 
-            }
+            if (validatorName === null || validatorName.trim() === "") return;
 
             try {
                 const res = await fetch(`${API_URL}/${id}/valider`, {
@@ -522,15 +568,9 @@
                     headers: { 'Content-Type': 'application/json' },
                     body: JSON.stringify({ validatorName: validatorName })
                 });
-                
-                if(res.ok) {
-                    chargerEnCours();
-                } else {
-                    alert("Erreur lors de la validation.");
-                }
-            } catch(e) {
-                alert("Erreur de connexion.");
-            }
+                if(res.ok) chargerEnCours();
+                else alert("Erreur validation");
+            } catch(e) { alert("Erreur connexion"); }
         }
 
         async function restaurer(id) {
