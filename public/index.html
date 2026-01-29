@@ -29,9 +29,6 @@
         .avatar { width: 40px; height: 40px; border-radius: 50%; border: 2px solid var(--shock-red); }
         .admin-section { border-left: 2px solid var(--shock-red); padding-left: 15px; margin-bottom: 20px; }
         .tag-remove { cursor: pointer; color: #e74c3c; margin-left: 5px; }
-        
-        /* Utilitaires de texte */
-        .ls-1 { letter-spacing: 1px; font-weight: 600; font-size: 0.75rem; }
     </style>
 </head>
 <body class="container py-5">
@@ -324,7 +321,6 @@
                 let actionButtons = '';
                 const canEdit = user.isAdmin || user.isOfficer || user.isMarine;
                 const canValidate = user.isAdmin || user.isOfficer;
-                
                 const isAuthor = (p.discordId === user.id);
                 const canModify = user.isAdmin || isAuthor;
 
@@ -356,7 +352,16 @@
                 const steamInfo = p.targetSteamID ? `<small class="text-muted d-block mt-1" style="font-size:0.7rem">${p.targetSteamID}</small>` : '';
                 const dateStr = new Date(p.date).toLocaleString().slice(0, -3);
 
-                // --- MODIFICATION ICI : Réorganisation de l'affichage ---
+                // --- INFO VALIDATEUR (ARCHIVES) ---
+                let validatorInfo = '';
+                if (p.statut === 'Effectué' && (p.validatorNick || p.validatorUser)) {
+                    let vName = p.validatorNick || p.validatorUser;
+                    if (p.validatorNick && p.validatorUser && p.validatorNick !== p.validatorUser) {
+                        vName = `${p.validatorNick} (${p.validatorUser})`;
+                    }
+                    validatorInfo = `<div class="mt-2 small text-success border-top border-secondary pt-1"><i class="fas fa-check-circle"></i> Traité par : ${vName}</div>`;
+                }
+
                 container.innerHTML += `
                 <div class="col-12" style="${estEnCours ? '' : 'opacity:0.8; filter:grayscale(20%);'}">
                     <div class="card h-100">
@@ -370,21 +375,18 @@
                         <div class="card-body">
                             <div class="row">
                                 <div class="col-md-9">
-                                    
                                     <div class="mb-2">
                                         <div class="p-2 bg-dark rounded border border-secondary">
                                             <small class="text-muted d-block ls-1">SANCTION</small>
                                             <span class="fw-bold text-danger">${p.protocoleType}</span>
                                         </div>
                                     </div>
-
                                     <div class="mb-2">
                                         <div class="p-2 bg-dark rounded border border-danger">
                                             <small class="text-muted d-block ls-1">RAISON</small>
                                             <span class="text-light">${p.raison}</span>
                                         </div>
                                     </div>
-
                                     ${p.details ? `
                                     <div class="mb-2">
                                         <div class="p-2 bg-dark rounded border border-warning">
@@ -392,13 +394,13 @@
                                             <span class="text-light">${p.details}</span>
                                         </div>
                                     </div>` : ''}
-
                                     ${timeAlert}
                                 </div>
                                 <div class="col-md-3 border-start border-secondary ps-4 d-flex flex-column justify-content-center">
                                     <div class="small text-muted mb-1">📅 ${dateStr}</div>
                                     <div class="mb-1">Officier: <strong>${p.auteurNom}</strong></div>
                                     ${discordInfo}
+                                    ${validatorInfo}
                                     ${steamInfo}
                                 </div>
                             </div>
