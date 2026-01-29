@@ -42,18 +42,29 @@ async function initConfig() {
 initConfig();
 
 const ProtocoleSchema = new mongoose.Schema({
+    // Créateur
     auteurNom: String,
     discordUser: String,
     discordNick: String,
-    discordId: String, // IMPORTANT : On stocke l'ID unique Discord ici
+    discordId: String,
+    
+    // Cible
     cibleNom: String,
     cibleGrade: String,
     cibleRegiment: String,
     targetSteamID: String,
+    
+    // Détails
     protocoleType: String,
     raison: String,
     details: String,
     tempsRestant: String,
+    
+    // NOUVEAU : Validateur (Celui qui clique sur Confirmer/Effectué)
+    validatorUser: String,
+    validatorNick: String,
+    validatorId: String,
+
     statut: { type: String, default: 'En Attente' },
     date: { type: Date, default: Date.now }
 });
@@ -148,8 +159,8 @@ app.get('/auth/user', async (req, res) => {
     if (req.isAuthenticated()) {
         const perms = await getPermissions(req.user);
         res.json({ 
-            connecte: true,
-            id: req.user.id, // ON RENVOIE L'ID DISCORD ICI
+            connecte: true, 
+            id: req.user.id,
             username: req.user.username,
             nickname: req.user.serverNick,
             avatar: `https://cdn.discordapp.com/avatars/${req.user.id}/${req.user.avatar}.png`,
@@ -179,24 +190,30 @@ app.post('/api/protocoles', checkEdit, async (req, res) => {
     } catch (error) { res.status(500).json({ error: error.message }); }
 });
 
-// MODIFICATION : SÉCURITÉ RENFORCÉE ICI
 app.put('/api/protocoles/:id', checkEdit, async (req, res) => {
     try {
         const protocole = await Protocole.findById(req.params.id);
         const perms = await getPermissions(req.user);
-
-        // Si ce n'est pas l'admin ET ce n'est pas l'auteur -> Refusé
         if (!perms.isAdmin && protocole.discordId !== req.user.id) {
             return res.status(403).json({ message: "Seul l'auteur ou un Admin peut modifier ce protocole." });
         }
-
         await Protocole.findByIdAndUpdate(req.params.id, req.body);
         res.json({ message: "OK" });
     } catch (error) { res.status(500).json({ error: "Erreur serveur" }); }
 });
 
+// ROUTE VALIDATION MODIFIÉE (Enregistre le validateur)
 app.put('/api/protocoles/:id/valider', checkValidate, async (req, res) => {
-    await Protocole.findByIdAndUpdate(req.params.id, { statut: 'Effectué' });
+    // On met à jour le statut ET on enregistre qui l'a fait
+    const updateData = {
+        statut: 'Effectué',
+        validatorUser: req.user.username,
+        validatorNick: req.user.serverNick,
+        validatorId: req.user.id
+    };
+
+    await Protocole.findByIdAndUpdate(req.params.id, updateData);
+    
     const historique = await Protocole.find({ statut: 'Effectué' }).sort({ date: -1 });
     if (historique.length > 30) {
         const tropVieux = historique.slice(30);
@@ -207,7 +224,14 @@ app.put('/api/protocoles/:id/valider', checkValidate, async (req, res) => {
 
 app.put('/api/protocoles/:id/restaurer', checkValidate, async (req, res) => {
     const { tempsRestant } = req.body;
-    let updateData = { statut: 'En Attente', date: Date.now() };
+    // Quand on restaure, on enlève les infos du validateur car ce n'est plus "fait"
+    let updateData = { 
+        statut: 'En Attente', 
+        date: Date.now(),
+        validatorUser: null, 
+        validatorNick: null, 
+        validatorId: null
+    };
     if (tempsRestant) updateData.tempsRestant = tempsRestant;
     await Protocole.findByIdAndUpdate(req.params.id, updateData);
     res.json({ message: "OK" });
@@ -216,8 +240,8 @@ app.put('/api/protocoles/:id/restaurer', checkValidate, async (req, res) => {
 app.delete('/api/protocoles/:id', checkAdmin, async (req, res) => {
     try {
         await Protocole.findByIdAndDelete(req.params.id);
-        res.json({ message: "Protocole supprimé définitivement." });
-    } catch (error) { res.status(500).json({ error: "Erreur serveur" }); }
+        res.json({ message: "Supprimé." });
+    } catch (error) { res.status(500).json({ error: "Erreur" }); }
 });
 
 const PORT = process.env.PORT || 3000;
