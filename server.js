@@ -37,7 +37,6 @@ mongoose.connect(MONGO_URI, { useNewUrlParser: true, useUnifiedTopology: true })
     .then(() => console.log("✅ Connecté à MongoDB"))
     .catch(err => console.error("❌ Erreur MongoDB:", err));
 
-// MODIFICATION SCHEMA : Ajout de 'color'
 const ConfigSchema = new mongoose.Schema({
     adminRoles: [String], adminUsers: [String], officerRoles: [String], marineRoles: [String], 
     regiments: [{ 
@@ -45,7 +44,7 @@ const ConfigSchema = new mongoose.Schema({
         rappelDays: { type: Number, default: 7 }, 
         sanctionDays: { type: Number, default: 3 }, 
         sanctionText: { type: String, default: "Sanction par défaut" },
-        color: { type: String, default: '#c0392b' } // Couleur par défaut (Rouge Shock)
+        color: { type: String, default: '#c0392b' }
     }]     
 });
 const Config = mongoose.model('Config', ConfigSchema);
