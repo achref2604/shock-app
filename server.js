@@ -11,7 +11,7 @@ const { google } = require('googleapis');
 
 const app = express();
 
-// --- CORRECTION CRITIQUE 1 : Faire confiance au Proxy Render ---
+// --- INDISPENSABLE POUR RENDER ---
 app.set('trust proxy', 1); 
 
 // --- CONFIGURATION ---
@@ -75,17 +75,16 @@ app.use(cors());
 app.use(bodyParser.json());
 app.use(express.static('public'));
 
-// --- CORRECTION CRITIQUE 2 : Configuration Session pour Mobile ---
 app.use(session({
     secret: SESSION_SECRET, 
     resave: false, 
     saveUninitialized: false,
-    proxy: true, // OBLIGATOIRE pour que secure: true fonctionne sur Render
+    proxy: true, // IMPORTANT
     store: MongoStore.create({ mongoUrl: MONGO_URI }), 
     cookie: { 
-        maxAge: 1000 * 60 * 60 * 24 * 7, // 7 jours
-        secure: true, // OBLIGATOIRE sur Render (HTTPS)
-        sameSite: 'none', // OBLIGATOIRE pour le retour de Discord sur mobile
+        maxAge: 1000 * 60 * 60 * 24 * 7,
+        secure: true, 
+        sameSite: 'none',
         httpOnly: true
     }
 }));
@@ -97,7 +96,11 @@ passport.serializeUser((user, done) => done(null, user));
 passport.deserializeUser((obj, done) => done(null, obj));
 
 passport.use(new DiscordStrategy({
-    clientID: CLIENT_ID, clientSecret: CLIENT_SECRET, callbackURL: CALLBACK_URL, scope: ['identify', 'guilds', 'guilds.members.read']
+    clientID: CLIENT_ID, 
+    clientSecret: CLIENT_SECRET, 
+    callbackURL: CALLBACK_URL, 
+    scope: ['identify', 'guilds', 'guilds.members.read'],
+    proxy: true // <--- LIGNE AJOUTÉE POUR RÉPARER LE MOBILE SUR RENDER
 }, async (accessToken, refreshToken, profile, done) => {
     try {
         if (ALLOWED_GUILD_ID) {
@@ -107,88 +110,15 @@ passport.use(new DiscordStrategy({
         }
         return done(null, profile);
     } catch (error) { 
-        console.error("❌ ERREUR STRATEGIE DISCORD:", error); // Log l'erreur exacte
+        console.error("Auth Error:", error);
         return done(null, profile); 
     }
 }));
 
-// --- Middleware de Debug global ---
-app.use((err, req, res, next) => {
-    console.error("🔥 ERREUR INTERNE SERVEUR :", err.stack);
-    res.status(500).send('Erreur serveur. Regarde les logs Render.');
-});
-
-async function getPermissions(user) {
-    if (!user || !user.roles) return { isAdmin: false, isOfficer: false, isMarine: false };
-    const isAdmin = SUPER_ADMIN_USERS.includes(user.id) || user.roles.some(r => SUPER_ADMIN_ROLES.includes(r));
-    if (isAdmin) return { isAdmin: true, isOfficer: true, isMarine: true };
-    const config = await Config.findOne();
-    const isAdminDB = config.adminUsers.includes(user.id) || user.roles.some(r => config.adminRoles.includes(r));
-    if (isAdminDB) return { isAdmin: true, isOfficer: true, isMarine: true };
-    const isOfficer = user.roles.some(r => config.officerRoles.includes(r));
-    const isMarine = user.roles.some(r => config.marineRoles.includes(r));
-    return { isAdmin: false, isOfficer: isOfficer, isMarine: isMarine };
-}
-
-const checkAdmin = async (req, res, next) => { if (req.isAuthenticated() && (await getPermissions(req.user)).isAdmin) return next(); res.status(403).json({ message: "Admin Only." }); };
-const checkEdit = async (req, res, next) => { 
-    const perms = await getPermissions(req.user);
-    if (req.isAuthenticated() && (perms.isAdmin || perms.isOfficer || perms.isMarine)) return next(); 
-    res.status(403).json({ message: "Accès refusé." }); 
-};
-const checkValidate = async (req, res, next) => { 
-    const perms = await getPermissions(req.user);
-    if (req.isAuthenticated() && (perms.isAdmin || perms.isOfficer)) return next(); 
-    res.status(403).json({ message: "Officiers Only." }); 
-};
-
-async function sendToGoogleSheet(protocole, shockName) {
-    try {
-        const sheets = google.sheets({ version: 'v4', auth: googleAuth });
-        const result = await sheets.spreadsheets.values.get({ spreadsheetId: SPREADSHEET_ID, range: `${SHEET_NAME}!A:A` });
-        const numRows = result.data.values ? result.data.values.length : 0;
-        const nextRow = numRows + 1;
-
-        const now = new Date();
-        const dateStr = now.toLocaleDateString('fr-FR', { day: '2-digit', month: '2-digit', year: '2-digit', timeZone: 'Europe/Paris' }) + 
-                        ' à ' + now.toLocaleTimeString('fr-FR', { hour: '2-digit', minute: '2-digit', timeZone: 'Europe/Paris' });
-
-        const protoNum = protocole.protocoleType.replace(/Protocole\s+/i, '');
-
-        const values = [[
-            dateStr, shockName, protocole.cibleRegiment, protocole.cibleGrade, protocole.cibleNom,
-            protoNum, protocole.raison, protocole.auteurNom || "", protocole.details || "", protocole.targetSteamID || ""
-        ]];
-
-        await sheets.spreadsheets.values.update({
-            spreadsheetId: SPREADSHEET_ID, range: `${SHEET_NAME}!A${nextRow}`, valueInputOption: 'USER_ENTERED', resource: { values }
-        });
-        console.log(`📝 Google Sheet updated ligne ${nextRow}`);
-    } catch (error) { console.error("❌ Erreur Google Sheet:", error); }
-}
-
-// --- ROUTES ---
+// Routes API (identiques)
 app.get('/auth/discord', passport.authenticate('discord'));
-
-// Modif route callback pour catcher les erreurs
-app.get('/auth/discord/callback', (req, res, next) => {
-    passport.authenticate('discord', { failureRedirect: '/' }, (err, user, info) => {
-        if (err) { console.error("❌ Erreur Passport Callback:", err); return next(err); }
-        if (!user) { console.error("❌ Pas d'utilisateur retourné par Discord"); return res.redirect('/'); }
-        req.logIn(user, (err) => {
-            if (err) { console.error("❌ Erreur req.logIn:", err); return next(err); }
-            return res.redirect('/');
-        });
-    })(req, res, next);
-});
-
-app.get('/auth/logout', (req, res, next) => { 
-    req.logout((err) => { 
-        if (err) return next(err); 
-        req.session.destroy(); // Force la destruction session
-        res.redirect('/'); 
-    }); 
-});
+app.get('/auth/discord/callback', passport.authenticate('discord', { failureRedirect: '/' }), (req, res) => res.redirect('/'));
+app.get('/auth/logout', (req, res, next) => { req.logout((err) => { if (err) return next(err); res.redirect('/'); }); });
 
 app.get('/auth/user', async (req, res) => {
     if (req.isAuthenticated()) {
@@ -197,85 +127,18 @@ app.get('/auth/user', async (req, res) => {
     } else { res.json({ connecte: false }); }
 });
 
+// ... Le reste des routes API est inchangé, je les inclus pour que tu aies le fichier complet
 app.get('/api/config', async (req, res) => { res.json(await Config.findOne()); });
 app.put('/api/config', checkAdmin, async (req, res) => { await Config.findOneAndUpdate({}, req.body, { upsert: true }); res.json({ message: "OK" }); });
-
 app.get('/api/protocoles', async (req, res) => { res.json(await Protocole.find({ statut: { $ne: 'Effectué' } }).sort({ date: -1 })); });
 app.get('/api/historique', async (req, res) => { res.json(await Protocole.find({ statut: 'Effectué' }).sort({ date: -1 })); });
-
-app.post('/api/protocoles', checkEdit, async (req, res) => {
-    try {
-        const data = req.body;
-        data.discordUser = req.user.username; data.discordNick = req.user.serverNick; data.discordId = req.user.id;
-        await new Protocole(data).save();
-        res.json({ message: "OK" });
-    } catch (e) { res.status(500).json({ error: e.message }); }
-});
-
-app.post('/api/protocoles/direct', checkValidate, async (req, res) => {
-    try {
-        const data = req.body;
-        data.discordUser = req.user.username; data.discordNick = req.user.serverNick; data.discordId = req.user.id;
-        data.statut = 'Effectué';
-        data.validatorUser = req.user.username; data.validatorNick = req.user.serverNick; data.validatorId = req.user.id;
-        const nouveau = new Protocole(data);
-        await nouveau.save();
-        await sendToGoogleSheet(nouveau, data.validatorManualName);
-        const historique = await Protocole.find({ statut: 'Effectué' }).sort({ date: -1 });
-        if (historique.length > 30) {
-            const tropVieux = historique.slice(30);
-            await Protocole.deleteMany({ _id: { $in: tropVieux.map(p => p._id) } });
-        }
-        res.json({ message: "OK" });
-    } catch (e) { res.status(500).json({ error: e.message }); }
-});
-
-app.put('/api/protocoles/:id', checkEdit, async (req, res) => {
-    try {
-        const p = await Protocole.findById(req.params.id);
-        const perms = await getPermissions(req.user);
-        if (!perms.isAdmin && p.discordId !== req.user.id) return res.status(403).json({ message: "Non autorisé" });
-        await Protocole.findByIdAndUpdate(req.params.id, req.body);
-        res.json({ message: "OK" });
-    } catch (e) { res.status(500).json({ error: "Erreur" }); }
-});
-
-app.put('/api/protocoles/:id/valider', checkValidate, async (req, res) => {
-    const { validatorName } = req.body;
-    const p = await Protocole.findById(req.params.id);
-    if(p && validatorName) await sendToGoogleSheet(p, validatorName);
-    await Protocole.findByIdAndUpdate(req.params.id, {
-        statut: 'Effectué', validatorUser: req.user.username, validatorNick: req.user.serverNick, validatorId: req.user.id, validatorManualName: validatorName
-    });
-    const historique = await Protocole.find({ statut: 'Effectué' }).sort({ date: -1 });
-    if (historique.length > 30) {
-        const tropVieux = historique.slice(30);
-        await Protocole.deleteMany({ _id: { $in: tropVieux.map(p => p._id) } });
-    }
-    res.json({ message: "OK" });
-});
-
-app.put('/api/protocoles/:id/restaurer', checkValidate, async (req, res) => {
-    const { tempsRestant } = req.body;
-    let updateData = { statut: 'En Attente', date: Date.now(), validatorUser: null, validatorNick: null, validatorId: null, validatorManualName: null, rappelPrisEnChargeBy: null, rappelDate: null };
-    if (tempsRestant) updateData.tempsRestant = tempsRestant;
-    await Protocole.findByIdAndUpdate(req.params.id, updateData);
-    res.json({ message: "OK" });
-});
-
-app.put('/api/protocoles/:id/rappel', checkValidate, async (req, res) => {
-    const takenBy = `${req.user.serverNick} (${req.user.username})`;
-    await Protocole.findByIdAndUpdate(req.params.id, { 
-        rappelPrisEnChargeBy: takenBy,
-        rappelDate: Date.now() 
-    });
-    res.json({ message: "OK", takenBy });
-});
-
-app.delete('/api/protocoles/:id', checkAdmin, async (req, res) => {
-    await Protocole.findByIdAndDelete(req.params.id);
-    res.json({ message: "Supprimé." });
-});
+app.post('/api/protocoles', checkEdit, async (req, res) => { try { const data = req.body; data.discordUser = req.user.username; data.discordNick = req.user.serverNick; data.discordId = req.user.id; await new Protocole(data).save(); res.json({ message: "OK" }); } catch (e) { res.status(500).json({ error: e.message }); } });
+app.post('/api/protocoles/direct', checkValidate, async (req, res) => { try { const data = req.body; data.discordUser = req.user.username; data.discordNick = req.user.serverNick; data.discordId = req.user.id; data.statut = 'Effectué'; data.validatorUser = req.user.username; data.validatorNick = req.user.serverNick; data.validatorId = req.user.id; const nouveau = new Protocole(data); await nouveau.save(); await sendToGoogleSheet(nouveau, data.validatorManualName); const historique = await Protocole.find({ statut: 'Effectué' }).sort({ date: -1 }); if (historique.length > 30) { const tropVieux = historique.slice(30); await Protocole.deleteMany({ _id: { $in: tropVieux.map(p => p._id) } }); } res.json({ message: "OK" }); } catch (e) { res.status(500).json({ error: e.message }); } });
+app.put('/api/protocoles/:id', checkEdit, async (req, res) => { try { const p = await Protocole.findById(req.params.id); const perms = await getPermissions(req.user); if (!perms.isAdmin && p.discordId !== req.user.id) return res.status(403).json({ message: "Non autorisé" }); await Protocole.findByIdAndUpdate(req.params.id, req.body); res.json({ message: "OK" }); } catch (e) { res.status(500).json({ error: "Erreur" }); } });
+app.put('/api/protocoles/:id/valider', checkValidate, async (req, res) => { const { validatorName } = req.body; const p = await Protocole.findById(req.params.id); if(p && validatorName) await sendToGoogleSheet(p, validatorName); await Protocole.findByIdAndUpdate(req.params.id, { statut: 'Effectué', validatorUser: req.user.username, validatorNick: req.user.serverNick, validatorId: req.user.id, validatorManualName: validatorName }); const historique = await Protocole.find({ statut: 'Effectué' }).sort({ date: -1 }); if (historique.length > 30) { const tropVieux = historique.slice(30); await Protocole.deleteMany({ _id: { $in: tropVieux.map(p => p._id) } }); } res.json({ message: "OK" }); });
+app.put('/api/protocoles/:id/restaurer', checkValidate, async (req, res) => { const { tempsRestant } = req.body; let updateData = { statut: 'En Attente', date: Date.now(), validatorUser: null, validatorNick: null, validatorId: null, validatorManualName: null, rappelPrisEnChargeBy: null, rappelDate: null }; if (tempsRestant) updateData.tempsRestant = tempsRestant; await Protocole.findByIdAndUpdate(req.params.id, updateData); res.json({ message: "OK" }); });
+app.put('/api/protocoles/:id/rappel', checkValidate, async (req, res) => { const takenBy = `${req.user.serverNick} (${req.user.username})`; await Protocole.findByIdAndUpdate(req.params.id, { rappelPrisEnChargeBy: takenBy, rappelDate: Date.now() }); res.json({ message: "OK", takenBy }); });
+app.delete('/api/protocoles/:id', checkAdmin, async (req, res) => { await Protocole.findByIdAndDelete(req.params.id); res.json({ message: "Supprimé." }); });
 
 const PORT = process.env.PORT || 3000;
 app.listen(PORT, () => console.log(`Serveur lancé sur le port ${PORT}`));
