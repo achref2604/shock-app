@@ -28,7 +28,6 @@
         .alert-time { background-color: rgba(243, 156, 18, 0.2); border: 1px solid #f39c12; color: #f39c12; }
         .user-bar { position: absolute; top: 20px; right: 20px; }
         .avatar { width: 40px; height: 40px; border-radius: 50%; border: 2px solid var(--shock-red); }
-        
         .admin-section { border-left: 2px solid var(--shock-red); padding-left: 15px; margin-bottom: 20px; }
         .tag-remove { cursor: pointer; color: #e74c3c; margin-left: 5px; }
     </style>
@@ -63,7 +62,6 @@
                 <div class="card-body p-4">
                     <div class="admin-section">
                         <h5>👮 Rôles Officiers (Accès Total)</h5>
-                        <p class="small text-muted">Copiez les IDs des rôles Discord ici.</p>
                         <div class="d-flex gap-2 mb-2">
                             <input type="text" id="newOfficerRole" class="form-control form-control-sm" placeholder="ID Rôle">
                             <button onclick="addConfig('officerRoles')" class="btn btn-sm btn-success">Ajouter</button>
@@ -72,7 +70,6 @@
                     </div>
                     <div class="admin-section">
                         <h5>🔫 Rôles Marines (Accès Restreint)</h5>
-                        <p class="small text-muted">Peuvent créer/modifier, mais PAS valider ni restaurer.</p>
                         <div class="d-flex gap-2 mb-2">
                             <input type="text" id="newMarineRole" class="form-control form-control-sm" placeholder="ID Rôle">
                             <button onclick="addConfig('marineRoles')" class="btn btn-sm btn-success">Ajouter</button>
@@ -81,7 +78,6 @@
                     </div>
                     <div class="admin-section">
                         <h5>🏴 Régiments</h5>
-                        <p class="small text-muted">Liste du menu déroulant.</p>
                         <div class="d-flex gap-2 mb-2">
                             <input type="text" id="newRegiment" class="form-control form-control-sm" placeholder="Nom Régiment">
                             <button onclick="addConfig('regiments')" class="btn btn-sm btn-success">Ajouter</button>
@@ -156,7 +152,8 @@
         let configData = { officerRoles: [], marineRoles: [], regiments: [] };
         let editingId = null; 
         
-        let user = { connecte: false, isAdmin: false, isOfficer: false, isMarine: false };
+        // On rajoute 'id' dans l'objet user pour savoir qui je suis
+        let user = { connecte: false, id: null, isAdmin: false, isOfficer: false, isMarine: false };
 
         async function init() {
             await fetchConfig(); 
@@ -326,13 +323,22 @@
                 let actionButtons = '';
                 const canEdit = user.isAdmin || user.isOfficer || user.isMarine;
                 const canValidate = user.isAdmin || user.isOfficer;
+                
+                // VÉRIFICATION AUTEUR : Est-ce moi ?
+                const isAuthor = (p.discordId === user.id);
+                // On peut modifier si on est Admin OU si on est l'auteur
+                const canModify = user.isAdmin || isAuthor;
 
                 if (estEnCours && canEdit) {
                     let btnValider = canValidate ? `<button onclick="valider('${p._id}')" class="btn btn-outline-success flex-grow-1 fw-bold">Confirmer</button>` : '';
+                    
+                    // Bouton modifier affiché conditionnellement
+                    let btnModifier = canModify ? `<button onclick="preparerAction('${p._id}', 'modifier')" class="btn btn-outline-warning" title="Modifier">✏️</button>` : '';
+
                     actionButtons = `
                     <div class="card-footer bg-transparent border-top-0 pt-0 d-flex gap-2">
                         ${btnValider}
-                        <button onclick="preparerAction('${p._id}', 'modifier')" class="btn btn-outline-warning" title="Modifier">✏️</button>
+                        ${btnModifier}
                         <button onclick="preparerAction('${p._id}', 'dupliquer')" class="btn btn-outline-info" title="Dupliquer">📋</button>
                     </div>`;
                 } else if (!estEnCours && canValidate) {
@@ -469,7 +475,8 @@
                     chargerEnCours();
                     if(!editingId) toggleForm();
                 } else {
-                    alert('Erreur ou Permissions insuffisantes.');
+                    if(res.status === 403) alert("Seul l'auteur ou l'admin peut modifier.");
+                    else alert('Erreur ou Permissions insuffisantes.');
                 }
             } catch(e) { alert("Erreur réseau"); }
         }
@@ -497,9 +504,6 @@
             try {
                 const res = await fetch(`${API_URL}/${id}`, { method: 'DELETE' });
                 if(res.ok) {
-                    // On recharge la liste où on se trouve (En cours ou Historique)
-                    // Le moyen le plus simple est de recharger la page ou de deviner
-                    // Mais comme on ne sait pas où on est, on recharge la liste actuelle
                     const activeTab = document.querySelector('.nav-link.active').getAttribute('onclick');
                     if(activeTab.includes('encours')) chargerEnCours();
                     else chargerHistorique();
