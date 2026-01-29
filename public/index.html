@@ -162,12 +162,11 @@
         let configData = { officerRoles: [], marineRoles: [], regiments: [] };
         let editingId = null; 
         
-        // Permissions
         let user = { connecte: false, isAdmin: false, isOfficer: false, isMarine: false };
 
         // --- AUTH & INIT ---
         async function init() {
-            await fetchConfig(); // Charger les régiments pour la liste déroulante
+            await fetchConfig(); 
             await checkUserStatus();
         }
 
@@ -196,7 +195,6 @@
                             <a href="/auth/logout" class="btn btn-sm btn-outline-danger"><i class="fas fa-sign-out-alt"></i></a>
                         </div>`;
                     
-                    // Visibilité des boutons "Ajouter"
                     const canEdit = user.isAdmin || user.isOfficer || user.isMarine;
                     btnZone.style.display = canEdit ? 'block' : 'none';
                     navAdmin.style.display = user.isAdmin ? 'block' : 'none';
@@ -215,7 +213,7 @@
             } catch (e) { console.error("Erreur auth", e); }
         }
 
-        // --- GESTION CONFIG (ADMIN) ---
+        // --- GESTION CONFIG ---
         async function fetchConfig() {
             try {
                 const res = await fetch('/api/config');
@@ -248,7 +246,6 @@
             const btnZone = document.getElementById('btnAdminZone');
             const titre = document.getElementById('titreListe');
 
-            // Reset view
             adminPanel.style.display = 'none';
             listPanel.style.display = 'block';
             document.getElementById('protocolFormPanel').style.display = 'none';
@@ -270,7 +267,6 @@
             }
         }
 
-        // --- LOGIQUE ADMIN UI ---
         function renderAdminUI() {
             const listOfficer = document.getElementById('listOfficerRoles');
             const listMarine = document.getElementById('listMarineRoles');
@@ -307,7 +303,7 @@
                 body: JSON.stringify(configData)
             });
             alert("Configuration sauvegardée !");
-            renderRegimentsSelect(); // Mettre à jour la liste déroulante immédiatement
+            renderRegimentsSelect();
         }
 
         // --- LOGIQUE PROTOCOLES ---
@@ -340,10 +336,6 @@
                     : '<span class="badge badge-pending rounded-pill px-3 py-2">⏳ EN ATTENTE</span>';
                 
                 let actionButtons = '';
-
-                // DROITS :
-                // Admin/Officier : TOUT
-                // Marine : Create/Edit/Dupliquer MAIS PAS Valider/Restaurer
                 
                 const canEdit = user.isAdmin || user.isOfficer || user.isMarine;
                 const canValidate = user.isAdmin || user.isOfficer;
@@ -365,7 +357,6 @@
 
                 let timeAlert = (p.tempsRestant && !isDone) ? `<div class="alert-time p-2 rounded mb-2 text-center fw-bold">⚠️ RESTANT : ${p.tempsRestant}</div>` : '';
                 
-                // LOG FORMAT: Surnom (Username)
                 let logName = p.discordNick || p.discordUser;
                 if (p.discordNick && p.discordUser && p.discordNick !== p.discordUser) {
                     logName = `${p.discordNick} (${p.discordUser})`;
@@ -374,25 +365,33 @@
                 const steamInfo = p.targetSteamID ? `<small class="text-muted d-block mt-1" style="font-size:0.7rem">${p.targetSteamID}</small>` : '';
                 const dateStr = new Date(p.date).toLocaleString().slice(0, -3);
 
+                // ICI: J'ai changé col-md-6 col-xl-4 par col-12 pour prendre toute la largeur
                 container.innerHTML += `
-                <div class="col-md-6 col-xl-4" style="${estEnCours ? '' : 'opacity:0.8; filter:grayscale(20%);'}">
+                <div class="col-12" style="${estEnCours ? '' : 'opacity:0.8; filter:grayscale(20%);'}">
                     <div class="card h-100">
                         <div class="card-header d-flex justify-content-between align-items-center">
-                            <div><span class="fw-bold text-white fs-5">${p.cibleNom}</span><div class="small text-muted">${p.cibleGrade} - ${p.cibleRegiment}</div></div>
+                            <div><span class="fw-bold text-white fs-5">${p.cibleNom}</span> <span class="small text-muted ms-2">${p.cibleGrade} - ${p.cibleRegiment}</span></div>
                             ${badge}
                         </div>
                         <div class="card-body">
-                            <div class="d-flex justify-content-between small text-muted mb-3">
-                                <span>📅 ${dateStr}</span>
-                                <div class="text-end"><span>Officier: ${p.auteurNom}</span>${discordInfo}</div>
+                            
+                            <div class="row">
+                                <div class="col-md-9">
+                                     <div class="row mb-3 g-2">
+                                        <div class="col-md-4"><div class="p-2 bg-dark rounded border border-secondary"><small class="text-muted d-block ls-1">SANCTION</small><span class="fw-bold text-danger">${p.protocoleType}</span></div></div>
+                                        <div class="col-md-8"><div class="p-2 bg-dark rounded border border-secondary"><small class="text-muted d-block ls-1">RAISON</small><span class="fw-bold">${p.raison}</span></div></div>
+                                    </div>
+                                    ${p.details ? `<div class="details-box p-3 rounded bg-dark text-light small fst-italic mb-2">" ${p.details} "</div>` : ''}
+                                    ${timeAlert}
+                                </div>
+                                <div class="col-md-3 border-start border-secondary ps-4 d-flex flex-column justify-content-center">
+                                    <div class="small text-muted mb-1">📅 ${dateStr}</div>
+                                    <div class="mb-1">Officier: <strong>${p.auteurNom}</strong></div>
+                                    ${discordInfo}
+                                    ${steamInfo}
+                                </div>
                             </div>
-                            ${timeAlert}
-                            <div class="row mb-3 g-2">
-                                <div class="col-6"><div class="p-2 bg-dark rounded border border-secondary"><small class="text-muted d-block ls-1">SANCTION</small><span class="fw-bold text-danger">${p.protocoleType}</span></div></div>
-                                <div class="col-6"><div class="p-2 bg-dark rounded border border-secondary"><small class="text-muted d-block ls-1">RAISON</small><span class="fw-bold">${p.raison}</span></div></div>
-                            </div>
-                            ${p.details ? `<div class="details-box p-3 rounded bg-dark text-light small fst-italic mb-2">" ${p.details} "</div>` : ''}
-                            ${steamInfo}
+
                         </div>
                         ${actionButtons}
                     </div>
@@ -406,7 +405,7 @@
             document.getElementById('auteurNom').value = item.auteurNom;
             document.getElementById('cibleNom').value = item.cibleNom;
             document.getElementById('cibleGrade').value = item.cibleGrade;
-            document.getElementById('cibleRegiment').value = item.cibleRegiment; // Si le régiment a été supprimé de la config, ça restera vide
+            document.getElementById('cibleRegiment').value = item.cibleRegiment;
             document.getElementById('steamid').value = item.targetSteamID || '';
             document.getElementById('protocole').value = item.protocoleType;
             document.getElementById('raison').value = item.raison;
@@ -488,7 +487,7 @@
             if(!confirm("Valider ?")) return;
             const res = await fetch(`${API_URL}/${id}/valider`, { method: 'PUT' });
             if(res.ok) chargerEnCours();
-            else alert("Permission refusée (Réservé Officiers/Admin)");
+            else alert("Permission refusée");
         }
 
         async function restaurer(id) {
