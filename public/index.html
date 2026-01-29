@@ -291,6 +291,7 @@
             }
         }
 
+        // --- LOGIQUE DELAIS & RAPPELS (CORRIGÉE JOUR J+1) ---
         async function chargerDelais() {
             const res = await fetch('/api/protocoles'); 
             const data = await res.json();
@@ -305,31 +306,51 @@
                 if(!regConfig) return;
 
                 const dateCreation = new Date(p.date);
-                const limitDate = new Date(dateCreation);
-                limitDate.setDate(limitDate.getDate() + regConfig.rappelDays);
+                
+                // 1. Calcul pour le RAPPEL
+                // La date limite théorique (ex: le 12/01)
+                const limitDateDisplay = new Date(dateCreation);
+                limitDateDisplay.setDate(limitDateDisplay.getDate() + regConfig.rappelDays);
+                
+                // La date de DÉCLENCHEMENT (ex: le 13/01 à 00h00) -> On ajoute 1 jour de tolérance
+                const triggerRappel = new Date(limitDateDisplay);
+                triggerRappel.setDate(triggerRappel.getDate() + 1);
+                triggerRappel.setHours(0, 0, 0, 0); // À partir de minuit le lendemain
 
-                if (now > limitDate) {
+                // On affiche la carte seulement si on a dépassé le jour de tolérance
+                if (now >= triggerRappel) {
                     count++;
                     
                     // --- LOGIQUE DATE LIMITE ET BANNIERE ---
                     let sanctionBanner = '';
                     let deadlineText = '';
 
-                    // On ne calcule et affiche tout ça QUE si la prise en charge a été validée (date enregistrée)
+                    // Si le rappel a été validé
                     if (p.rappelDate) {
                         const datePriseEnCharge = new Date(p.rappelDate);
-                        const deadline = new Date(datePriseEnCharge);
-                        deadline.setDate(deadline.getDate() + regConfig.sanctionDays);
-                        const deadlineStr = deadline.toLocaleDateString('fr-FR');
+                        
+                        // Date limite affichée (ex: 01/02)
+                        const deadlineDisplay = new Date(datePriseEnCharge);
+                        deadlineDisplay.setDate(deadlineDisplay.getDate() + regConfig.sanctionDays);
+                        const deadlineStr = deadlineDisplay.toLocaleDateString('fr-FR');
 
                         // Texte sous le nom
-                        deadlineText = `<div class="text-white mt-1 small">A jusqu'au <strong>${deadlineStr}</strong> pour effectuer le protocole.</div>`;
+                        deadlineText = `<div class="text-white mt-1 small">A jusqu'au <strong>${deadlineStr}</strong> inclus pour effectuer le protocole.</div>`;
 
-                        // Si on dépasse cette date, on affiche la sanction
-                        if (now > deadline) {
+                        // Date de DÉCLENCHEMENT BANNIÈRE (ex: 02/02 à 00h00) -> On ajoute 1 jour
+                        const triggerBanner = new Date(deadlineDisplay);
+                        triggerBanner.setDate(triggerBanner.getDate() + 1);
+                        triggerBanner.setHours(0, 0, 0, 0);
+
+                        // Si on dépasse cette date (+1j), on affiche la sanction
+                        if (now >= triggerBanner) {
                             sanctionBanner = `<div class="sanction-alert">${regConfig.sanctionText} À APPLIQUER</div>`;
                         }
                     }
+
+                    // Calcul des jours de retard pour l'affichage (par rapport à la date théorique)
+                    const retardMs = now - limitDateDisplay;
+                    const retardJours = Math.floor(retardMs / (1000 * 60 * 60 * 24));
 
                     const btnGen = `<button class="btn btn-outline-light btn-sm w-100 mb-2" onclick="generateAndShow('${p._id}', '${p.cibleRegiment}', '${p.cibleGrade}', '${p.cibleNom}', '${p.auteurNom}', '${p.protocoleType}', '${p.raison}', '${p.details || ''}', '${p.targetSteamID || ''}', ${regConfig.sanctionDays}, '${regConfig.sanctionText}')">📄 Générer le Rapport Discord</button>`;
 
@@ -342,7 +363,7 @@
                         <div class="card rappel-card h-100">
                             <div class="card-header rappel-header d-flex justify-content-between align-items-center">
                                 <span>⚠️ RAPPEL NÉCESSAIRE : ${p.cibleNom}</span>
-                                <small>Retard de ${(Math.floor((now - limitDate)/(1000*60*60*24)))+1} jours</small>
+                                <small>Retard de ${retardJours} jours</small>
                             </div>
                             <div class="card-body">
                                 ${sanctionBanner}
@@ -351,7 +372,9 @@
                                         <p><strong>Cible :</strong> ${p.cibleGrade} ${p.cibleNom} (${p.cibleRegiment})<br>
                                         <strong>Protocole :</strong> ${p.protocoleType}<br>
                                         <strong>Date Ordre :</strong> ${new Date(p.date).toLocaleDateString('fr-FR')}</p>
+                                        
                                         ${btnGen}
+                                        
                                         <div id="gen-${p._id}" style="display:none;">
                                             <div class="generated-box mb-2" id="title-${p._id}" onclick="navigator.clipboard.writeText(this.innerText); alert('Titre copié !');"></div>
                                             <div class="generated-box mb-2" id="body-${p._id}" onclick="navigator.clipboard.writeText(this.innerText); alert('Contenu copié !');"></div>
