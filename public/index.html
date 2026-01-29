@@ -8,24 +8,18 @@
     <link href="https://fonts.googleapis.com/css2?family=Rajdhani:wght@400;600;700&display=swap" rel="stylesheet">
     <link rel="stylesheet" href="https://cdnjs.cloudflare.com/ajax/libs/font-awesome/6.4.0/css/all.min.css">
     <style>
-        /* --- AJUSTEMENT SUBTIL DU THÈME SOMBRE --- */
         :root { 
             --shock-red: #c0392b; 
             --signal-orange: #e67e22; 
-            /* Fond global légèrement éclairci (était #0a0a0a) */
             --bg-dark: #141414; 
-            /* Fond des cartes légèrement éclairci pour le contraste (était #161616) */
             --card-bg: #1e1e1e; 
         }
         body { 
             font-family: 'Rajdhani', sans-serif; 
             background-color: var(--bg-dark); 
             color: #e0e0e0; 
-            /* Gradient ajusté pour être moins "noir profond" */
             background-image: radial-gradient(circle at center, #252525 0%, #141414 100%);
         }
-        /* ---------------------------------------- */
-
         h1, h2, h3, h4, h5, .nav-link, .btn { text-transform: uppercase; letter-spacing: 1px; }
         
         .text-shock { color: var(--shock-red) !important; text-shadow: 0 0 10px rgba(192, 57, 43, 0.3); }
@@ -39,7 +33,7 @@
 
         .card { background-color: var(--card-bg); border: 1px solid #333; box-shadow: 0 4px 6px rgba(0,0,0,0.3); }
         .card-header { border-bottom: 1px solid #333; background-color: rgba(192, 57, 43, 0.1); }
-        .form-control, .form-select { background-color: #2a2a2a; border: 1px solid #444; color: #fff; } /* Input un peu plus clair aussi */
+        .form-control, .form-select { background-color: #2a2a2a; border: 1px solid #444; color: #fff; }
         .form-control:focus, .form-select:focus { background-color: #333; border-color: var(--shock-red); color: #fff; }
         .nav-tabs { border-bottom: 2px solid #333; }
         .nav-link { color: #888; border: none; padding: 1rem 1.5rem; font-weight: 600; transition: all 0.3s; }
@@ -422,6 +416,7 @@
 
         function afficherRappels(container, p, regConfig, retardJours, sanctionBanner, deadlineText) {
             const regColor = getRegimentColor(p.cibleRegiment);
+            // MODIFICATION ICI : BORDURE ROUGE FIXE POUR LE CONTOUR, FOND COLORÉ POUR LE TITRE, TEXTE ROUGE POUR RETARD
             const headerStyle = `background-color: ${regColor}33; border-bottom: 1px solid #c0392b; color: white; font-weight: bold;`;
 
             const btnGen = `<button class="btn btn-outline-light btn-sm w-100 mb-2" onclick="generateAndShow('${p._id}', '${p.cibleRegiment}', '${p.cibleGrade}', '${p.cibleNom}', '${p.auteurNom}', '${p.protocoleType}', '${p.raison}', '${p.details || ''}', '${p.targetSteamID || ''}', ${regConfig.sanctionDays}, '${regConfig.sanctionText}')">📄 Générer le Rapport Discord</button>`;
@@ -501,8 +496,11 @@
                 let timeAlert = (p.tempsRestant && !isDone) ? `<div class="alert-time p-2 rounded mb-2 text-center fw-bold">⚠️ RESTANT : ${p.tempsRestant}</div>` : '';
                 let logName = p.discordNick || p.discordUser; if (p.discordNick && p.discordUser && p.discordNick !== p.discordUser) logName = `${p.discordNick} (${p.discordUser})`; const discordInfo = logName ? `<br><small class="text-secondary"><i class="fab fa-discord"></i> Log: ${logName}</small>` : ''; const steamInfo = p.targetSteamID ? `<small class="text-muted d-block mt-1" style="font-size:0.7rem">${p.targetSteamID}</small>` : ''; const dateStr = new Date(p.date).toLocaleString().slice(0, -3); let validatorInfo = ''; if (p.statut === 'Effectué') { const vName = p.validatorManualName || (p.validatorNick || p.validatorUser); if (vName) validatorInfo = `<div class="mt-2 small text-success border-top border-secondary pt-1"><i class="fas fa-check-circle"></i> Traité par : ${p.validatorManualName ? p.validatorManualName + (p.validatorUser ? ` (${p.validatorUser})` : '') : vName}</div>`; }
 
+                // MODIFICATION ICI POUR LES ARCHIVES : Pas de grayscale, juste une opacité
+                const styleCard = estEnCours ? '' : 'opacity:0.9;';
+
                 container.innerHTML += `
-                <div class="col-12" style="${estEnCours ? '' : 'opacity:0.8; filter:grayscale(20%);'}">
+                <div class="col-12" style="${styleCard}">
                     <div class="card h-100">
                         <div class="card-header d-flex justify-content-between align-items-center" style="${headerStyle}">
                             <div><span class="fs-5">${p.cibleNom}</span> <span class="small ms-2" style="opacity:0.8">${p.cibleGrade} - ${p.cibleRegiment}</span></div>
