@@ -40,7 +40,7 @@
         .user-text { white-space: pre-wrap; word-wrap: break-word; word-break: break-word; overflow-wrap: break-word; display: block; }
         
         .rappel-card { border: 1px solid #e74c3c; box-shadow: 0 0 10px rgba(231, 76, 60, 0.2); }
-        .rappel-header { background-color: rgba(231, 76, 60, 0.1); border-bottom: 1px solid #e74c3c; color: white; font-weight: bold; } /* TEXTE BLANC FORCÉ */
+        .rappel-header { background-color: rgba(231, 76, 60, 0.1); border-bottom: 1px solid #e74c3c; color: white; font-weight: bold; }
         .generated-box { background: #222; border: 1px dashed #666; padding: 10px; font-family: monospace; font-size: 0.85rem; color: #aaa; margin-top: 10px; cursor: pointer; }
         .generated-box:hover { border-color: #fff; color: #fff; }
         
@@ -49,7 +49,7 @@
     
         .main-wrapper { max-width: 1800px; margin: 0 auto; }
 
-        /* --- STYLES MODALES PERSONNALISÉES --- */
+        /* --- MODALES --- */
         .modal-content { background-color: #1a1a1a; border: 1px solid #444; color: white; }
         .modal-header { border-bottom: 1px solid #444; }
         .modal-footer { border-top: 1px solid #444; }
@@ -207,14 +207,9 @@
     <div class="modal fade" id="customAlertModal" tabindex="-1" aria-hidden="true">
         <div class="modal-dialog modal-dialog-centered">
             <div class="modal-content">
-                <div class="modal-header">
-                    <h5 class="modal-title">INFORMATION</h5>
-                    <button type="button" class="btn-close" data-bs-dismiss="modal"></button>
-                </div>
+                <div class="modal-header"><h5 class="modal-title">INFORMATION</h5><button type="button" class="btn-close" data-bs-dismiss="modal"></button></div>
                 <div class="modal-body" id="customAlertBody"></div>
-                <div class="modal-footer">
-                    <button type="button" class="btn btn-shock" data-bs-dismiss="modal">OK</button>
-                </div>
+                <div class="modal-footer"><button type="button" class="btn btn-shock" data-bs-dismiss="modal">OK</button></div>
             </div>
         </div>
     </div>
@@ -222,10 +217,7 @@
     <div class="modal fade" id="customConfirmModal" tabindex="-1" aria-hidden="true">
         <div class="modal-dialog modal-dialog-centered">
             <div class="modal-content">
-                <div class="modal-header">
-                    <h5 class="modal-title">CONFIRMATION</h5>
-                    <button type="button" class="btn-close" data-bs-dismiss="modal"></button>
-                </div>
+                <div class="modal-header"><h5 class="modal-title">CONFIRMATION</h5><button type="button" class="btn-close" data-bs-dismiss="modal"></button></div>
                 <div class="modal-body" id="customConfirmBody"></div>
                 <div class="modal-footer">
                     <button type="button" class="btn btn-secondary" data-bs-dismiss="modal" id="btnConfirmNo">Annuler</button>
@@ -238,10 +230,7 @@
     <div class="modal fade" id="customPromptModal" tabindex="-1" aria-hidden="true">
         <div class="modal-dialog modal-dialog-centered">
             <div class="modal-content">
-                <div class="modal-header">
-                    <h5 class="modal-title" id="customPromptTitle">SAISIE REQUISE</h5>
-                    <button type="button" class="btn-close" data-bs-dismiss="modal"></button>
-                </div>
+                <div class="modal-header"><h5 class="modal-title" id="customPromptTitle">SAISIE REQUISE</h5><button type="button" class="btn-close" data-bs-dismiss="modal"></button></div>
                 <div class="modal-body">
                     <p id="customPromptBody" class="mb-2"></p>
                     <input type="text" id="customPromptInput" class="form-control" autocomplete="off">
@@ -262,62 +251,13 @@
         let editingId = null; 
         let user = { connecte: false, id: null, isAdmin: false, isOfficer: false, isMarine: false };
 
-        // --- UTILITAIRES MODALES CUSTOM ---
         const alertModal = new bootstrap.Modal(document.getElementById('customAlertModal'));
         const confirmModal = new bootstrap.Modal(document.getElementById('customConfirmModal'));
         const promptModal = new bootstrap.Modal(document.getElementById('customPromptModal'));
 
-        function customAlert(message) {
-            document.getElementById('customAlertBody').innerText = message;
-            alertModal.show();
-        }
-
-        function customConfirm(message) {
-            return new Promise((resolve) => {
-                document.getElementById('customConfirmBody').innerText = message;
-                const btnYes = document.getElementById('btnConfirmYes');
-                const btnNo = document.getElementById('btnConfirmNo');
-                
-                // Nettoyage des anciens listeners
-                const newYes = btnYes.cloneNode(true);
-                const newNo = btnNo.cloneNode(true);
-                btnYes.parentNode.replaceChild(newYes, btnYes);
-                btnNo.parentNode.replaceChild(newNo, btnNo);
-
-                newYes.onclick = () => { confirmModal.hide(); resolve(true); };
-                newNo.onclick = () => { confirmModal.hide(); resolve(false); };
-                
-                confirmModal.show();
-            });
-        }
-
-        function customPrompt(message, title = "SAISIE REQUISE") {
-            return new Promise((resolve) => {
-                document.getElementById('customPromptTitle').innerText = title;
-                document.getElementById('customPromptBody').innerText = message;
-                const input = document.getElementById('customPromptInput');
-                input.value = '';
-                
-                const btnOk = document.getElementById('btnPromptOk');
-                const btnCancel = document.getElementById('btnPromptCancel');
-
-                // Nettoyage
-                const newOk = btnOk.cloneNode(true);
-                const newCancel = btnCancel.cloneNode(true);
-                btnOk.parentNode.replaceChild(newOk, btnOk);
-                btnCancel.parentNode.replaceChild(newCancel, btnCancel);
-
-                newOk.onclick = () => { promptModal.hide(); resolve(input.value); };
-                newCancel.onclick = () => { promptModal.hide(); resolve(null); };
-
-                // Focus sur l'input à l'ouverture
-                document.getElementById('customPromptModal').addEventListener('shown.bs.modal', () => {
-                    input.focus();
-                }, { once: true });
-
-                promptModal.show();
-            });
-        }
+        function customAlert(message) { document.getElementById('customAlertBody').innerText = message; alertModal.show(); }
+        function customConfirm(message) { return new Promise((resolve) => { document.getElementById('customConfirmBody').innerText = message; const btnYes = document.getElementById('btnConfirmYes'); const btnNo = document.getElementById('btnConfirmNo'); const newYes = btnYes.cloneNode(true); const newNo = btnNo.cloneNode(true); btnYes.parentNode.replaceChild(newYes, btnYes); btnNo.parentNode.replaceChild(newNo, btnNo); newYes.onclick = () => { confirmModal.hide(); resolve(true); }; newNo.onclick = () => { confirmModal.hide(); resolve(false); }; confirmModal.show(); }); }
+        function customPrompt(message, title = "SAISIE REQUISE") { return new Promise((resolve) => { document.getElementById('customPromptTitle').innerText = title; document.getElementById('customPromptBody').innerText = message; const input = document.getElementById('customPromptInput'); input.value = ''; const btnOk = document.getElementById('btnPromptOk'); const btnCancel = document.getElementById('btnPromptCancel'); const newOk = btnOk.cloneNode(true); const newCancel = btnCancel.cloneNode(true); btnOk.parentNode.replaceChild(newOk, btnOk); btnCancel.parentNode.replaceChild(newCancel, btnCancel); newOk.onclick = () => { promptModal.hide(); resolve(input.value); }; newCancel.onclick = () => { promptModal.hide(); resolve(null); }; document.getElementById('customPromptModal').addEventListener('shown.bs.modal', () => { input.focus(); }, { once: true }); promptModal.show(); }); }
 
         async function init() { await fetchConfig(); await checkUserStatus(); }
 
@@ -342,10 +282,7 @@
                     else if (user.isMarine) badge = '<span class="badge bg-info text-dark">MARINE</span>';
                     document.getElementById('userZone').innerHTML = `<div class="d-flex align-items-center gap-2"><img src="${data.avatar}" class="avatar"><span class="fw-bold">${data.nickname}</span>${badge}<a href="/auth/logout" class="btn btn-sm btn-outline-danger"><i class="fas fa-sign-out-alt"></i></a></div>`;
                     document.getElementById('loginWarning').style.display = 'none';
-                    
-                    if(canValidate) changerOnglet('signalement');
-                    else chargerEnCours();
-
+                    if(canValidate) changerOnglet('signalement'); else chargerEnCours();
                 } else {
                     document.getElementById('userZone').innerHTML = `<a href="/auth/discord" class="btn btn-outline-light btn-sm"><i class="fab fa-discord"></i> Connexion</a>`;
                     document.getElementById('btnAdminZone').style.display = 'none';
@@ -381,7 +318,6 @@
         function changerOnglet(type) {
             resetForm();
             document.querySelectorAll('.nav-link').forEach(el => el.classList.remove('active'));
-            
             if(type === 'signalement') document.querySelector('a[onclick="changerOnglet(\'signalement\')"]').classList.add('active');
             if(type === 'encours') document.querySelector('a[onclick="changerOnglet(\'encours\')"]').classList.add('active');
             if(type === 'delais') document.querySelector('a[onclick="changerOnglet(\'delais\')"]').classList.add('active');
@@ -416,7 +352,6 @@
             }
         }
 
-        // --- AFFICHAGE DELAIS (AVEC COULEURS) ---
         async function chargerDelais() {
             const res = await fetch('/api/protocoles'); 
             const data = await res.json();
@@ -471,9 +406,8 @@
 
         function afficherRappels(container, p, regConfig, retardJours, sanctionBanner, deadlineText) {
             const regColor = getRegimentColor(p.cibleRegiment);
-            
-            // MODIFICATION ICI : color: white; pour le texte du header
-            const cardStyle = `border: 1px solid ${regColor}; box-shadow: 0 0 10px ${regColor}33;`; 
+            // MODIFICATION ICI : Couleur carte ROUGE fixe, Header Coloré + Texte Blanc
+            const cardStyle = `border: 1px solid #c0392b; box-shadow: 0 0 10px rgba(192, 57, 43, 0.2);`; 
             const headerStyle = `background-color: ${regColor}20; border-bottom: 1px solid ${regColor}; color: white; font-weight: bold;`;
 
             const btnGen = `<button class="btn btn-outline-light btn-sm w-100 mb-2" onclick="generateAndShow('${p._id}', '${p.cibleRegiment}', '${p.cibleGrade}', '${p.cibleNom}', '${p.auteurNom}', '${p.protocoleType}', '${p.raison}', '${p.details || ''}', '${p.targetSteamID || ''}', ${regConfig.sanctionDays}, '${regConfig.sanctionText}')">📄 Générer le Rapport Discord</button>`;
@@ -487,7 +421,7 @@
                 <div class="card h-100" style="${cardStyle}">
                     <div class="card-header d-flex justify-content-between align-items-center" style="${headerStyle}">
                         <span>⚠️ RAPPEL NÉCESSAIRE : ${p.cibleNom}</span>
-                        <small style="color:${regColor}">Retard de ${retardJours} jours</small>
+                        <small style="color:#e74c3c; font-weight:bold;">Retard de ${retardJours} jours</small>
                     </div>
                     <div class="card-body">
                         ${sanctionBanner}
@@ -515,16 +449,12 @@
             </div>`;
         }
 
-        // --- FONCTIONS COMMUNES ---
         function getRegimentColor(regimentName) {
             const reg = configData.regiments.find(r => r.name === regimentName);
             return reg && reg.color ? reg.color : '#c0392b';
         }
 
-        function copyText(text) {
-            navigator.clipboard.writeText(text);
-            customAlert('Texte copié !');
-        }
+        function copyText(text) { navigator.clipboard.writeText(text); customAlert('Texte copié !'); }
 
         function afficherMandats(data, estEnCours) {
             const container = document.getElementById('listeProtocoles');
@@ -535,9 +465,7 @@
             data.forEach(p => {
                 const isDone = p.statut === 'Effectué';
                 const badge = isDone ? '<span class="badge badge-done rounded-pill px-3 py-2">✅ EFFECTUÉ</span>' : '<span class="badge badge-pending rounded-pill px-3 py-2">⏳ EN ATTENTE</span>';
-                
                 const regColor = getRegimentColor(p.cibleRegiment);
-                // MODIFICATION ICI AUSSI : color: white
                 const headerStyle = `background-color: ${regColor}20; border-bottom: 2px solid ${regColor}; color: white; font-weight: bold;`;
 
                 let actionButtons = '';
@@ -556,18 +484,7 @@
 
                 let deleteBtn = user.isAdmin ? `<button onclick="supprimer('${p._id}')" class="btn btn-sm btn-danger ms-2" title="Supprimer"><i class="fas fa-trash"></i></button>` : '';
                 let timeAlert = (p.tempsRestant && !isDone) ? `<div class="alert-time p-2 rounded mb-2 text-center fw-bold">⚠️ RESTANT : ${p.tempsRestant}</div>` : '';
-                
-                let logName = p.discordNick || p.discordUser;
-                if (p.discordNick && p.discordUser && p.discordNick !== p.discordUser) logName = `${p.discordNick} (${p.discordUser})`;
-                const discordInfo = logName ? `<br><small class="text-secondary"><i class="fab fa-discord"></i> Log: ${logName}</small>` : '';
-                const steamInfo = p.targetSteamID ? `<small class="text-muted d-block mt-1" style="font-size:0.7rem">${p.targetSteamID}</small>` : '';
-                const dateStr = new Date(p.date).toLocaleString().slice(0, -3);
-
-                let validatorInfo = '';
-                if (p.statut === 'Effectué') {
-                    const vName = p.validatorManualName || (p.validatorNick || p.validatorUser);
-                    if (vName) validatorInfo = `<div class="mt-2 small text-success border-top border-secondary pt-1"><i class="fas fa-check-circle"></i> Traité par : ${p.validatorManualName ? p.validatorManualName + (p.validatorUser ? ` (${p.validatorUser})` : '') : vName}</div>`;
-                }
+                let logName = p.discordNick || p.discordUser; if (p.discordNick && p.discordUser && p.discordNick !== p.discordUser) logName = `${p.discordNick} (${p.discordUser})`; const discordInfo = logName ? `<br><small class="text-secondary"><i class="fab fa-discord"></i> Log: ${logName}</small>` : ''; const steamInfo = p.targetSteamID ? `<small class="text-muted d-block mt-1" style="font-size:0.7rem">${p.targetSteamID}</small>` : ''; const dateStr = new Date(p.date).toLocaleString().slice(0, -3); let validatorInfo = ''; if (p.statut === 'Effectué') { const vName = p.validatorManualName || (p.validatorNick || p.validatorUser); if (vName) validatorInfo = `<div class="mt-2 small text-success border-top border-secondary pt-1"><i class="fas fa-check-circle"></i> Traité par : ${p.validatorManualName ? p.validatorManualName + (p.validatorUser ? ` (${p.validatorUser})` : '') : vName}</div>`; }
 
                 container.innerHTML += `
                 <div class="col-12" style="${estEnCours ? '' : 'opacity:0.8; filter:grayscale(20%);'}">
@@ -610,36 +527,14 @@
             afficherMandats(currentData, false);
         }
 
-        // --- RESTE DU CODE (ADMIN, BUTTONS, ETC.) ---
-        
-        function generateAndShow(id, reg, grade, nom, auteur, proto, raison, details, steam, sanctionDays, sanctionText) {
-            const dateFinale = new Date();
-            dateFinale.setDate(dateFinale.getDate() + parseInt(sanctionDays));
-            const dateFinaleStr = dateFinale.toLocaleDateString('fr-FR');
-            const titlePost = `${reg} ${grade} ${nom} -> ${dateFinaleStr}`;
-            const bodyPost = `<:FlecheVert:990651262976528414> Protocole à effectuer avant le ${dateFinaleStr} sinon : ${sanctionText}\n<:FlecheVert:990651262976528414> Reçu\n\n...........................................................................\n\n- **Qui l'a ordonné :** ${auteur}\n- **Protocole :** ${proto.replace(/Protocole\s+/i, '')}\n- **Raison :** ${raison}${details ? `\n- **Détails :** ${details}` : ''}${steam ? `\n- **Steam ID :** ${steam}` : ''}`;
-            document.getElementById(`title-${id}`).innerText = titlePost;
-            document.getElementById(`body-${id}`).innerText = bodyPost;
-            toggleBox(id);
-        }
-
+        function generateAndShow(id, reg, grade, nom, auteur, proto, raison, details, steam, sanctionDays, sanctionText) { const dateFinale = new Date(); dateFinale.setDate(dateFinale.getDate() + parseInt(sanctionDays)); const dateFinaleStr = dateFinale.toLocaleDateString('fr-FR'); const titlePost = `${reg} ${grade} ${nom} -> ${dateFinaleStr}`; const bodyPost = `<:FlecheVert:990651262976528414> Protocole à effectuer avant le ${dateFinaleStr} sinon : ${sanctionText}\n<:FlecheVert:990651262976528414> Reçu\n\n...........................................................................\n\n- **Qui l'a ordonné :** ${auteur}\n- **Protocole :** ${proto.replace(/Protocole\s+/i, '')}\n- **Raison :** ${raison}${details ? `\n- **Détails :** ${details}` : ''}${steam ? `\n- **Steam ID :** ${steam}` : ''}`; document.getElementById(`title-${id}`).innerText = titlePost; document.getElementById(`body-${id}`).innerText = bodyPost; toggleBox(id); }
         function toggleBox(id) { const el = document.getElementById(`gen-${id}`); el.style.display = el.style.display === 'none' ? 'block' : 'none'; }
-        async function validerRappel(id) { 
-            const confirm = await customConfirm("Confirmer que vous prenez en charge ce rappel sur le forum ?");
-            if(!confirm) return; 
-            try { const res = await fetch(`${API_URL}/${id}/rappel`, { method: 'PUT' }); if(res.ok) chargerDelais(); } catch(e) { customAlert("Erreur réseau"); } 
-        }
-        
-        async function envoyerSignalement() { 
-            const body = { validatorManualName: document.getElementById('sigShockName').value, cibleNom: document.getElementById('sigCibleNom').value, cibleGrade: document.getElementById('sigCibleGrade').value, cibleRegiment: document.getElementById('sigCibleRegiment').value, protocoleType: document.getElementById('sigProtocole').value, auteurNom: document.getElementById('sigOrderedBy').value, raison: document.getElementById('sigRaison').value, details: document.getElementById('sigDetails').value, targetSteamID: document.getElementById('sigSteamID').value }; 
-            if(!body.validatorManualName || !body.cibleNom || !body.cibleGrade || !body.cibleRegiment || !body.protocoleType || !body.raison) return customAlert("Champs obligatoires manquants."); 
-            try { const res = await fetch('/api/protocoles/direct', { method: 'POST', headers: { 'Content-Type': 'application/json' }, body: JSON.stringify(body) }); if(res.ok) { customAlert("Enregistré !"); document.querySelectorAll('#signalementPanel input, #signalementPanel textarea, #signalementPanel select').forEach(i => i.value = ''); document.querySelectorAll('.nav-link')[3].click(); } else customAlert("Erreur"); } catch(e) { customAlert("Erreur connexion"); } 
-        }
-        
+        async function validerRappel(id) { const confirm = await customConfirm("Confirmer que vous prenez en charge ce rappel sur le forum ?"); if(!confirm) return; try { const res = await fetch(`${API_URL}/${id}/rappel`, { method: 'PUT' }); if(res.ok) chargerDelais(); } catch(e) { customAlert("Erreur réseau"); } }
+        async function envoyerSignalement() { const body = { validatorManualName: document.getElementById('sigShockName').value, cibleNom: document.getElementById('sigCibleNom').value, cibleGrade: document.getElementById('sigCibleGrade').value, cibleRegiment: document.getElementById('sigCibleRegiment').value, protocoleType: document.getElementById('sigProtocole').value, auteurNom: document.getElementById('sigOrderedBy').value, raison: document.getElementById('sigRaison').value, details: document.getElementById('sigDetails').value, targetSteamID: document.getElementById('sigSteamID').value }; if(!body.validatorManualName || !body.cibleNom || !body.cibleGrade || !body.cibleRegiment || !body.protocoleType || !body.raison) return customAlert("Champs obligatoires manquants."); try { const res = await fetch('/api/protocoles/direct', { method: 'POST', headers: { 'Content-Type': 'application/json' }, body: JSON.stringify(body) }); if(res.ok) { customAlert("Enregistré !"); document.querySelectorAll('#signalementPanel input, #signalementPanel textarea, #signalementPanel select').forEach(i => i.value = ''); document.querySelectorAll('.nav-link')[3].click(); } else customAlert("Erreur"); } catch(e) { customAlert("Erreur connexion"); } }
         function renderAdminUI() { const listAdminR = document.getElementById('listAdminRoles'); const listAdminU = document.getElementById('listAdminUsers'); const listOfficer = document.getElementById('listOfficerRoles'); const listMarine = document.getElementById('listMarineRoles'); listAdminR.innerHTML = (configData.adminRoles||[]).map(r => `<span class="badge bg-secondary">${r} <i class="fas fa-times tag-remove" onclick="removeConfig('adminRoles', '${r}')"></i></span>`).join(''); listAdminU.innerHTML = (configData.adminUsers||[]).map(r => `<span class="badge bg-secondary">${r} <i class="fas fa-times tag-remove" onclick="removeConfig('adminUsers', '${r}')"></i></span>`).join(''); listOfficer.innerHTML = (configData.officerRoles||[]).map(r => `<span class="badge bg-secondary">${r} <i class="fas fa-times tag-remove" onclick="removeConfig('officerRoles', '${r}')"></i></span>`).join(''); listMarine.innerHTML = (configData.marineRoles||[]).map(r => `<span class="badge bg-secondary">${r} <i class="fas fa-times tag-remove" onclick="removeConfig('marineRoles', '${r}')"></i></span>`).join(''); const regList = document.getElementById('regimentConfigList'); regList.innerHTML = ''; (configData.regiments || []).forEach((reg, index) => { const currentColor = reg.color || '#c0392b'; regList.innerHTML += `<div class="col-md-6 col-lg-4"><div class="card border-secondary h-100"><div class="card-header d-flex justify-content-between align-items-center py-2" style="border-bottom: 3px solid ${currentColor}"><span class="fw-bold">${reg.name}</span><button class="btn btn-sm btn-outline-danger" onclick="removeRegiment(${index})">🗑️</button></div><div class="card-body p-2"><div class="input-group input-group-sm mb-1"><span class="input-group-text bg-dark text-white border-secondary">Rappel (j)</span><input type="number" class="form-control" value="${reg.rappelDays}" onchange="updateRegiment(${index}, 'rappelDays', this.value)"></div><div class="input-group input-group-sm mb-1"><span class="input-group-text bg-dark text-white border-secondary">Sanction (j)</span><input type="number" class="form-control" value="${reg.sanctionDays}" onchange="updateRegiment(${index}, 'sanctionDays', this.value)"></div><div class="input-group input-group-sm mb-2"><span class="input-group-text bg-dark text-white border-secondary">Sanction</span><input type="text" class="form-control" value="${reg.sanctionText}" onchange="updateRegiment(${index}, 'sanctionText', this.value)"></div><div class="d-flex align-items-center gap-2"><small class="text-muted">Couleur Bandeau :</small><input type="color" class="form-control form-control-color" value="${currentColor}" onchange="updateRegiment(${index}, 'color', this.value)" title="Choisir la couleur"></div></div></div></div>`; }); }
         function addNewRegiment() { const name = document.getElementById('newRegimentName').value.trim(); if(!name) return; if(!configData.regiments) configData.regiments = []; configData.regiments.push({ name: name, rappelDays: 7, sanctionDays: 3, sanctionText: 'Arrêts', color: '#c0392b' }); document.getElementById('newRegimentName').value = ''; renderAdminUI(); }
         function updateRegiment(index, field, value) { if(field === 'rappelDays' || field === 'sanctionDays') value = parseInt(value); configData.regiments[index][field] = value; }
-        function removeRegiment(index) { if(!confirm("Supprimer ce régiment ?")) return; configData.regiments.splice(index, 1); renderAdminUI(); }
+        function removeRegiment(index) { customConfirm("Supprimer ce régiment ?").then(ok => { if(ok) { configData.regiments.splice(index, 1); renderAdminUI(); }}); }
         function addConfig(key) { let inputId = (key==='adminRoles')?'newAdminRole':(key==='adminUsers')?'newAdminUser':(key==='officerRoles')?'newOfficerRole':'newMarineRole'; const val = document.getElementById(inputId).value.trim(); if(!val) return; if(!configData[key]) configData[key] = []; configData[key].push(val); document.getElementById(inputId).value = ''; renderAdminUI(); }
         function removeConfig(key, val) { configData[key] = configData[key].filter(item => item !== val); renderAdminUI(); }
         async function saveConfig() { await fetch('/api/config', { method: 'PUT', headers: { 'Content-Type': 'application/json' }, body: JSON.stringify(configData) }); customAlert("Configuration sauvegardée !"); renderRegimentsSelect(); }
@@ -662,6 +557,7 @@
         
         async function restaurer(id) { 
             const temps = await customPrompt("Temps restant ?"); 
+            if(temps === null) return;
             const res = await fetch(`${API_URL}/${id}/restaurer`, { method: 'PUT', headers: { 'Content-Type': 'application/json' }, body: JSON.stringify({ tempsRestant: temps }) }); 
             if(res.ok) chargerHistorique(); else customAlert("Permission refusée"); 
         }
