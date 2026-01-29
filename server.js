@@ -11,7 +11,7 @@ const { google } = require('googleapis');
 
 const app = express();
 
-// --- INDISPENSABLE POUR RENDER & MOBILE ---
+// --- CORRECTION CRITIQUE 1 : Faire confiance au Proxy Render ---
 app.set('trust proxy', 1); 
 
 // --- CONFIGURATION ---
@@ -75,17 +75,17 @@ app.use(cors());
 app.use(bodyParser.json());
 app.use(express.static('public'));
 
-// --- SESSION SECURISÉE ---
+// --- CORRECTION CRITIQUE 2 : Configuration Session pour Mobile ---
 app.use(session({
     secret: SESSION_SECRET, 
     resave: false, 
     saveUninitialized: false,
-    proxy: true, // IMPORTANT POUR MOBILE
+    proxy: true, // OBLIGATOIRE pour que secure: true fonctionne sur Render
     store: MongoStore.create({ mongoUrl: MONGO_URI }), 
     cookie: { 
-        maxAge: 1000 * 60 * 60 * 24 * 7,
-        secure: true, 
-        sameSite: 'none', 
+        maxAge: 1000 * 60 * 60 * 24 * 7, // 7 jours
+        secure: true, // OBLIGATOIRE sur Render (HTTPS)
+        sameSite: 'none', // OBLIGATOIRE pour le retour de Discord sur mobile
         httpOnly: true
     }
 }));
@@ -97,11 +97,7 @@ passport.serializeUser((user, done) => done(null, user));
 passport.deserializeUser((obj, done) => done(null, obj));
 
 passport.use(new DiscordStrategy({
-    clientID: CLIENT_ID, 
-    clientSecret: CLIENT_SECRET, 
-    callbackURL: CALLBACK_URL, 
-    scope: ['identify', 'guilds', 'guilds.members.read'],
-    proxy: true
+    clientID: CLIENT_ID, clientSecret: CLIENT_SECRET, callbackURL: CALLBACK_URL, scope: ['identify', 'guilds', 'guilds.members.read']
 }, async (accessToken, refreshToken, profile, done) => {
     try {
         if (ALLOWED_GUILD_ID) {
@@ -111,12 +107,16 @@ passport.use(new DiscordStrategy({
         }
         return done(null, profile);
     } catch (error) { 
-        console.error("Auth Error:", error);
+        console.error("❌ ERREUR STRATEGIE DISCORD:", error); // Log l'erreur exacte
         return done(null, profile); 
     }
 }));
 
-// --- FONCTIONS DE SÉCURITÉ (DÉFINIES AVANT LES ROUTES) ---
+// --- Middleware de Debug global ---
+app.use((err, req, res, next) => {
+    console.error("🔥 ERREUR INTERNE SERVEUR :", err.stack);
+    res.status(500).send('Erreur serveur. Regarde les logs Render.');
+});
 
 async function getPermissions(user) {
     if (!user || !user.roles) return { isAdmin: false, isOfficer: false, isMarine: false };
@@ -130,17 +130,12 @@ async function getPermissions(user) {
     return { isAdmin: false, isOfficer: isOfficer, isMarine: isMarine };
 }
 
-const checkAdmin = async (req, res, next) => { 
-    if (req.isAuthenticated() && (await getPermissions(req.user)).isAdmin) return next(); 
-    res.status(403).json({ message: "Admin Only." }); 
-};
-
+const checkAdmin = async (req, res, next) => { if (req.isAuthenticated() && (await getPermissions(req.user)).isAdmin) return next(); res.status(403).json({ message: "Admin Only." }); };
 const checkEdit = async (req, res, next) => { 
     const perms = await getPermissions(req.user);
     if (req.isAuthenticated() && (perms.isAdmin || perms.isOfficer || perms.isMarine)) return next(); 
     res.status(403).json({ message: "Accès refusé." }); 
 };
-
 const checkValidate = async (req, res, next) => { 
     const perms = await getPermissions(req.user);
     if (req.isAuthenticated() && (perms.isAdmin || perms.isOfficer)) return next(); 
@@ -175,12 +170,13 @@ async function sendToGoogleSheet(protocole, shockName) {
 // --- ROUTES ---
 app.get('/auth/discord', passport.authenticate('discord'));
 
+// Modif route callback pour catcher les erreurs
 app.get('/auth/discord/callback', (req, res, next) => {
     passport.authenticate('discord', { failureRedirect: '/' }, (err, user, info) => {
-        if (err) return next(err);
-        if (!user) return res.redirect('/');
+        if (err) { console.error("❌ Erreur Passport Callback:", err); return next(err); }
+        if (!user) { console.error("❌ Pas d'utilisateur retourné par Discord"); return res.redirect('/'); }
         req.logIn(user, (err) => {
-            if (err) return next(err);
+            if (err) { console.error("❌ Erreur req.logIn:", err); return next(err); }
             return res.redirect('/');
         });
     })(req, res, next);
@@ -189,7 +185,7 @@ app.get('/auth/discord/callback', (req, res, next) => {
 app.get('/auth/logout', (req, res, next) => { 
     req.logout((err) => { 
         if (err) return next(err); 
-        req.session.destroy();
+        req.session.destroy(); // Force la destruction session
         res.redirect('/'); 
     }); 
 });
