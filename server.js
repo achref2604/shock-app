@@ -2,133 +2,181 @@ const express = require('express');
 const mongoose = require('mongoose');
 const cors = require('cors');
 const bodyParser = require('body-parser');
-const path = require('path');
+const session = require('express-session');
+const MongoStore = require('connect-mongo');
+const passport = require('passport');
+const DiscordStrategy = require('passport-discord').Strategy;
 
 const app = express();
-app.use(cors());
-app.use(bodyParser.json());
 
-// IMPORTANT : Servir le site web (Frontend)
-app.use(express.static('public'));
+// --- CONFIGURATION ---
+// Récupération des variables d'environnement
+const MONGO_URI = process.env.MONGO_URI;
+const CLIENT_ID = process.env.DISCORD_CLIENT_ID;
+const CLIENT_SECRET = process.env.DISCORD_CLIENT_SECRET;
+const CALLBACK_URL = process.env.DISCORD_CALLBACK_URL; // ex: https://ton-site.onrender.com/auth/discord/callback
+const SESSION_SECRET = process.env.SESSION_SECRET || 'secretSuperShock';
+// Optionnel : L'ID de ton serveur Discord pour empêcher les inconnus de se connecter
+const ALLOWED_GUILD_ID = process.env.ALLOWED_GUILD_ID; 
 
-// Connexion à la Base de Données (Via une variable secrète pour la sécurité)
-const mongoURI = process.env.MONGO_URI; 
-mongoose.connect(mongoURI, { useNewUrlParser: true, useUnifiedTopology: true })
-    .then(() => console.log("Connecté à MongoDB"))
-    .catch(err => console.error("Erreur de connexion MongoDB:", err));
+// --- BASE DE DONNÉES ---
+mongoose.connect(MONGO_URI, { useNewUrlParser: true, useUnifiedTopology: true })
+    .then(() => console.log("✅ Connecté à MongoDB"))
+    .catch(err => console.error("❌ Erreur MongoDB:", err));
 
-// Schéma
 const ProtocoleSchema = new mongoose.Schema({
     auteurNom: String,
     auteurMatricule: String,
     auteurGrade: String,
-    auteurRegiment: String,
+    discordUser: String, // Nouveau : Pseudo Discord de celui qui a fait l'action
+    discordId: String,   // Nouveau : ID Discord unique
     protocoleType: String,
     raison: String,
     targetSteamID: String,
     details: String,
-    tempsRestant: String, // <--- NOUVEAU CHAMP ICI
+    tempsRestant: String,
     statut: { type: String, default: 'En Attente' },
     date: { type: Date, default: Date.now }
 });
 const Protocole = mongoose.model('Protocole', ProtocoleSchema);
 
-// Middleware Auth
-const verifierAuth = (req, res, next) => {
-    const codeAcces = req.headers['authorization'];
-    // Le mot de passe sera aussi stocké dans une variable secrète
-    if (codeAcces === process.env.ADMIN_PASSWORD) { 
-        next();
-    } else {
-        res.status(403).json({ message: "Accès refusé." });
+// --- MIDDLEWARES ---
+app.use(cors());
+app.use(bodyParser.json());
+app.use(express.static('public'));
+
+// Configuration de la Session (Stockée dans MongoDB)
+app.use(session({
+    secret: SESSION_SECRET,
+    resave: false,
+    saveUninitialized: false,
+    store: MongoStore.create({ mongoUrl: MONGO_URI }),
+    cookie: { maxAge: 1000 * 60 * 60 * 24 * 7 } // Reste connecté 7 jours
+}));
+
+// Initialisation Passport (Discord)
+app.use(passport.initialize());
+app.use(passport.session());
+
+passport.serializeUser((user, done) => done(null, user));
+passport.deserializeUser((obj, done) => done(null, obj));
+
+passport.use(new DiscordStrategy({
+    clientID: CLIENT_ID,
+    clientSecret: CLIENT_SECRET,
+    callbackURL: CALLBACK_URL,
+    scope: ['identify', 'guilds'] // On demande l'identité et la liste des serveurs
+}, (accessToken, refreshToken, profile, done) => {
+    // SÉCURITÉ : Vérifier si l'utilisateur est dans le bon serveur Discord
+    if (ALLOWED_GUILD_ID) {
+        const isMember = profile.guilds.some(g => g.id === ALLOWED_GUILD_ID);
+        if (!isMember) return done(null, false, { message: "Vous n'êtes pas sur le serveur Shock Trooper." });
     }
+    return done(null, profile);
+}));
+
+// Fonction de vérification (Middleware de sécurité)
+const estConnecte = (req, res, next) => {
+    if (req.isAuthenticated()) {
+        return next();
+    }
+    res.status(401).json({ message: "Non authentifié. Veuillez vous connecter via Discord." });
 };
 
-// ... (Le début de ton fichier avec les connexions ne change pas) ...
+// --- ROUTES AUTHENTIFICATION ---
 
-// --- ROUTES API ---
+// 1. Lancer la connexion
+app.get('/auth/discord', passport.authenticate('discord'));
 
-// 1. VOIR les protocoles EN ATTENTE (Pour la page principale)
+// 2. Retour de Discord
+app.get('/auth/discord/callback', passport.authenticate('discord', {
+    failureRedirect: '/' // Si ça rate, retour accueil
+}), (req, res) => {
+    res.redirect('/'); // Si ça marche, retour accueil
+});
+
+// 3. Info utilisateur (pour le frontend)
+app.get('/auth/user', (req, res) => {
+    if (req.isAuthenticated()) {
+        res.json({ 
+            connecte: true, 
+            username: req.user.username, 
+            avatar: `https://cdn.discordapp.com/avatars/${req.user.id}/${req.user.avatar}.png`
+        });
+    } else {
+        res.json({ connecte: false });
+    }
+});
+
+// 4. Déconnexion
+app.get('/auth/logout', (req, res, next) => {
+    req.logout((err) => {
+        if (err) return next(err);
+        res.redirect('/');
+    });
+});
+
+// --- ROUTES API (PROTÉGÉES PAR DISCORD) ---
+
+// Voir (Public ou Protégé selon ton choix, ici Public)
 app.get('/api/protocoles', async (req, res) => {
-    // On ne cherche que ceux qui ne sont PAS effectués
     const protocoles = await Protocole.find({ statut: { $ne: 'Effectué' } }).sort({ date: -1 });
     res.json(protocoles);
 });
 
-// 2. VOIR L'HISTORIQUE (Les 30 derniers effectués)
 app.get('/api/historique', async (req, res) => {
-    // On cherche ceux qui SONT effectués
     const protocoles = await Protocole.find({ statut: 'Effectué' }).sort({ date: -1 });
     res.json(protocoles);
 });
 
-// 3. AJOUTER un protocole (Reste pareil)
-app.post('/api/protocoles', verifierAuth, async (req, res) => {
+// AJOUTER (Protégé)
+app.post('/api/protocoles', estConnecte, async (req, res) => {
     try {
-        const nouveauProtocole = new Protocole(req.body);
+        const data = req.body;
+        // On ajoute automatiquement les infos Discord
+        data.discordUser = req.user.username;
+        data.discordId = req.user.id;
+        
+        const nouveauProtocole = new Protocole(data);
         await nouveauProtocole.save();
-        res.json({ message: "Protocole enregistré !" });
+        res.json({ message: "Enregistré par " + req.user.username });
     } catch (error) { res.status(500).json({ error: error.message }); }
 });
 
-// 4. VALIDER un protocole + NETTOYAGE AUTOMATIQUE (C'est ici que la magie opère)
-app.put('/api/protocoles/:id/valider', verifierAuth, async (req, res) => {
+// MODIFIER (Protégé)
+app.put('/api/protocoles/:id', estConnecte, async (req, res) => {
     try {
-        // A. On marque le protocole comme effectué
-        await Protocole.findByIdAndUpdate(req.params.id, { statut: 'Effectué' });
-
-        // B. Logique de suppression des vieux protocoles (> 30)
-        // On compte combien sont terminés
-        const historique = await Protocole.find({ statut: 'Effectué' }).sort({ date: -1 }); // Du plus récent au plus vieux
-        
-        if (historique.length > 30) {
-            // S'il y en a plus de 30, on récupère les ID de ceux qui dépassent (les plus vieux à la fin de la liste)
-            const tropVieux = historique.slice(30); 
-            const idsASupprimer = tropVieux.map(p => p._id);
-            
-            // On les supprime de la base de données
-            await Protocole.deleteMany({ _id: { $in: idsASupprimer } });
-            console.log(`${idsASupprimer.length} vieux protocoles supprimés.`);
-        }
-
-        res.json({ message: "Validé et historique nettoyé." });
-    } catch (error) {
-        res.status(500).json({ error: "Erreur lors de la validation" });
-    }
-});
-
-// ... (La fin avec app.listen ne change pas)
-const PORT = process.env.PORT || 3000;
-
-// 5. MODIFIER un protocole (Mise à jour des infos)
-app.put('/api/protocoles/:id', verifierAuth, async (req, res) => {
-    try {
-        // On met à jour tous les champs envoyés
         await Protocole.findByIdAndUpdate(req.params.id, req.body);
-        res.json({ message: "Protocole mis à jour avec succès." });
-    } catch (error) {
-        res.status(500).json({ error: "Erreur lors de la modification" });
-    }
+        res.json({ message: "Mis à jour par " + req.user.username });
+    } catch (error) { res.status(500).json({ error: "Erreur" }); }
 });
 
-// 6. RESTAURER un protocole (Sortir des archives -> Vers En cours)
-app.put('/api/protocoles/:id/restaurer', verifierAuth, async (req, res) => {
+// VALIDER (Protégé)
+app.put('/api/protocoles/:id/valider', estConnecte, async (req, res) => {
+    try {
+        await Protocole.findByIdAndUpdate(req.params.id, { statut: 'Effectué' });
+        
+        // Nettoyage historique > 30
+        const historique = await Protocole.find({ statut: 'Effectué' }).sort({ date: -1 });
+        if (historique.length > 30) {
+            const tropVieux = historique.slice(30);
+            await Protocole.deleteMany({ _id: { $in: tropVieux.map(p => p._id) } });
+        }
+        res.json({ message: "Validé par " + req.user.username });
+    } catch (error) { res.status(500).json({ error: "Erreur" }); }
+});
+
+// RESTAURER (Protégé)
+app.put('/api/protocoles/:id/restaurer', estConnecte, async (req, res) => {
     try {
         const { tempsRestant } = req.body;
+        let updateData = { statut: 'En Attente', date: Date.now() };
+        if (tempsRestant) updateData.tempsRestant = tempsRestant;
         
-        // On prépare la mise à jour : on change le statut ET le temps restant si fourni
-        let updateData = { statut: 'En Attente', date: Date.now() }; // On met à jour la date pour qu'il remonte en haut
-        if (tempsRestant) {
-            updateData.tempsRestant = tempsRestant;
-        }
-
         await Protocole.findByIdAndUpdate(req.params.id, updateData);
-        res.json({ message: "Protocole restauré." });
-    } catch (error) {
-        res.status(500).json({ error: "Erreur lors de la restauration" });
-    }
+        res.json({ message: "Restauré par " + req.user.username });
+    } catch (error) { res.status(500).json({ error: "Erreur" }); }
 });
 
+const PORT = process.env.PORT || 3000;
 app.listen(PORT, () => console.log(`Serveur lancé sur le port ${PORT}`));
-
-
