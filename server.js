@@ -100,22 +100,29 @@ passport.serializeUser((user, done) => done(null, user));
 passport.deserializeUser((obj, done) => done(null, obj));
 
 passport.use(new DiscordStrategy({
-    clientID: CLIENT_ID, 
-    clientSecret: CLIENT_SECRET, 
-    callbackURL: CALLBACK_URL, 
+    clientID: CLIENT_ID,
+    clientSecret: CLIENT_SECRET,
+    callbackURL: CALLBACK_URL,
     scope: ['identify', 'guilds', 'guilds.members.read'],
     proxy: true
 }, async (accessToken, refreshToken, profile, done) => {
     try {
         if (ALLOWED_GUILD_ID) {
-            const response = await axios.get(`https://discord.com/api/users/@me/guilds/${ALLOWED_GUILD_ID}/member`, { headers: { Authorization: `Bearer ${accessToken}` } });
-            profile.roles = response.data.roles;
-            profile.serverNick = response.data.nick || response.data.user.username;
+            try {
+                const response = await axios.get(`https://discord.com/api/users/@me/guilds/${ALLOWED_GUILD_ID}/member`, { 
+                    headers: { Authorization: `Bearer ${accessToken}` } 
+                });
+                profile.roles = response.data.roles;
+                profile.serverNick = response.data.nick || response.data.user.username;
+            } catch (guildError) {
+                console.error("L'utilisateur n'est pas dans le serveur autorisé.");
+                return done(null, false, { message: "Serveur Discord non rejoint." });
+            }
         }
         return done(null, profile);
-    } catch (error) { 
-        console.error("Auth Error:", error);
-        return done(null, profile); 
+    } catch (error) {
+        console.error("Détails de l'erreur Auth:", error.response ? error.response.data : error.message);
+        return done(error, null);
     }
 }));
 
@@ -296,3 +303,4 @@ app.delete('/api/protocoles/:id', checkAdmin, async (req, res) => {
 
 const PORT = process.env.PORT || 3000;
 app.listen(PORT, () => console.log(`Serveur lancé sur le port ${PORT}`));
+
