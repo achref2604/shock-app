@@ -58,7 +58,7 @@ const ProtocoleSchema = new mongoose.Schema({
     
     // --- NOUVEAUX CHAMPS RAPPEL ---
     rappelPrisEnChargeBy: String, 
-    rappelDate: Date, // Date à laquelle le Shock a validé le rappel
+    rappelDate: Date, // C'est ici que la date du clic est stockée
 
     statut: { type: String, default: 'En Attente' },
     date: { type: Date, default: Date.now }
@@ -212,17 +212,16 @@ app.put('/api/protocoles/:id/valider', checkValidate, async (req, res) => {
 
 app.put('/api/protocoles/:id/restaurer', checkValidate, async (req, res) => {
     const { tempsRestant } = req.body;
-    // On reset aussi les infos de rappel
     let updateData = { statut: 'En Attente', date: Date.now(), validatorUser: null, validatorNick: null, validatorId: null, validatorManualName: null, rappelPrisEnChargeBy: null, rappelDate: null };
     if (tempsRestant) updateData.tempsRestant = tempsRestant;
     await Protocole.findByIdAndUpdate(req.params.id, updateData);
     res.json({ message: "OK" });
 });
 
-// ROUTE PRISE EN CHARGE RAPPEL (MODIFIÉE)
+// ROUTE PRISE EN CHARGE RAPPEL (IMPORTANTE)
 app.put('/api/protocoles/:id/rappel', checkValidate, async (req, res) => {
     const takenBy = `${req.user.serverNick} (${req.user.username})`;
-    // On enregistre la DATE de la prise en charge (Date.now())
+    // Ici on enregistre la DATE EXACTE du clic
     await Protocole.findByIdAndUpdate(req.params.id, { 
         rappelPrisEnChargeBy: takenBy,
         rappelDate: Date.now() 
