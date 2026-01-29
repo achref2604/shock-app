@@ -292,7 +292,7 @@
 
         // --- LOGIQUE DELAIS & RAPPELS ---
         async function chargerDelais() {
-            const res = await fetch('/api/protocoles'); 
+            const res = await fetch('/api/protocoles'); // On récupère ceux en cours
             const data = await res.json();
             const container = document.getElementById('listeProtocoles');
             container.innerHTML = '';
@@ -311,23 +311,31 @@
                 if (now > limitDate) {
                     count++;
                     
-                    // Calcul Date Sanction (Date Création + RappelDays + SanctionDays)
-                    const absoluteSanctionDate = new Date(dateCreation);
-                    absoluteSanctionDate.setDate(absoluteSanctionDate.getDate() + regConfig.rappelDays + regConfig.sanctionDays);
-                    
-                    // Affichage conditionnel de la bannière
+                    // --- VARIABLE ET LOGIQUE DATE LIMITE ---
                     let sanctionBanner = '';
-                    if (now > absoluteSanctionDate) {
-                        sanctionBanner = `<div class="sanction-alert">${regConfig.sanctionText} À APPLIQUER</div>`;
+                    let deadlineText = '';
+
+                    // Si le rappel a été validé (rappelDate existe), on calcule la vraie date limite
+                    if (p.rappelDate) {
+                        const datePriseEnCharge = new Date(p.rappelDate);
+                        const deadline = new Date(datePriseEnCharge);
+                        deadline.setDate(deadline.getDate() + regConfig.sanctionDays);
+                        const deadlineStr = deadline.toLocaleDateString('fr-FR');
+
+                        // Texte sous le nom du shock
+                        deadlineText = `<div class="text-white mt-1 small">A jusqu'au <strong>${deadlineStr}</strong> pour effectuer le protocole.</div>`;
+
+                        // Si la date limite est passée, on affiche la bannière
+                        if (now > deadline) {
+                            sanctionBanner = `<div class="sanction-alert">${regConfig.sanctionText} À APPLIQUER</div>`;
+                        }
                     }
 
-                    // Calcul de la date du titre au clic (voir generateAndShow)
-                    
-                    // Stockage des infos pour le bouton
+                    // Stockage des infos pour le bouton Générer (Date Sanction dynamique au clic)
                     const btnGen = `<button class="btn btn-outline-light btn-sm w-100 mb-2" onclick="generateAndShow('${p._id}', '${p.cibleRegiment}', '${p.cibleGrade}', '${p.cibleNom}', '${p.auteurNom}', '${p.protocoleType}', '${p.raison}', '${p.details || ''}', '${p.targetSteamID || ''}', ${regConfig.sanctionDays}, '${regConfig.sanctionText}')">📄 Générer le Rapport Discord</button>`;
 
                     let statusPriseEnCharge = p.rappelPrisEnChargeBy 
-                        ? `<div class="text-success fw-bold mt-2"><i class="fas fa-check"></i> Pris en charge par ${p.rappelPrisEnChargeBy}</div>` 
+                        ? `<div class="text-success fw-bold mt-2"><i class="fas fa-check"></i> Pris en charge par ${p.rappelPrisEnChargeBy}</div>${deadlineText}` 
                         : `<div class="text-warning fw-bold mt-2"><i class="fas fa-clock"></i> Pas encore pris en charge</div>`;
 
                     container.innerHTML += `
