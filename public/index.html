@@ -8,20 +8,18 @@
     <link href="https://fonts.googleapis.com/css2?family=Rajdhani:wght@400;600;700&display=swap" rel="stylesheet">
     <link rel="stylesheet" href="https://cdnjs.cloudflare.com/ajax/libs/font-awesome/6.4.0/css/all.min.css">
     <style>
-        /* --- THEME PLUS CLAIR --- */
         :root { 
             --shock-red: #c0392b; 
             --signal-orange: #e67e22; 
-            --bg-dark: #181818; /* Gris foncé visible (plus clair que le noir) */
-            --card-bg: #222222; /* Carte grise pour le contraste */
+            --bg-dark: #141414; 
+            --card-bg: #1e1e1e; 
         }
         body { 
             font-family: 'Rajdhani', sans-serif; 
             background-color: var(--bg-dark); 
             color: #e0e0e0; 
-            /* Suppression du gradient pour être sûr que la couleur s'applique */
+            background-image: radial-gradient(circle at center, #252525 0%, #141414 100%);
         }
-        
         h1, h2, h3, h4, h5, .nav-link, .btn { text-transform: uppercase; letter-spacing: 1px; }
         
         .text-shock { color: var(--shock-red) !important; text-shadow: 0 0 10px rgba(192, 57, 43, 0.3); }
@@ -61,6 +59,7 @@
     
         .main-wrapper { max-width: 1800px; margin: 0 auto; }
 
+        /* MODALES */
         .modal-content { background-color: var(--card-bg); border: 1px solid #444; color: white; }
         .modal-header { border-bottom: 1px solid #444; }
         .modal-footer { border-top: 1px solid #444; }
@@ -497,9 +496,8 @@
                 let timeAlert = (p.tempsRestant && !isDone) ? `<div class="alert-time p-2 rounded mb-2 text-center fw-bold">⚠️ RESTANT : ${p.tempsRestant}</div>` : '';
                 let logName = p.discordNick || p.discordUser; if (p.discordNick && p.discordUser && p.discordNick !== p.discordUser) logName = `${p.discordNick} (${p.discordUser})`; const discordInfo = logName ? `<br><small class="text-secondary"><i class="fab fa-discord"></i> Log: ${logName}</small>` : ''; const steamInfo = p.targetSteamID ? `<small class="text-muted d-block mt-1" style="font-size:0.7rem">${p.targetSteamID}</small>` : ''; const dateStr = new Date(p.date).toLocaleString().slice(0, -3); let validatorInfo = ''; if (p.statut === 'Effectué') { const vName = p.validatorManualName || (p.validatorNick || p.validatorUser); if (vName) validatorInfo = `<div class="mt-2 small text-success border-top border-secondary pt-1"><i class="fas fa-check-circle"></i> Traité par : ${p.validatorManualName ? p.validatorManualName + (p.validatorUser ? ` (${p.validatorUser})` : '') : vName}</div>`; }
 
-                // MODIF ARCHIVE : PLUS DE GRAYSCALE
-                // On met juste une légère opacité si c'est pas en cours, mais on garde les couleurs
-                const styleCard = estEnCours ? '' : 'opacity:1;'; 
+                // MODIFICATION ICI POUR LES ARCHIVES : Pas de grayscale, juste une opacité
+                const styleCard = estEnCours ? '' : 'opacity:0.9;';
 
                 container.innerHTML += `
                 <div class="col-12" style="${styleCard}">
