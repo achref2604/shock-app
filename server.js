@@ -18,7 +18,6 @@ const CALLBACK_URL = process.env.DISCORD_CALLBACK_URL;
 const SESSION_SECRET = process.env.SESSION_SECRET || 'secretSuperShock';
 const ALLOWED_GUILD_ID = process.env.ALLOWED_GUILD_ID;
 
-// IDs des "Super Admins" (Fox) - SEULS EUX PEUVENT SUPPRIMER
 const SUPER_ADMIN_USERS = ['517350911647940611']; 
 const SUPER_ADMIN_ROLES = ['1313599623004160082'];
 
@@ -27,7 +26,6 @@ mongoose.connect(MONGO_URI, { useNewUrlParser: true, useUnifiedTopology: true })
     .then(() => console.log("✅ Connecté à MongoDB"))
     .catch(err => console.error("❌ Erreur MongoDB:", err));
 
-// Schémas
 const ConfigSchema = new mongoose.Schema({
     officerRoles: [String], 
     marineRoles: [String],  
@@ -47,7 +45,7 @@ const ProtocoleSchema = new mongoose.Schema({
     auteurNom: String,
     discordUser: String,
     discordNick: String,
-    discordId: String,
+    discordId: String, // IMPORTANT : On stocke l'ID unique Discord ici
     cibleNom: String,
     cibleGrade: String,
     cibleRegiment: String,
@@ -105,11 +103,9 @@ passport.use(new DiscordStrategy({
 async function getPermissions(user) {
     if (!user || !user.roles) return { isAdmin: false, isOfficer: false, isMarine: false };
     
-    // Admin (Hardcodé)
     const isAdmin = SUPER_ADMIN_USERS.includes(user.id) || user.roles.some(r => SUPER_ADMIN_ROLES.includes(r));
     if (isAdmin) return { isAdmin: true, isOfficer: true, isMarine: true };
 
-    // DB Config
     const config = await Config.findOne();
     const isOfficer = user.roles.some(r => config.officerRoles.includes(r));
     const isMarine = user.roles.some(r => config.marineRoles.includes(r));
@@ -152,7 +148,8 @@ app.get('/auth/user', async (req, res) => {
     if (req.isAuthenticated()) {
         const perms = await getPermissions(req.user);
         res.json({ 
-            connecte: true, 
+            connecte: true,
+            id: req.user.id, // ON RENVOIE L'ID DISCORD ICI
             username: req.user.username,
             nickname: req.user.serverNick,
             avatar: `https://cdn.discordapp.com/avatars/${req.user.id}/${req.user.avatar}.png`,
@@ -182,7 +179,21 @@ app.post('/api/protocoles', checkEdit, async (req, res) => {
     } catch (error) { res.status(500).json({ error: error.message }); }
 });
 
-app.put('/api/protocoles/:id', checkEdit, async (req, res) => { await Protocole.findByIdAndUpdate(req.params.id, req.body); res.json({ message: "OK" }); });
+// MODIFICATION : SÉCURITÉ RENFORCÉE ICI
+app.put('/api/protocoles/:id', checkEdit, async (req, res) => {
+    try {
+        const protocole = await Protocole.findById(req.params.id);
+        const perms = await getPermissions(req.user);
+
+        // Si ce n'est pas l'admin ET ce n'est pas l'auteur -> Refusé
+        if (!perms.isAdmin && protocole.discordId !== req.user.id) {
+            return res.status(403).json({ message: "Seul l'auteur ou un Admin peut modifier ce protocole." });
+        }
+
+        await Protocole.findByIdAndUpdate(req.params.id, req.body);
+        res.json({ message: "OK" });
+    } catch (error) { res.status(500).json({ error: "Erreur serveur" }); }
+});
 
 app.put('/api/protocoles/:id/valider', checkValidate, async (req, res) => {
     await Protocole.findByIdAndUpdate(req.params.id, { statut: 'Effectué' });
@@ -202,14 +213,11 @@ app.put('/api/protocoles/:id/restaurer', checkValidate, async (req, res) => {
     res.json({ message: "OK" });
 });
 
-// NOUVELLE ROUTE : SUPPRESSION DÉFINITIVE (Admin Only)
 app.delete('/api/protocoles/:id', checkAdmin, async (req, res) => {
     try {
         await Protocole.findByIdAndDelete(req.params.id);
         res.json({ message: "Protocole supprimé définitivement." });
-    } catch (error) {
-        res.status(500).json({ error: "Erreur serveur" });
-    }
+    } catch (error) { res.status(500).json({ error: "Erreur serveur" }); }
 });
 
 const PORT = process.env.PORT || 3000;
