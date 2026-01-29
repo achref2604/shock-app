@@ -8,12 +8,26 @@
     <link href="https://fonts.googleapis.com/css2?family=Rajdhani:wght@400;600;700&display=swap" rel="stylesheet">
     <link rel="stylesheet" href="https://cdnjs.cloudflare.com/ajax/libs/font-awesome/6.4.0/css/all.min.css">
     <style>
-        :root { --shock-red: #c0392b; --bg-dark: #0a0a0a; --card-bg: #161616; }
+        :root { 
+            --shock-red: #c0392b; 
+            --signal-orange: #e67e22; /* NOUVELLE COULEUR SIGNALEMENT */
+            --bg-dark: #0a0a0a; 
+            --card-bg: #161616; 
+        }
         body { font-family: 'Rajdhani', sans-serif; background-color: var(--bg-dark); color: #e0e0e0; background-image: radial-gradient(circle at center, #1a1a1a 0%, #0a0a0a 100%); }
         h1, h2, h3, h4, h5, .nav-link, .btn { text-transform: uppercase; letter-spacing: 1px; }
+        
+        /* SHOCK RED THEME */
         .text-shock { color: var(--shock-red) !important; text-shadow: 0 0 10px rgba(192, 57, 43, 0.3); }
         .btn-shock { background-color: var(--shock-red); border: none; color: white; font-weight: 600; }
         .btn-shock:hover { background-color: #a93226; box-shadow: 0 0 15px rgba(192, 57, 43, 0.5); color: white; }
+        
+        /* SIGNAL ORANGE THEME (NOUVEAU) */
+        .text-signal { color: var(--signal-orange) !important; text-shadow: 0 0 10px rgba(230, 126, 34, 0.3); }
+        .border-signal { border-color: var(--signal-orange) !important; }
+        .btn-signal { background-color: var(--signal-orange); border: none; color: white; font-weight: 600; }
+        .btn-signal:hover { background-color: #d35400; box-shadow: 0 0 15px rgba(230, 126, 34, 0.5); color: white; }
+
         .card { background-color: var(--card-bg); border: 1px solid #333; box-shadow: 0 4px 6px rgba(0,0,0,0.3); }
         .card-header { border-bottom: 1px solid #333; background-color: rgba(192, 57, 43, 0.1); }
         .form-control, .form-select { background-color: #222; border: 1px solid #444; color: #fff; }
@@ -92,15 +106,15 @@
 
     <div class="row justify-content-center" id="signalementPanel" style="display: none;">
         <div class="col-12 mb-5">
-            <div class="card border-info">
-                <div class="card-header text-center text-info fw-bold py-3">⚡ SIGNALEMENT PROTOCOLE (DIRECT & EFFECTUÉ)</div>
+            <div class="card border-signal">
+                <div class="card-header text-center text-signal fw-bold py-3">⚡ SIGNALEMENT PROTOCOLE (DIRECT & EFFECTUÉ)</div>
                 <div class="card-body p-4">
                     <div class="row g-3">
                         <div class="col-md-3 border-end border-secondary pe-md-4">
                             <h5 class="text-muted mb-3"><i class="fas fa-user-shield"></i> Le Shock</h5>
                             <div class="mb-3">
                                 <label class="small text-muted">Identification du Shock*</label>
-                                <input type="text" id="sigShockName" class="form-control fw-bold text-info" placeholder="Matricule + Nom">
+                                <input type="text" id="sigShockName" class="form-control fw-bold text-signal" placeholder="Matricule + Nom">
                             </div>
                         </div>
                         <div class="col-md-9 ps-md-4">
@@ -130,7 +144,7 @@
                         </div>
                     </div>
                     <div class="text-center mt-4 pt-3 border-top border-secondary">
-                        <button onclick="envoyerSignalement()" class="btn btn-info btn-lg px-5 fw-bold">Enregistrer et Archiver</button>
+                        <button onclick="envoyerSignalement()" class="btn btn-signal btn-lg px-5 fw-bold">Enregistrer et Archiver</button>
                     </div>
                 </div>
             </div>
@@ -227,7 +241,7 @@
 
                     btnZone.style.display = canEdit ? 'block' : 'none';
                     navAdmin.style.display = user.isAdmin ? 'block' : 'none';
-                    navSig.style.display = canValidate ? 'block' : 'none'; // Seuls officiers/admins voient le signalement direct
+                    navSig.style.display = canValidate ? 'block' : 'none';
                     warning.style.display = 'none';
 
                     if(!canEdit) { warning.innerHTML = "<small>Connecté en lecture seule.</small>"; warning.style.display = 'block'; }
@@ -278,7 +292,7 @@
             } else if(type === 'signalement') {
                 document.getElementById('listeSection').style.display = 'none';
                 document.getElementById('signalementPanel').style.display = 'block';
-                document.getElementById('titreListe').innerHTML = '<span class="text-info">⚡</span> Signalement Direct';
+                document.getElementById('titreListe').innerHTML = '<span class="text-signal">⚡</span> Signalement Direct';
             } else if(type === 'encours') {
                 document.getElementById('titreListe').innerHTML = '<span class="text-shock">►</span> Mandats en Cours';
                 if (user.isAdmin || user.isOfficer || user.isMarine) document.getElementById('btnAdminZone').style.display = 'block';
@@ -289,15 +303,14 @@
             }
         }
 
-        // --- ENVOI DU SIGNALEMENT DIRECT ---
         async function envoyerSignalement() {
             const body = {
-                validatorManualName: document.getElementById('sigShockName').value, // Identification Shock
+                validatorManualName: document.getElementById('sigShockName').value,
                 cibleNom: document.getElementById('sigCibleNom').value,
                 cibleGrade: document.getElementById('sigCibleGrade').value,
                 cibleRegiment: document.getElementById('sigCibleRegiment').value,
                 protocoleType: document.getElementById('sigProtocole').value,
-                auteurNom: document.getElementById('sigOrderedBy').value, // Ordonné par
+                auteurNom: document.getElementById('sigOrderedBy').value,
                 raison: document.getElementById('sigRaison').value,
                 details: document.getElementById('sigDetails').value,
                 targetSteamID: document.getElementById('sigSteamID').value
@@ -315,17 +328,14 @@
                 });
                 if(res.ok) {
                     alert("Signalement enregistré et archivé !");
-                    // Vider formulaire
                     document.querySelectorAll('#signalementPanel input, #signalementPanel textarea, #signalementPanel select').forEach(i => i.value = '');
-                    // Aller aux archives
-                    document.querySelectorAll('.nav-link')[1].click(); // Simule le clic sur Archives
+                    document.querySelectorAll('.nav-link')[1].click(); 
                 } else {
                     alert("Erreur");
                 }
             } catch(e) { alert("Erreur connexion"); }
         }
 
-        // --- FONCTIONS ADMIN UI ---
         function renderAdminUI() {
             const listAdminR = document.getElementById('listAdminRoles');
             const listAdminU = document.getElementById('listAdminUsers');
@@ -374,7 +384,6 @@
             renderRegimentsSelect();
         }
 
-        // --- LOGIQUE STANDARD ---
         async function chargerEnCours() {
             const res = await fetch('/api/protocoles');
             currentData = await res.json();
