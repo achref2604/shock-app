@@ -33,6 +33,7 @@
         .badge-done { background-color: #27ae60; color: white; }
         .badge-pending { background-color: #f39c12; color: #000; }
         .details-box { background-color: rgba(255,255,255,0.05); border-left: 3px solid var(--shock-red); }
+        .alert-time { background-color: rgba(243, 156, 18, 0.2); border: 1px solid #f39c12; color: #f39c12; }
     </style>
 </head>
 <body class="container py-5">
@@ -75,14 +76,14 @@
                         <div class="col-md-6">
                             <h5 class="text-muted mb-3">Détails du Mandat</h5>
                             <input type="text" id="steamid" class="form-control mb-2 fw-bold text-warning" placeholder="SteamID64 de la Cible">
-                            <div class="row g-2">
-                                <div class="col-6"><input type="text" id="protocole" class="form-control" placeholder="Sanction"></div>
-                                <div class="col-6"><input type="text" id="raison" class="form-control" placeholder="Raison"></div>
+                            <div class="row g-2 mb-2">
+                                <div class="col-6"><input type="text" id="protocole" class="form-control" placeholder="Sanction (Total)"></div>
+                                <div class="col-6"><input type="text" id="tempsRestant" class="form-control border-warning text-warning" placeholder="Temps Restant (Opt.)"></div>
                             </div>
-                            <textarea id="details" class="form-control mt-2" rows="3" placeholder="Rapport détaillé..."></textarea>
+                            <input type="text" id="raison" class="form-control mb-2" placeholder="Raison">
+                            <textarea id="details" class="form-control" rows="2" placeholder="Rapport détaillé..."></textarea>
                         </div>
                     </div>
-                    
                     <div class="text-center mt-4">
                         <button id="btnSubmit" onclick="envoyerProtocole()" class="btn btn-shock btn-lg px-5">Transmettre l'Ordre</button>
                         <button id="btnCancel" onclick="resetForm()" class="btn btn-outline-secondary btn-lg px-3 ms-2" style="display:none;">Annuler</button>
@@ -103,8 +104,6 @@
     <script>
         const API_URL = '/api/protocoles';
         const API_HISTORY = '/api/historique';
-        
-        // Variables globales pour stocker les données et l'état d'édition
         let currentData = [];
         let editingId = null; 
 
@@ -114,10 +113,9 @@
         }
 
         function changerOnglet(type) {
-            resetForm(); // Reset du formulaire si on change d'onglet
+            resetForm();
             document.querySelectorAll('.nav-link').forEach(el => el.classList.remove('active'));
             event.target.classList.add('active');
-
             const btnZone = document.getElementById('btnAdminZone');
             const adminPanel = document.getElementById('adminPanel');
             const titre = document.getElementById('titreListe');
@@ -137,7 +135,7 @@
         async function chargerEnCours() {
             try {
                 const response = await fetch(API_URL);
-                currentData = await response.json(); // On stocke les données
+                currentData = await response.json();
                 afficherCartes(currentData, true);
             } catch (e) { console.error(e); }
         }
@@ -150,13 +148,10 @@
             } catch (e) { console.error(e); }
         }
 
-        // Fonction pour pré-remplir le formulaire
         function preparerAction(id, mode) {
-            // On trouve l'élément dans la liste locale
             const item = currentData.find(p => p._id === id);
             if(!item) return;
 
-            // On remplit les champs
             document.getElementById('matricule').value = item.auteurMatricule;
             document.getElementById('nom').value = item.auteurNom;
             document.getElementById('grade').value = item.auteurGrade;
@@ -164,21 +159,19 @@
             document.getElementById('protocole').value = item.protocoleType;
             document.getElementById('raison').value = item.raison;
             document.getElementById('details').value = item.details;
+            document.getElementById('tempsRestant').value = item.tempsRestant || '';
 
-            // Afficher le panneau
             document.getElementById('adminPanel').style.display = 'block';
-            
-            // Scroller vers le formulaire
             document.getElementById('adminPanel').scrollIntoView({ behavior: 'smooth' });
 
             if(mode === 'modifier') {
                 editingId = id;
                 document.getElementById('formTitle').innerText = "📝 MODIFICATION DU PROTOCOLE";
-                document.getElementById('btnSubmit').innerText = "Sauvegarder les modifications";
+                document.getElementById('btnSubmit').innerText = "Sauvegarder";
                 document.getElementById('btnSubmit').className = "btn btn-warning btn-lg px-5";
                 document.getElementById('btnCancel').style.display = "inline-block";
             } else if(mode === 'dupliquer') {
-                editingId = null; // On force la création d'un nouveau
+                editingId = null;
                 document.getElementById('formTitle').innerText = "📋 DUPLICATION DE PROTOCOLE";
                 document.getElementById('btnSubmit').innerText = "Créer la copie";
                 document.getElementById('btnSubmit').className = "btn btn-shock btn-lg px-5";
@@ -192,15 +185,14 @@
             document.getElementById('btnSubmit').innerText = "Transmettre l'Ordre";
             document.getElementById('btnSubmit').className = "btn btn-shock btn-lg px-5";
             document.getElementById('btnCancel').style.display = "none";
-            
-            // On vide les champs cibles (mais on peut garder les infos de l'officier si on veut)
             document.getElementById('steamid').value = '';
             document.getElementById('protocole').value = '';
             document.getElementById('raison').value = '';
             document.getElementById('details').value = '';
+            document.getElementById('tempsRestant').value = '';
         }
 
-        function afficherCartes(data, estEditable) {
+        function afficherCartes(data, estEnCours) {
             const container = document.getElementById('listeProtocoles');
             container.innerHTML = '';
             document.getElementById('compteur').innerText = `${data.length} dossiers`;
@@ -216,18 +208,30 @@
                     ? '<span class="badge badge-done rounded-pill px-3 py-2">✅ EFFECTUÉ</span>' 
                     : '<span class="badge badge-pending rounded-pill px-3 py-2">⏳ EN ATTENTE</span>';
                 
-                // Barre de boutons
+                // Gestion des boutons selon l'onglet
                 let actionButtons = '';
-                if(estEditable) {
+                if(estEnCours) {
                     actionButtons = `
                     <div class="card-footer bg-transparent border-top-0 pt-0 d-flex gap-2">
                         <button onclick="valider('${p._id}')" class="btn btn-outline-success flex-grow-1 fw-bold">Confirmer</button>
                         <button onclick="preparerAction('${p._id}', 'modifier')" class="btn btn-outline-warning" title="Modifier">✏️</button>
                         <button onclick="preparerAction('${p._id}', 'dupliquer')" class="btn btn-outline-info" title="Dupliquer">📋</button>
                     </div>`;
+                } else {
+                    // Bouton restaurer dans l'historique
+                    actionButtons = `
+                    <div class="card-footer bg-transparent border-top-0 pt-0">
+                        <button onclick="restaurer('${p._id}')" class="btn btn-outline-light w-100 fw-bold">↩️ Restaurer en cours</button>
+                    </div>`;
                 }
 
-                const cardStyle = estEditable ? '' : 'opacity: 0.7; filter: grayscale(30%);';
+                // Affichage du temps restant si présent
+                let timeAlert = '';
+                if(p.tempsRestant && !isDone) {
+                    timeAlert = `<div class="alert-time p-2 rounded mb-2 text-center fw-bold">⚠️ RESTANT : ${p.tempsRestant}</div>`;
+                }
+
+                const cardStyle = estEnCours ? '' : 'opacity: 0.8; filter: grayscale(20%);';
                 const dateObj = new Date(p.date);
                 const dateStr = dateObj.toLocaleDateString() + ' ' + dateObj.toLocaleTimeString().slice(0,5);
 
@@ -243,6 +247,9 @@
                                 <span>📅 ${dateStr}</span>
                                 <span>${p.auteurGrade} ${p.auteurNom}</span>
                             </div>
+                            
+                            ${timeAlert}
+
                             <div class="row mb-3 g-2">
                                 <div class="col-6"><div class="p-2 bg-dark rounded border border-secondary"><small class="text-muted d-block ls-1">SANCTION</small><span class="fw-bold text-danger">${p.protocoleType}</span></div></div>
                                 <div class="col-6"><div class="p-2 bg-dark rounded border border-secondary"><small class="text-muted d-block ls-1">RAISON</small><span class="fw-bold">${p.raison}</span></div></div>
@@ -267,10 +274,10 @@
                 targetSteamID: document.getElementById('steamid').value,
                 protocoleType: document.getElementById('protocole').value,
                 raison: document.getElementById('raison').value,
-                details: document.getElementById('details').value
+                details: document.getElementById('details').value,
+                tempsRestant: document.getElementById('tempsRestant').value
             };
 
-            // Logique : Si editingId existe -> PUT (Modif), sinon -> POST (Création)
             const method = editingId ? 'PUT' : 'POST';
             const url = editingId ? `${API_URL}/${editingId}` : API_URL;
 
@@ -282,14 +289,12 @@
                 });
 
                 if(response.ok) {
-                    alert(editingId ? '✅ Modification enregistrée' : '✅ Ordre transmis');
-                    resetForm(); // On remet le formulaire à zéro
+                    alert('✅ Opération réussie');
+                    resetForm();
                     chargerEnCours();
-                    if(!editingId) toggleAdmin(); // On ferme le panneau si c'était une création
-                } else { 
-                    alert('❌ Erreur : Code Officier Incorrect.'); 
-                }
-            } catch(e) { alert("Erreur de connexion."); }
+                    if(!editingId) toggleAdmin();
+                } else { alert('❌ Erreur : Code Officier Incorrect.'); }
+            } catch(e) { alert("Erreur connexion."); }
         }
 
         async function valider(id) {
@@ -299,6 +304,27 @@
                 await fetch(`${API_URL}/${id}/valider`, { method: 'PUT', headers: { 'Authorization': auth } });
                 chargerEnCours();
             } catch(e) {}
+        }
+
+        async function restaurer(id) {
+            const nouveauTemps = prompt("Il reste combien de temps ? (Laisser vide si inchangé)");
+            const auth = prompt("Code Officier pour restaurer :");
+            if(!auth) return;
+
+            try {
+                const response = await fetch(`${API_URL}/${id}/restaurer`, {
+                    method: 'PUT',
+                    headers: { 'Content-Type': 'application/json', 'Authorization': auth },
+                    body: JSON.stringify({ tempsRestant: nouveauTemps })
+                });
+
+                if(response.ok) {
+                    alert("Dossier restauré dans 'En Cours'");
+                    chargerHistorique(); // On rafraichit l'historique (il va disparaitre)
+                } else {
+                    alert("Accès refusé");
+                }
+            } catch(e) { console.error(e); }
         }
 
         chargerEnCours();
