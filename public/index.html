@@ -12,11 +12,10 @@
             --shock-red: #c0392b; 
             --signal-orange: #e67e22; 
             --bg-dark: #141414; 
-            /* MODIF COULEUR : Gris plus clair pour bien voir la carte */
+            /* On définit la couleur ici, mais on va aussi la forcer dans le JS */
             --card-bg: #262626; 
         }
         
-        /* Empêche le décalage (scroll) */
         html { overflow-y: scroll; }
 
         body { 
@@ -36,7 +35,9 @@
         .btn-signal { background-color: var(--signal-orange); border: none; color: white; font-weight: 600; }
         .btn-signal:hover { background-color: #d35400; box-shadow: 0 0 15px rgba(230, 126, 34, 0.5); color: white; }
 
-        .card { background-color: var(--card-bg); border: 1px solid #333; box-shadow: 0 4px 6px rgba(0,0,0,0.3); }
+        /* Force la couleur de fond des cartes via CSS aussi */
+        .card { background-color: var(--card-bg) !important; border: 1px solid #333; box-shadow: 0 4px 6px rgba(0,0,0,0.3); }
+        
         .card-header { border-bottom: 1px solid #333; background-color: rgba(192, 57, 43, 0.1); }
         .form-control, .form-select { background-color: #2a2a2a; border: 1px solid #444; color: #fff; }
         .form-control:focus, .form-select:focus { background-color: #333; border-color: var(--shock-red); color: #fff; }
@@ -430,7 +431,7 @@
 
             container.innerHTML += `
             <div class="col-12">
-                <div class="card h-100 rappel-card">
+                <div class="card h-100 rappel-card" style="background-color: #262626 !important;">
                     <div class="card-header d-flex justify-content-between align-items-center" style="${headerStyle}">
                         <span>⚠️ RAPPEL NÉCESSAIRE : ${p.cibleNom}</span>
                         <small style="color:#e74c3c; font-weight:bold;">Retard de ${retardJours} jours</small>
@@ -499,12 +500,12 @@
                 let timeAlert = (p.tempsRestant && !isDone) ? `<div class="alert-time p-2 rounded mb-2 text-center fw-bold">⚠️ RESTANT : ${p.tempsRestant}</div>` : '';
                 let logName = p.discordNick || p.discordUser; if (p.discordNick && p.discordUser && p.discordNick !== p.discordUser) logName = `${p.discordNick} (${p.discordUser})`; const discordInfo = logName ? `<br><small class="text-secondary"><i class="fab fa-discord"></i> Log: ${logName}</small>` : ''; const steamInfo = p.targetSteamID ? `<small class="text-muted d-block mt-1" style="font-size:0.7rem">${p.targetSteamID}</small>` : ''; const dateStr = new Date(p.date).toLocaleString().slice(0, -3); let validatorInfo = ''; if (p.statut === 'Effectué') { const vName = p.validatorManualName || (p.validatorNick || p.validatorUser); if (vName) validatorInfo = `<div class="mt-2 small text-success border-top border-secondary pt-1"><i class="fas fa-check-circle"></i> Traité par : ${p.validatorManualName ? p.validatorManualName + (p.validatorUser ? ` (${p.validatorUser})` : '') : vName}</div>`; }
 
-                // MODIF COULEUR : PLUS D'OPACITÉ, FOND NORMAL
-                const styleCard = ''; 
+                // MODIFICATION FORCEE : COULEUR DE FOND EN DUR DANS LE HTML
+                const cardInlineStyle = 'background-color: #262626 !important;';
 
                 container.innerHTML += `
-                <div class="col-12" style="${styleCard}">
-                    <div class="card h-100">
+                <div class="col-12">
+                    <div class="card h-100" style="${cardInlineStyle}">
                         <div class="card-header d-flex justify-content-between align-items-center" style="${headerStyle}">
                             <div><span class="fs-5">${p.cibleNom}</span> <span class="small ms-2" style="opacity:0.8">${p.cibleGrade} - ${p.cibleRegiment}</span></div>
                             <div class="d-flex align-items-center gap-2">${badge}${deleteBtn}</div>
