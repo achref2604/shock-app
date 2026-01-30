@@ -97,7 +97,8 @@ passport.serializeUser((user, done) => done(null, user));
 passport.deserializeUser((obj, done) => done(null, obj));
 
 passport.use(new DiscordStrategy({
-    clientID: CLIENT_ID, clientSecret: CLIENT_SECRET, callbackURL: CALLBACK_URL, scope: ['identify', 'guilds', 'guilds.members.read']
+    clientID: CLIENT_ID, clientSecret: CLIENT_SECRET, callbackURL: CALLBACK_URL, scope: ['identify', 'guilds', 'guilds.members.read'],
+    proxy: true // AJOUT CRITIQUE POUR MOBILE
 }, async (accessToken, refreshToken, profile, done) => {
     try {
         if (ALLOWED_GUILD_ID) {
@@ -117,6 +118,8 @@ app.use((err, req, res, next) => {
     console.error("🔥 ERREUR INTERNE SERVEUR :", err.stack);
     res.status(500).send('Erreur serveur. Regarde les logs Render.');
 });
+
+// --- DÉPLACEMENT DES FONCTIONS AVANT LES ROUTES ---
 
 async function getPermissions(user) {
     if (!user || !user.roles) return { isAdmin: false, isOfficer: false, isMarine: false };
