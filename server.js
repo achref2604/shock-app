@@ -152,21 +152,12 @@ async function sendDiscordWebhook(protocole, shockName) {
         // On joint tout avec un double saut de ligne pour bien espacer
         const descriptionBody = contentArray.join("\n\n");
 
-        // Formatage Date: JJ/MM/AA à HH:MM
-        const now = new Date();
-        const day = String(now.getDate()).padStart(2, '0');
-        const month = String(now.getMonth() + 1).padStart(2, '0');
-        const year = String(now.getFullYear()).slice(-2); 
-        const hours = String(now.getHours()).padStart(2, '0');
-        const minutes = String(now.getMinutes()).padStart(2, '0');
-        const dateStr = `${day}/${month}/${year} à ${hours}:${minutes}`;
-
         const embed = {
             title: "Signalement Protocole",
             description: descriptionBody, // Tout le texte est ici
             color: colorInt,
             thumbnail: { url: SHOCK_LOGO_URL },
-            footer: { text: dateStr }
+            timestamp: new Date().toISOString()
         };
 
         await axios.post(DISCORD_WEBHOOK_URL, {
@@ -345,3 +336,4 @@ app.delete('/api/protocoles/:id', checkAdmin, async (req, res) => {
 
 const PORT = process.env.PORT || 3000;
 app.listen(PORT, () => console.log(`Serveur lancé sur le port ${PORT}`));
+
