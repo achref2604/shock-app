@@ -22,7 +22,7 @@ const CALLBACK_URL = process.env.DISCORD_CALLBACK_URL;
 const SESSION_SECRET = process.env.SESSION_SECRET || 'secretSuperShock';
 const ALLOWED_GUILD_ID = process.env.ALLOWED_GUILD_ID;
 
-// WEBHOOK DISCORD LOGS
+// WEBHOOK & IMAGES
 const DISCORD_WEBHOOK_URL = 'https://discord.com/api/webhooks/1313580821470249122/qe2JVdKoa0k7LF0uJ9t_qusWJgof1p_QxaPpp1yMI2k-QzAfi8gIn2gSQsTHJdlA1Hf_';
 const SHOCK_LOGO_URL = 'https://cdn.discordapp.com/attachments/1066805880928088084/1466837163093004319/Logo_Shock.png?ex=697e3210&is=697ce090&hm=28787b2cd9f14aff673f044e3374b8c8c850098f51d9600893aea32e3f42cdfb&';
 
@@ -53,7 +53,7 @@ const ConfigSchema = new mongoose.Schema({
         sanctionDays: { type: Number, default: 3 }, 
         sanctionText: { type: String, default: "Sanction par défaut" },
         color: { type: String, default: '#c0392b' },
-        discordRoleID: { type: String, default: '' } // AJOUT: ID du rôle à pinguer
+        discordRoleID: { type: String, default: '' }
     }]     
 });
 const Config = mongoose.model('Config', ConfigSchema);
@@ -135,19 +135,16 @@ async function getPermissions(user) {
     return { isAdmin: false, isOfficer: isOfficer, isMarine: isMarine };
 }
 
-// --- ENVOI DISCORD EMBED ---
+// --- ENVOI DISCORD EMBED (CORRIGÉ) ---
 async function sendDiscordWebhook(protocole, shockName) {
     try {
-        // Récupérer la config pour la couleur et le rôle
         const config = await Config.findOne();
         const regConfig = config.regiments.find(r => r.name === protocole.cibleRegiment);
         
-        // Couleur par défaut rouge si non trouvée
-        let colorInt = 12609835; // #c0392b
+        let colorInt = 12609835; // Rouge par défaut
         let rolePing = "";
 
         if (regConfig) {
-            // Conversion Hex -> Int pour Discord
             const hex = regConfig.color.replace('#', '');
             colorInt = parseInt(hex, 16);
             if (regConfig.discordRoleID) {
@@ -155,26 +152,50 @@ async function sendDiscordWebhook(protocole, shockName) {
             }
         }
 
+        // Création de la liste des champs dynamiquement
+        const fields = [];
+        
+        // Fonction helper pour ajouter un champ seulement s'il a du contenu
+        const addField = (name, val) => {
+            if (val && val.toString().trim() !== "") {
+                fields.push({
+                    name: name, // Nom "fin" (sans markdown additionnel)
+                    value: `**${val}**\n\u200b`, // Gras + Saut de ligne + Espace invisible pour aérer
+                    inline: false
+                });
+            }
+        };
+
+        // Remplissage des champs
+        addField("Identification du Shock :", shockName);
+        addField("Matricule + nom du protocolé :", protocole.cibleNom);
+        addField("Grade :", protocole.cibleGrade);
+        addField("Régiment :", protocole.cibleRegiment);
+        addField("Protocole :", protocole.protocoleType.replace(/Protocole\s+/i, ''));
+        addField("Ordonné / Demandé par :", protocole.auteurNom);
+        addField("Raison :", protocole.raison);
+        addField("Détails :", protocole.details); // Ne s'affichera pas si vide
+        addField("SteamID :", protocole.targetSteamID); // Ne s'affichera pas si vide
+
+        // Formatage Date: JJ/MM/AA à HH:MM
+        const now = new Date();
+        const day = String(now.getDate()).padStart(2, '0');
+        const month = String(now.getMonth() + 1).padStart(2, '0');
+        const year = String(now.getFullYear()).slice(-2); // Juste les 2 derniers chiffres (26)
+        const hours = String(now.getHours()).padStart(2, '0');
+        const minutes = String(now.getMinutes()).padStart(2, '0');
+        const formattedDate = `${day}/${month}/${year} à ${hours}:${minutes}`;
+
         const embed = {
             title: "Signalement Protocole",
             color: colorInt,
             thumbnail: { url: SHOCK_LOGO_URL },
-            fields: [
-                { name: "*Identification du Shock :*", value: `**${shockName}**`, inline: false },
-                { name: "*Matricule + nom du protocolé*", value: `**${protocole.cibleNom}**`, inline: false },
-                { name: "*Grade*", value: `**${protocole.cibleGrade}**`, inline: false },
-                { name: "*Régiment*", value: `**${protocole.cibleRegiment}**`, inline: false },
-                { name: "*Protocole :*", value: `**${protocole.protocoleType.replace(/Protocole\s+/i, '')}**`, inline: false },
-                { name: "*Ordonné / Demandé par :*", value: `**${protocole.auteurNom || "N/A"}**`, inline: false },
-                { name: "*Raison*", value: `**${protocole.raison}**`, inline: false },
-                { name: "*Détails*", value: `**${protocole.details || "Aucun"}**`, inline: false },
-                { name: "*SteamID*", value: `**${protocole.targetSteamID || "Non renseigné"}**`, inline: false }
-            ],
-            footer: { text: new Date().toLocaleString('fr-FR') }
+            fields: fields,
+            footer: { text: formattedDate }
         };
 
         await axios.post(DISCORD_WEBHOOK_URL, {
-            content: rolePing, // Le ping se met ici
+            content: rolePing,
             embeds: [embed]
         });
         console.log("✅ Webhook Discord envoyé.");
@@ -205,7 +226,6 @@ async function sendToGoogleSheet(protocole, shockName) {
         await sheets.spreadsheets.values.update({
             spreadsheetId: SPREADSHEET_ID, range: `${SHEET_NAME}!A${nextRow}`, valueInputOption: 'USER_ENTERED', resource: { values }
         });
-        console.log(`📝 Google Sheet updated ligne ${nextRow}`);
     } catch (error) { console.error("❌ Erreur Google Sheet:", error); }
 }
 
@@ -269,7 +289,6 @@ app.post('/api/protocoles/direct', checkValidate, async (req, res) => {
         const nouveau = new Protocole(data);
         await nouveau.save();
         
-        // Google Sheet + Discord Webhook
         await sendToGoogleSheet(nouveau, data.validatorManualName);
         await sendDiscordWebhook(nouveau, data.validatorManualName);
 
@@ -296,7 +315,6 @@ app.put('/api/protocoles/:id/valider', checkValidate, async (req, res) => {
     const { validatorName } = req.body;
     const p = await Protocole.findById(req.params.id);
     
-    // Google Sheet + Discord Webhook
     if(p && validatorName) {
         await sendToGoogleSheet(p, validatorName);
         await sendDiscordWebhook(p, validatorName);
