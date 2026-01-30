@@ -11,7 +11,7 @@ const { google } = require('googleapis');
 
 const app = express();
 
-// --- CONFIGURATION PROXY ---
+// --- PROXY RENDER ---
 app.set('trust proxy', 1);
 
 // --- CONFIGURATION ---
@@ -22,7 +22,7 @@ const CALLBACK_URL = process.env.DISCORD_CALLBACK_URL;
 const SESSION_SECRET = process.env.SESSION_SECRET || 'secretSuperShock';
 const ALLOWED_GUILD_ID = process.env.ALLOWED_GUILD_ID;
 
-// WEBHOOK & IMAGES
+// WEBHOOK
 const DISCORD_WEBHOOK_URL = 'https://discord.com/api/webhooks/1313580821470249122/qe2JVdKoa0k7LF0uJ9t_qusWJgof1p_QxaPpp1yMI2k-QzAfi8gIn2gSQsTHJdlA1Hf_';
 const SHOCK_LOGO_URL = 'https://cdn.discordapp.com/attachments/1066805880928088084/1466837163093004319/Logo_Shock.png?ex=697e3210&is=697ce090&hm=28787b2cd9f14aff673f044e3374b8c8c850098f51d9600893aea32e3f42cdfb&';
 
@@ -77,49 +77,7 @@ const ProtocoleSchema = new mongoose.Schema({
 });
 const Protocole = mongoose.model('Protocole', ProtocoleSchema);
 
-// --- MIDDLEWARES ---
-app.use(cors());
-app.use(bodyParser.json());
-app.use(express.static('public'));
-
-app.use(session({
-    secret: SESSION_SECRET, 
-    resave: false, 
-    saveUninitialized: false,
-    proxy: true,
-    store: MongoStore.create({ mongoUrl: MONGO_URI }), 
-    cookie: { 
-        maxAge: 1000 * 60 * 60 * 24 * 7, 
-        secure: true, 
-        sameSite: 'none', 
-        httpOnly: true
-    }
-}));
-
-app.use(passport.initialize());
-app.use(passport.session());
-
-passport.serializeUser((user, done) => done(null, user));
-passport.deserializeUser((obj, done) => done(null, obj));
-
-passport.use(new DiscordStrategy({
-    clientID: CLIENT_ID, clientSecret: CLIENT_SECRET, callbackURL: CALLBACK_URL, scope: ['identify', 'guilds', 'guilds.members.read'],
-    proxy: true 
-}, async (accessToken, refreshToken, profile, done) => {
-    try {
-        if (ALLOWED_GUILD_ID) {
-            const response = await axios.get(`https://discord.com/api/users/@me/guilds/${ALLOWED_GUILD_ID}/member`, { headers: { Authorization: `Bearer ${accessToken}` } });
-            profile.roles = response.data.roles;
-            profile.serverNick = response.data.nick || response.data.user.username;
-        }
-        return done(null, profile);
-    } catch (error) { 
-        console.error("Auth Error:", error);
-        return done(null, profile); 
-    }
-}));
-
-// --- FONCTIONS ---
+// --- FONCTIONS DE SÉCURITÉ (AVANT LES ROUTES) ---
 
 async function getPermissions(user) {
     if (!user || !user.roles) return { isAdmin: false, isOfficer: false, isMarine: false };
@@ -135,13 +93,32 @@ async function getPermissions(user) {
     return { isAdmin: false, isOfficer: isOfficer, isMarine: isMarine };
 }
 
-// --- ENVOI DISCORD EMBED (CORRIGÉ) ---
+const checkAdmin = async (req, res, next) => { 
+    if (req.isAuthenticated() && (await getPermissions(req.user)).isAdmin) return next(); 
+    res.status(403).json({ message: "Admin Only." }); 
+};
+
+const checkEdit = async (req, res, next) => { 
+    if (!req.isAuthenticated()) return res.status(401).json({ message: "Non connecté" });
+    const perms = await getPermissions(req.user);
+    if (perms.isAdmin || perms.isOfficer || perms.isMarine) return next(); 
+    res.status(403).json({ message: "Accès refusé." }); 
+};
+
+const checkValidate = async (req, res, next) => { 
+    if (!req.isAuthenticated()) return res.status(401).json({ message: "Non connecté" });
+    const perms = await getPermissions(req.user);
+    if (perms.isAdmin || perms.isOfficer) return next(); 
+    res.status(403).json({ message: "Officiers Only." }); 
+};
+
+// --- WEBHOOK FORMATÉ SELON DEMANDE ---
 async function sendDiscordWebhook(protocole, shockName) {
     try {
         const config = await Config.findOne();
         const regConfig = config.regiments.find(r => r.name === protocole.cibleRegiment);
         
-        let colorInt = 12609835; // Rouge par défaut
+        let colorInt = 12609835; 
         let rolePing = "";
 
         if (regConfig) {
@@ -152,56 +129,54 @@ async function sendDiscordWebhook(protocole, shockName) {
             }
         }
 
-        // Création de la liste des champs dynamiquement
-        const fields = [];
-        
-        // Fonction helper pour ajouter un champ seulement s'il a du contenu
-        const addField = (name, val) => {
-            if (val && val.toString().trim() !== "") {
-                fields.push({
-                    name: name, // Nom "fin" (sans markdown additionnel)
-                    value: `**${val}**\n\u200b`, // Gras + Saut de ligne + Espace invisible pour aérer
-                    inline: false
-                });
+        // Construction du corps de l'embed (Description)
+        let contentArray = [];
+
+        // Fonction helper pour le formatage *Italique* \n **Gras**
+        const pushItem = (label, value) => {
+            if (value && value.toString().trim() !== "") {
+                contentArray.push(`*${label}*\n**${value}**`);
             }
         };
 
-        // Remplissage des champs
-        addField("Identification du Shock :", shockName);
-        addField("Matricule + nom du protocolé :", protocole.cibleNom);
-        addField("Grade :", protocole.cibleGrade);
-        addField("Régiment :", protocole.cibleRegiment);
-        addField("Protocole :", protocole.protocoleType.replace(/Protocole\s+/i, ''));
-        addField("Ordonné / Demandé par :", protocole.auteurNom);
-        addField("Raison :", protocole.raison);
-        addField("Détails :", protocole.details); // Ne s'affichera pas si vide
-        addField("SteamID :", protocole.targetSteamID); // Ne s'affichera pas si vide
+        pushItem("Identification du Shock :", shockName);
+        pushItem("Matricule + nom du protocolé", protocole.cibleNom);
+        pushItem("Grade", protocole.cibleGrade);
+        pushItem("Régiment", protocole.cibleRegiment);
+        pushItem("Protocole :", protocole.protocoleType.replace(/Protocole\s+/i, ''));
+        pushItem("Ordonné / Demandé par :", protocole.auteurNom);
+        pushItem("Raison", protocole.raison);
+        pushItem("Détails", protocole.details);
+        pushItem("SteamID", protocole.targetSteamID);
+
+        // On joint tout avec un double saut de ligne pour bien espacer
+        const descriptionBody = contentArray.join("\n\n");
 
         // Formatage Date: JJ/MM/AA à HH:MM
         const now = new Date();
         const day = String(now.getDate()).padStart(2, '0');
         const month = String(now.getMonth() + 1).padStart(2, '0');
-        const year = String(now.getFullYear()).slice(-2); // Juste les 2 derniers chiffres (26)
+        const year = String(now.getFullYear()).slice(-2); 
         const hours = String(now.getHours()).padStart(2, '0');
         const minutes = String(now.getMinutes()).padStart(2, '0');
-        const formattedDate = `${day}/${month}/${year} à ${hours}:${minutes}`;
+        const dateStr = `${day}/${month}/${year} à ${hours}:${minutes}`;
 
         const embed = {
             title: "Signalement Protocole",
+            description: descriptionBody, // Tout le texte est ici
             color: colorInt,
             thumbnail: { url: SHOCK_LOGO_URL },
-            fields: fields,
-            footer: { text: formattedDate }
+            footer: { text: dateStr }
         };
 
         await axios.post(DISCORD_WEBHOOK_URL, {
             content: rolePing,
             embeds: [embed]
         });
-        console.log("✅ Webhook Discord envoyé.");
+        console.log("✅ Webhook envoyé.");
 
     } catch (error) {
-        console.error("❌ Erreur Webhook Discord:", error.message);
+        console.error("❌ Erreur Webhook:", error.message);
     }
 }
 
@@ -229,31 +204,46 @@ async function sendToGoogleSheet(protocole, shockName) {
     } catch (error) { console.error("❌ Erreur Google Sheet:", error); }
 }
 
-// --- MIDDLEWARES SECURITE ---
-const checkAdmin = async (req, res, next) => { if (req.isAuthenticated() && (await getPermissions(req.user)).isAdmin) return next(); res.status(403).json({ message: "Admin Only." }); };
-const checkEdit = async (req, res, next) => { 
-    if (!req.isAuthenticated()) return res.status(401).json({ message: "Non connecté" });
-    const perms = await getPermissions(req.user);
-    if (perms.isAdmin || perms.isOfficer || perms.isMarine) return next(); 
-    res.status(403).json({ message: "Accès refusé." }); 
-};
-const checkValidate = async (req, res, next) => { 
-    if (!req.isAuthenticated()) return res.status(401).json({ message: "Non connecté" });
-    const perms = await getPermissions(req.user);
-    if (perms.isAdmin || perms.isOfficer) return next(); 
-    res.status(403).json({ message: "Officiers Only." }); 
-};
+// --- MIDDLEWARES & ROUTES ---
+app.use(cors());
+app.use(bodyParser.json());
+app.use(express.static('public'));
 
-// --- ROUTES ---
+app.use(session({
+    secret: SESSION_SECRET, 
+    resave: false, 
+    saveUninitialized: false,
+    proxy: true,
+    store: MongoStore.create({ mongoUrl: MONGO_URI }), 
+    cookie: { maxAge: 1000 * 60 * 60 * 24 * 7, secure: true, sameSite: 'none', httpOnly: true }
+}));
+
+app.use(passport.initialize());
+app.use(passport.session());
+
+passport.serializeUser((user, done) => done(null, user));
+passport.deserializeUser((obj, done) => done(null, obj));
+
+passport.use(new DiscordStrategy({
+    clientID: CLIENT_ID, clientSecret: CLIENT_SECRET, callbackURL: CALLBACK_URL, scope: ['identify', 'guilds', 'guilds.members.read'],
+    proxy: true
+}, async (accessToken, refreshToken, profile, done) => {
+    try {
+        if (ALLOWED_GUILD_ID) {
+            const response = await axios.get(`https://discord.com/api/users/@me/guilds/${ALLOWED_GUILD_ID}/member`, { headers: { Authorization: `Bearer ${accessToken}` } });
+            profile.roles = response.data.roles;
+            profile.serverNick = response.data.nick || response.data.user.username;
+        }
+        return done(null, profile);
+    } catch (error) { return done(null, profile); }
+}));
+
 app.get('/auth/discord', passport.authenticate('discord'));
 app.get('/auth/discord/callback', (req, res, next) => {
     passport.authenticate('discord', { failureRedirect: '/' }, (err, user, info) => {
         if (err) return next(err);
         if (!user) return res.redirect('/');
-        req.logIn(user, (err) => {
-            if (err) return next(err);
-            return res.redirect('/');
-        });
+        req.logIn(user, (err) => { if (err) return next(err); return res.redirect('/'); });
     })(req, res, next);
 });
 app.get('/auth/logout', (req, res, next) => { req.logout((err) => { if (err) return next(err); req.session.destroy(); res.redirect('/'); }); });
