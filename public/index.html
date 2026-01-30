@@ -500,7 +500,6 @@
                 let timeAlert = (p.tempsRestant && !isDone) ? `<div class="alert-time p-2 rounded mb-2 text-center fw-bold">⚠️ RESTANT : ${p.tempsRestant}</div>` : '';
                 let logName = p.discordNick || p.discordUser; if (p.discordNick && p.discordUser && p.discordNick !== p.discordUser) logName = `${p.discordNick} (${p.discordUser})`; const discordInfo = logName ? `<br><small class="text-secondary"><i class="fab fa-discord"></i> Log: ${logName}</small>` : ''; const steamInfo = p.targetSteamID ? `<small class="text-muted d-block mt-1" style="font-size:0.7rem">${p.targetSteamID}</small>` : ''; const dateStr = new Date(p.date).toLocaleString().slice(0, -3); let validatorInfo = ''; if (p.statut === 'Effectué') { const vName = p.validatorManualName || (p.validatorNick || p.validatorUser); if (vName) validatorInfo = `<div class="mt-2 small text-success border-top border-secondary pt-1"><i class="fas fa-check-circle"></i> Traité par : ${p.validatorManualName ? p.validatorManualName + (p.validatorUser ? ` (${p.validatorUser})` : '') : vName}</div>`; }
 
-                // Style carte FORCÉ (Gris plus clair)
                 const styleCard = ''; 
 
                 container.innerHTML += `
@@ -544,7 +543,6 @@
             afficherMandats(currentData, false);
         }
 
-        // --- RESTE DU CODE (ADMIN, BUTTONS, ETC.) ---
         function generateAndShow(id, reg, grade, nom, auteur, proto, raison, details, steam, sanctionDays, sanctionText) { const dateFinale = new Date(); dateFinale.setDate(dateFinale.getDate() + parseInt(sanctionDays)); const dateFinaleStr = dateFinale.toLocaleDateString('fr-FR'); const titlePost = `${reg} ${grade} ${nom} -> ${dateFinaleStr}`; const bodyPost = `<:FlecheVert:990651262976528414> Protocole à effectuer avant le ${dateFinaleStr} sinon : ${sanctionText}\n<:FlecheVert:990651262976528414> Reçu\n\n...........................................................................\n\n- **Qui l'a ordonné :** ${auteur}\n- **Protocole :** ${proto.replace(/Protocole\s+/i, '')}\n- **Raison :** ${raison}${details ? `\n- **Détails :** ${details}` : ''}${steam ? `\n- **Steam ID :** ${steam}` : ''}`; document.getElementById(`title-${id}`).innerText = titlePost; document.getElementById(`body-${id}`).innerText = bodyPost; toggleBox(id); }
         function toggleBox(id) { const el = document.getElementById(`gen-${id}`); el.style.display = el.style.display === 'none' ? 'block' : 'none'; }
         async function validerRappel(id) { const confirm = await customConfirm("Confirmer que vous prenez en charge ce rappel sur le forum ?"); if(!confirm) return; try { const res = await fetch(`${API_URL}/${id}/rappel`, { method: 'PUT' }); if(res.ok) chargerDelais(); } catch(e) { customAlert("Erreur réseau"); } }
