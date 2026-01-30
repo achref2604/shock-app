@@ -11,8 +11,8 @@ const { google } = require('googleapis');
 
 const app = express();
 
-// --- CORRECTION CRITIQUE 1 : Faire confiance au Proxy Render ---
-app.set('trust proxy', 1); 
+// --- CONFIGURATION PROXY ---
+app.set('trust proxy', 1);
 
 // --- CONFIGURATION ---
 const MONGO_URI = process.env.MONGO_URI;
@@ -21,6 +21,10 @@ const CLIENT_SECRET = process.env.DISCORD_CLIENT_SECRET;
 const CALLBACK_URL = process.env.DISCORD_CALLBACK_URL;
 const SESSION_SECRET = process.env.SESSION_SECRET || 'secretSuperShock';
 const ALLOWED_GUILD_ID = process.env.ALLOWED_GUILD_ID;
+
+// WEBHOOK DISCORD LOGS
+const DISCORD_WEBHOOK_URL = 'https://discord.com/api/webhooks/1313580821470249122/qe2JVdKoa0k7LF0uJ9t_qusWJgof1p_QxaPpp1yMI2k-QzAfi8gIn2gSQsTHJdlA1Hf_';
+const SHOCK_LOGO_URL = 'https://cdn.discordapp.com/attachments/1066805880928088084/1466837163093004319/Logo_Shock.png?ex=697e3210&is=697ce090&hm=28787b2cd9f14aff673f044e3374b8c8c850098f51d9600893aea32e3f42cdfb&';
 
 const SPREADSHEET_ID = '1vEQkvkcCMr6wvl0FsSj1oVdS5CUMttXsBNlt5jThXX0';
 const SHEET_NAME = '👮‍♂️ Casier Actuel';
@@ -40,6 +44,7 @@ mongoose.connect(MONGO_URI, { useNewUrlParser: true, useUnifiedTopology: true })
     .then(() => console.log("✅ Connecté à MongoDB"))
     .catch(err => console.error("❌ Erreur MongoDB:", err));
 
+// --- SCHEMAS ---
 const ConfigSchema = new mongoose.Schema({
     adminRoles: [String], adminUsers: [String], officerRoles: [String], marineRoles: [String], 
     regiments: [{ 
@@ -47,14 +52,15 @@ const ConfigSchema = new mongoose.Schema({
         rappelDays: { type: Number, default: 7 }, 
         sanctionDays: { type: Number, default: 3 }, 
         sanctionText: { type: String, default: "Sanction par défaut" },
-        color: { type: String, default: '#c0392b' }
+        color: { type: String, default: '#c0392b' },
+        discordRoleID: { type: String, default: '' } // AJOUT: ID du rôle à pinguer
     }]     
 });
 const Config = mongoose.model('Config', ConfigSchema);
 
 async function initConfig() {
     const exists = await Config.findOne();
-    if (!exists) { await new Config({ adminRoles: [], adminUsers: [], officerRoles: [], marineRoles: [], regiments: [{ name: 'Shock', rappelDays: 7, sanctionDays: 3, sanctionText: 'Arrêts', color: '#c0392b' }] }).save(); }
+    if (!exists) { await new Config({ adminRoles: [], adminUsers: [], officerRoles: [], marineRoles: [], regiments: [{ name: 'Shock', rappelDays: 7, sanctionDays: 3, sanctionText: 'Arrêts', color: '#c0392b', discordRoleID: '' }] }).save(); }
 }
 initConfig();
 
@@ -71,21 +77,21 @@ const ProtocoleSchema = new mongoose.Schema({
 });
 const Protocole = mongoose.model('Protocole', ProtocoleSchema);
 
+// --- MIDDLEWARES ---
 app.use(cors());
 app.use(bodyParser.json());
 app.use(express.static('public'));
 
-// --- CORRECTION CRITIQUE 2 : Configuration Session pour Mobile ---
 app.use(session({
     secret: SESSION_SECRET, 
     resave: false, 
     saveUninitialized: false,
-    proxy: true, // OBLIGATOIRE pour que secure: true fonctionne sur Render
+    proxy: true,
     store: MongoStore.create({ mongoUrl: MONGO_URI }), 
     cookie: { 
-        maxAge: 1000 * 60 * 60 * 24 * 7, // 7 jours
-        secure: true, // OBLIGATOIRE sur Render (HTTPS)
-        sameSite: 'none', // OBLIGATOIRE pour le retour de Discord sur mobile
+        maxAge: 1000 * 60 * 60 * 24 * 7, 
+        secure: true, 
+        sameSite: 'none', 
         httpOnly: true
     }
 }));
@@ -98,7 +104,7 @@ passport.deserializeUser((obj, done) => done(null, obj));
 
 passport.use(new DiscordStrategy({
     clientID: CLIENT_ID, clientSecret: CLIENT_SECRET, callbackURL: CALLBACK_URL, scope: ['identify', 'guilds', 'guilds.members.read'],
-    proxy: true // AJOUT CRITIQUE POUR MOBILE
+    proxy: true 
 }, async (accessToken, refreshToken, profile, done) => {
     try {
         if (ALLOWED_GUILD_ID) {
@@ -108,24 +114,20 @@ passport.use(new DiscordStrategy({
         }
         return done(null, profile);
     } catch (error) { 
-        console.error("❌ ERREUR STRATEGIE DISCORD:", error); // Log l'erreur exacte
+        console.error("Auth Error:", error);
         return done(null, profile); 
     }
 }));
 
-// --- Middleware de Debug global ---
-app.use((err, req, res, next) => {
-    console.error("🔥 ERREUR INTERNE SERVEUR :", err.stack);
-    res.status(500).send('Erreur serveur. Regarde les logs Render.');
-});
-
-// --- DÉPLACEMENT DES FONCTIONS AVANT LES ROUTES ---
+// --- FONCTIONS ---
 
 async function getPermissions(user) {
     if (!user || !user.roles) return { isAdmin: false, isOfficer: false, isMarine: false };
     const isAdmin = SUPER_ADMIN_USERS.includes(user.id) || user.roles.some(r => SUPER_ADMIN_ROLES.includes(r));
     if (isAdmin) return { isAdmin: true, isOfficer: true, isMarine: true };
     const config = await Config.findOne();
+    if (!config) return { isAdmin: false, isOfficer: false, isMarine: false };
+
     const isAdminDB = config.adminUsers.includes(user.id) || user.roles.some(r => config.adminRoles.includes(r));
     if (isAdminDB) return { isAdmin: true, isOfficer: true, isMarine: true };
     const isOfficer = user.roles.some(r => config.officerRoles.includes(r));
@@ -133,17 +135,54 @@ async function getPermissions(user) {
     return { isAdmin: false, isOfficer: isOfficer, isMarine: isMarine };
 }
 
-const checkAdmin = async (req, res, next) => { if (req.isAuthenticated() && (await getPermissions(req.user)).isAdmin) return next(); res.status(403).json({ message: "Admin Only." }); };
-const checkEdit = async (req, res, next) => { 
-    const perms = await getPermissions(req.user);
-    if (req.isAuthenticated() && (perms.isAdmin || perms.isOfficer || perms.isMarine)) return next(); 
-    res.status(403).json({ message: "Accès refusé." }); 
-};
-const checkValidate = async (req, res, next) => { 
-    const perms = await getPermissions(req.user);
-    if (req.isAuthenticated() && (perms.isAdmin || perms.isOfficer)) return next(); 
-    res.status(403).json({ message: "Officiers Only." }); 
-};
+// --- ENVOI DISCORD EMBED ---
+async function sendDiscordWebhook(protocole, shockName) {
+    try {
+        // Récupérer la config pour la couleur et le rôle
+        const config = await Config.findOne();
+        const regConfig = config.regiments.find(r => r.name === protocole.cibleRegiment);
+        
+        // Couleur par défaut rouge si non trouvée
+        let colorInt = 12609835; // #c0392b
+        let rolePing = "";
+
+        if (regConfig) {
+            // Conversion Hex -> Int pour Discord
+            const hex = regConfig.color.replace('#', '');
+            colorInt = parseInt(hex, 16);
+            if (regConfig.discordRoleID) {
+                rolePing = `<@&${regConfig.discordRoleID}>`;
+            }
+        }
+
+        const embed = {
+            title: "Signalement Protocole",
+            color: colorInt,
+            thumbnail: { url: SHOCK_LOGO_URL },
+            fields: [
+                { name: "*Identification du Shock :*", value: `**${shockName}**`, inline: false },
+                { name: "*Matricule + nom du protocolé*", value: `**${protocole.cibleNom}**`, inline: false },
+                { name: "*Grade*", value: `**${protocole.cibleGrade}**`, inline: false },
+                { name: "*Régiment*", value: `**${protocole.cibleRegiment}**`, inline: false },
+                { name: "*Protocole :*", value: `**${protocole.protocoleType.replace(/Protocole\s+/i, '')}**`, inline: false },
+                { name: "*Ordonné / Demandé par :*", value: `**${protocole.auteurNom || "N/A"}**`, inline: false },
+                { name: "*Raison*", value: `**${protocole.raison}**`, inline: false },
+                { name: "*Détails*", value: `**${protocole.details || "Aucun"}**`, inline: false },
+                { name: "*SteamID*", value: `**${protocole.targetSteamID || "Non renseigné"}**`, inline: false }
+            ],
+            footer: { text: new Date().toLocaleString('fr-FR') }
+        };
+
+        await axios.post(DISCORD_WEBHOOK_URL, {
+            content: rolePing, // Le ping se met ici
+            embeds: [embed]
+        });
+        console.log("✅ Webhook Discord envoyé.");
+
+    } catch (error) {
+        console.error("❌ Erreur Webhook Discord:", error.message);
+    }
+}
 
 async function sendToGoogleSheet(protocole, shockName) {
     try {
@@ -170,28 +209,34 @@ async function sendToGoogleSheet(protocole, shockName) {
     } catch (error) { console.error("❌ Erreur Google Sheet:", error); }
 }
 
+// --- MIDDLEWARES SECURITE ---
+const checkAdmin = async (req, res, next) => { if (req.isAuthenticated() && (await getPermissions(req.user)).isAdmin) return next(); res.status(403).json({ message: "Admin Only." }); };
+const checkEdit = async (req, res, next) => { 
+    if (!req.isAuthenticated()) return res.status(401).json({ message: "Non connecté" });
+    const perms = await getPermissions(req.user);
+    if (perms.isAdmin || perms.isOfficer || perms.isMarine) return next(); 
+    res.status(403).json({ message: "Accès refusé." }); 
+};
+const checkValidate = async (req, res, next) => { 
+    if (!req.isAuthenticated()) return res.status(401).json({ message: "Non connecté" });
+    const perms = await getPermissions(req.user);
+    if (perms.isAdmin || perms.isOfficer) return next(); 
+    res.status(403).json({ message: "Officiers Only." }); 
+};
+
 // --- ROUTES ---
 app.get('/auth/discord', passport.authenticate('discord'));
-
-// Modif route callback pour catcher les erreurs
 app.get('/auth/discord/callback', (req, res, next) => {
     passport.authenticate('discord', { failureRedirect: '/' }, (err, user, info) => {
-        if (err) { console.error("❌ Erreur Passport Callback:", err); return next(err); }
-        if (!user) { console.error("❌ Pas d'utilisateur retourné par Discord"); return res.redirect('/'); }
+        if (err) return next(err);
+        if (!user) return res.redirect('/');
         req.logIn(user, (err) => {
-            if (err) { console.error("❌ Erreur req.logIn:", err); return next(err); }
+            if (err) return next(err);
             return res.redirect('/');
         });
     })(req, res, next);
 });
-
-app.get('/auth/logout', (req, res, next) => { 
-    req.logout((err) => { 
-        if (err) return next(err); 
-        req.session.destroy(); // Force la destruction session
-        res.redirect('/'); 
-    }); 
-});
+app.get('/auth/logout', (req, res, next) => { req.logout((err) => { if (err) return next(err); req.session.destroy(); res.redirect('/'); }); });
 
 app.get('/auth/user', async (req, res) => {
     if (req.isAuthenticated()) {
@@ -223,7 +268,11 @@ app.post('/api/protocoles/direct', checkValidate, async (req, res) => {
         data.validatorUser = req.user.username; data.validatorNick = req.user.serverNick; data.validatorId = req.user.id;
         const nouveau = new Protocole(data);
         await nouveau.save();
+        
+        // Google Sheet + Discord Webhook
         await sendToGoogleSheet(nouveau, data.validatorManualName);
+        await sendDiscordWebhook(nouveau, data.validatorManualName);
+
         const historique = await Protocole.find({ statut: 'Effectué' }).sort({ date: -1 });
         if (historique.length > 30) {
             const tropVieux = historique.slice(30);
@@ -246,7 +295,13 @@ app.put('/api/protocoles/:id', checkEdit, async (req, res) => {
 app.put('/api/protocoles/:id/valider', checkValidate, async (req, res) => {
     const { validatorName } = req.body;
     const p = await Protocole.findById(req.params.id);
-    if(p && validatorName) await sendToGoogleSheet(p, validatorName);
+    
+    // Google Sheet + Discord Webhook
+    if(p && validatorName) {
+        await sendToGoogleSheet(p, validatorName);
+        await sendDiscordWebhook(p, validatorName);
+    }
+
     await Protocole.findByIdAndUpdate(req.params.id, {
         statut: 'Effectué', validatorUser: req.user.username, validatorNick: req.user.serverNick, validatorId: req.user.id, validatorManualName: validatorName
     });
