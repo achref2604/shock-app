@@ -12,15 +12,19 @@
             --shock-red: #c0392b; 
             --signal-orange: #e67e22; 
             --bg-dark: #141414; 
-            /* MODIFICATION COULEUR : Gris plus clair (#2b2b2b) pour le contraste */
-            --card-bg: #2b2b2b; 
+            --card-bg: #2b2b2b; /* Gris anthracite clair pour bien détacher du fond */
         }
         
+        /* 1. EMPECHE LE DÉCALAGE : La barre de scroll est toujours là (même grisée) */
+        html { overflow-y: scroll; }
+
         body { 
             font-family: 'Rajdhani', sans-serif; 
             background-color: var(--bg-dark); 
             color: #e0e0e0; 
+            /* 2. LE DÉGRADÉ EST DE RETOUR */
             background-image: radial-gradient(circle at center, #252525 0%, #141414 100%);
+            min-height: 100vh; /* S'assure que le dégradé couvre tout l'écran */
         }
         h1, h2, h3, h4, h5, .nav-link, .btn { text-transform: uppercase; letter-spacing: 1px; }
         
@@ -33,7 +37,9 @@
         .btn-signal { background-color: var(--signal-orange); border: none; color: white; font-weight: 600; }
         .btn-signal:hover { background-color: #d35400; box-shadow: 0 0 15px rgba(230, 126, 34, 0.5); color: white; }
 
-        .card { background-color: var(--card-bg); border: 1px solid #333; box-shadow: 0 4px 6px rgba(0,0,0,0.3); }
+        /* 3. COULEUR DE CARTE FORCEE : Identique pour tout le monde */
+        .card { background-color: var(--card-bg) !important; border: 1px solid #333; box-shadow: 0 4px 6px rgba(0,0,0,0.3); }
+        
         .card-header { border-bottom: 1px solid #333; background-color: rgba(192, 57, 43, 0.1); }
         .form-control, .form-select { background-color: #2a2a2a; border: 1px solid #444; color: #fff; }
         .form-control:focus, .form-select:focus { background-color: #333; border-color: var(--shock-red); color: #fff; }
@@ -67,9 +73,6 @@
         .modal-footer { border-top: 1px solid #444; }
         .modal-title { color: var(--shock-red); font-weight: bold; letter-spacing: 1px; }
         .btn-close { filter: invert(1); }
-
-        /* Scrollbar pour éviter le décalage */
-        html { overflow-y: scroll; }
     </style>
 </head>
 <body class="container-fluid py-5 px-5">
@@ -421,6 +424,7 @@
 
         function afficherRappels(container, p, regConfig, retardJours, sanctionBanner, deadlineText) {
             const regColor = getRegimentColor(p.cibleRegiment);
+            // CORRECTION COULEUR
             const headerStyle = `background-color: ${regColor}33; border-bottom: 1px solid #c0392b; color: white; font-weight: bold;`;
 
             const btnGen = `<button class="btn btn-outline-light btn-sm w-100 mb-2" onclick="generateAndShow('${p._id}', '${p.cibleRegiment}', '${p.cibleGrade}', '${p.cibleNom}', '${p.auteurNom}', '${p.protocoleType}', '${p.raison}', '${p.details || ''}', '${p.targetSteamID || ''}', ${regConfig.sanctionDays}, '${regConfig.sanctionText}')">📄 Générer le Rapport Discord</button>`;
@@ -429,9 +433,10 @@
                 ? `<div class="text-success fw-bold mt-2"><i class="fas fa-check"></i> Pris en charge par ${p.rappelPrisEnChargeBy}</div>${deadlineText}` 
                 : `<div class="text-warning fw-bold mt-2"><i class="fas fa-clock"></i> Pas encore pris en charge</div>`;
 
+            // MODIFICATION FORCEE : Couleur de fond explicite pour les rappels
             container.innerHTML += `
             <div class="col-12">
-                <div class="card h-100 rappel-card">
+                <div class="card h-100 rappel-card" style="background-color: #2b2b2b !important;">
                     <div class="card-header d-flex justify-content-between align-items-center" style="${headerStyle}">
                         <span>⚠️ RAPPEL NÉCESSAIRE : ${p.cibleNom}</span>
                         <small style="color:#e74c3c; font-weight:bold;">Retard de ${retardJours} jours</small>
@@ -503,9 +508,10 @@
                 // MODIF COULEUR : PLUS D'OPACITÉ
                 const styleCard = ''; 
 
+                // COULEUR DE FOND FORCEE DANS LE STYLE INLINE
                 container.innerHTML += `
                 <div class="col-12" style="${styleCard}">
-                    <div class="card h-100">
+                    <div class="card h-100" style="background-color: #2b2b2b !important;">
                         <div class="card-header d-flex justify-content-between align-items-center" style="${headerStyle}">
                             <div><span class="fs-5">${p.cibleNom}</span> <span class="small ms-2" style="opacity:0.8">${p.cibleGrade} - ${p.cibleRegiment}</span></div>
                             <div class="d-flex align-items-center gap-2">${badge}${deleteBtn}</div>
