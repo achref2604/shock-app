@@ -531,10 +531,10 @@
                 let mainButton = '';
 
                 if (p.isSuspended) {
-                    suspendedAlert = `<div class="alert-suspended">⛔ <strong>PROTOCOLE MIS EN PAUSE</strong><br><small>Par ${p.suspendedBy} : ${p.suspendReason}</small></div>`;
+                    suspendedAlert = `<div class="alert-suspended">⛔ <strong>PROTOCOLE SUSPENDU</strong><br><small>Par ${p.suspendedBy} : ${p.suspendReason}</small></div>`;
                     
                     if (user.isAdmin) {
-                        mainButton = `<button onclick="toggleSuspend('${p._id}', true)" class="btn btn-outline-warning w-100 fw-bold mb-2">🔓 Lever la Mise en Pause</button>`;
+                        mainButton = `<button onclick="toggleSuspend('${p._id}', true)" class="btn btn-outline-warning w-100 fw-bold mb-2">🔓 Lever la Suspension</button>`;
                     } else {
                         mainButton = `<button class="btn btn-secondary w-100 fw-bold mb-2" disabled>⛔ Suspendu</button>`;
                     }
@@ -546,7 +546,7 @@
 
                 let suspendBtn = '';
                 if (user.isAdmin && estEnCours && !p.isSuspended) {
-                    suspendBtn = `<button onclick="toggleSuspend('${p._id}', false)" class="btn btn-sm btn-outline-warning" title="Mettre en pause">⏸️</button>`;
+                    suspendBtn = `<button onclick="toggleSuspend('${p._id}', false)" class="btn btn-sm btn-outline-warning" title="Suspendre">⏸️</button>`;
                 }
 
                 if (estEnCours) {
