@@ -326,7 +326,7 @@
                 
                 // GESTION DU BANNISSEMENT
                 if (user.isBanned) {
-                    document.body.innerHTML = '<div class="d-flex justify-content-center align-items-center vh-100"><div class="text-center p-5 bg-danger text-white rounded display-4 fw-bold">⛔ ACCÈS REFUSÉ<br><small class="fs-6 fw-normal">Vous avez été banni de cette interface.</small></div></div>';
+                    document.body.innerHTML = '<div class="d-flex justify-content-center align-items-center vh-100"><div class="text-center p-5 bg-danger text-white rounded display-4 fw-bold">⛔ ACCÈS REFUSÉ<br><small class="fs-6 fw-normal">Vous avez été banni de ce site.</small></div></div>';
                     return;
                 }
 
@@ -533,7 +533,7 @@
                 document.getElementById('compteur').innerText = `${data.length} archives`;
             }
             
-            if(data.length === 0) { container.innerHTML = `<div class="col-12 text-center py-5 text-muted"><h3 class="fw-light">Aucun dossier.</h3></div>`; return; }
+            if(data.length === 0) { container.innerHTML = `<div class="col-12 text-center py-5 text-muted"><h3 class="fw-light">Aucun protocole à remettre.</h3></div>`; return; }
 
             data.forEach(p => {
                 const isDone = p.statut === 'Effectué';
