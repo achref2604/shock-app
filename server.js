@@ -46,9 +46,12 @@ mongoose.connect(MONGO_URI, { useNewUrlParser: true, useUnifiedTopology: true })
 
 // --- SCHEMAS ---
 const ConfigSchema = new mongoose.Schema({
-    adminRoles: [String], adminUsers: [String], 
-    shockOfficerUsers: [String], // NOUVEAU: Liste des ID Officiers Shock
-    officerRoles: [String], marineRoles: [String], 
+    adminRoles: [String], 
+    adminUsers: [String], 
+    shockOfficerUsers: [String], 
+    bannedUsers: [String], // NOUVEAU : LISTE DES BANNIS
+    officerRoles: [String], 
+    marineRoles: [String], 
     regiments: [{ 
         name: String, 
         rappelDays: { type: Number, default: 10 }, 
@@ -62,7 +65,7 @@ const Config = mongoose.model('Config', ConfigSchema);
 
 async function initConfig() {
     const exists = await Config.findOne();
-    if (!exists) { await new Config({ adminRoles: [], adminUsers: [], shockOfficerUsers: [], officerRoles: [], marineRoles: [], regiments: [{ name: 'Shock', rappelDays: 10, sanctionDays: 14, sanctionText: 'Protocole 6', color: '#c0392b', discordRoleID: '' }] }).save(); }
+    if (!exists) { await new Config({ adminRoles: [], adminUsers: [], shockOfficerUsers: [], bannedUsers: [], officerRoles: [], marineRoles: [], regiments: [{ name: 'Shock', rappelDays: 10, sanctionDays: 14, sanctionText: 'Protocole 6', color: '#c0392b', discordRoleID: '' }] }).save(); }
 }
 initConfig();
 
@@ -74,7 +77,6 @@ const ProtocoleSchema = new mongoose.Schema({
     validatorUser: String, validatorNick: String, validatorId: String, validatorManualName: String,
     rappelPrisEnChargeBy: String, 
     rappelDate: Date, 
-    // CHAMPS SUSPENSION
     isSuspended: { type: Boolean, default: false },
     suspendedBy: String,
     suspendReason: String,
@@ -87,52 +89,57 @@ const Protocole = mongoose.model('Protocole', ProtocoleSchema);
 // --- FONCTIONS DE SÉCURITÉ ---
 
 async function getPermissions(user) {
-    if (!user || !user.roles) return { isAdmin: false, isShockOfficer: false, isOfficer: false, isMarine: false };
+    if (!user || !user.roles) return { isAdmin: false, isShockOfficer: false, isOfficer: false, isMarine: false, isBanned: false };
     
-    // Super Admin (Hardcodé)
-    const isSuperAdmin = SUPER_ADMIN_USERS.includes(user.id) || user.roles.some(r => SUPER_ADMIN_ROLES.includes(r));
-    if (isSuperAdmin) return { isAdmin: true, isShockOfficer: true, isOfficer: true, isMarine: true };
-
     const config = await Config.findOne();
-    if (!config) return { isAdmin: false, isShockOfficer: false, isOfficer: false, isMarine: false };
+    if (!config) return { isAdmin: false, isShockOfficer: false, isOfficer: false, isMarine: false, isBanned: false };
+
+    // VÉRIFICATION BANNISSEMENT (Prioritaire)
+    if (config.bannedUsers && config.bannedUsers.includes(user.id)) {
+        return { isAdmin: false, isShockOfficer: false, isOfficer: false, isMarine: false, isBanned: true };
+    }
+
+    // Super Admin
+    const isSuperAdmin = SUPER_ADMIN_USERS.includes(user.id) || user.roles.some(r => SUPER_ADMIN_ROLES.includes(r));
+    if (isSuperAdmin) return { isAdmin: true, isShockOfficer: true, isOfficer: true, isMarine: true, isBanned: false };
 
     // Admin DB
     const isAdminDB = config.adminUsers.includes(user.id) || user.roles.some(r => config.adminRoles.includes(r));
-    if (isAdminDB) return { isAdmin: true, isShockOfficer: true, isOfficer: true, isMarine: true };
+    if (isAdminDB) return { isAdmin: true, isShockOfficer: true, isOfficer: true, isMarine: true, isBanned: false };
 
-    // Shock Officer (NOUVEAU) - Seulement par User ID
+    // Shock Officer
     const isShockOfficer = config.shockOfficerUsers.includes(user.id);
-    if (isShockOfficer) return { isAdmin: false, isShockOfficer: true, isOfficer: true, isMarine: true };
+    if (isShockOfficer) return { isAdmin: false, isShockOfficer: true, isOfficer: true, isMarine: true, isBanned: false };
 
     const isOfficer = user.roles.some(r => config.officerRoles.includes(r));
     const isMarine = user.roles.some(r => config.marineRoles.includes(r));
-    return { isAdmin: false, isShockOfficer: false, isOfficer: isOfficer, isMarine: isMarine };
+    return { isAdmin: false, isShockOfficer: false, isOfficer: isOfficer, isMarine: isMarine, isBanned: false };
 }
 
 const checkAdmin = async (req, res, next) => { 
-    if (req.isAuthenticated() && (await getPermissions(req.user)).isAdmin) return next(); 
+    const perms = await getPermissions(req.user);
+    if (req.isAuthenticated() && !perms.isBanned && perms.isAdmin) return next(); 
     res.status(403).json({ message: "Admin Only." }); 
 };
 
-// Middleware pour Admin OU Officier Shock (Gestion : Edit forcé, Delete, Suspend)
 const checkManage = async (req, res, next) => {
     if (!req.isAuthenticated()) return res.status(401).json({ message: "Non connecté" });
     const perms = await getPermissions(req.user);
-    if (perms.isAdmin || perms.isShockOfficer) return next();
-    res.status(403).json({ message: "Permission refusée (Admin ou Officier Shock requis)." });
+    if (!perms.isBanned && (perms.isAdmin || perms.isShockOfficer)) return next();
+    res.status(403).json({ message: "Permission refusée." });
 };
 
 const checkEdit = async (req, res, next) => { 
     if (!req.isAuthenticated()) return res.status(401).json({ message: "Non connecté" });
     const perms = await getPermissions(req.user);
-    if (perms.isAdmin || perms.isShockOfficer || perms.isOfficer || perms.isMarine) return next(); 
+    if (!perms.isBanned && (perms.isAdmin || perms.isShockOfficer || perms.isOfficer || perms.isMarine)) return next(); 
     res.status(403).json({ message: "Accès refusé." }); 
 };
 
 const checkValidate = async (req, res, next) => { 
     if (!req.isAuthenticated()) return res.status(401).json({ message: "Non connecté" });
     const perms = await getPermissions(req.user);
-    if (perms.isAdmin || perms.isShockOfficer || perms.isOfficer) return next(); 
+    if (!perms.isBanned && (perms.isAdmin || perms.isShockOfficer || perms.isOfficer)) return next(); 
     res.status(403).json({ message: "Shock Only." }); 
 };
 
@@ -267,11 +274,27 @@ app.get('/auth/user', async (req, res) => {
     } else { res.json({ connecte: false }); }
 });
 
-app.get('/api/config', async (req, res) => { res.json(await Config.findOne()); });
+app.get('/api/config', async (req, res) => { 
+    if(req.isAuthenticated() && (await getPermissions(req.user)).isBanned) return res.status(403).json({});
+    res.json(await Config.findOne()); 
+});
 app.put('/api/config', checkAdmin, async (req, res) => { await Config.findOneAndUpdate({}, req.body, { upsert: true }); res.json({ message: "OK" }); });
 
-app.get('/api/protocoles', async (req, res) => { res.json(await Protocole.find({ statut: { $ne: 'Effectué' } }).sort({ date: -1 })); });
-app.get('/api/historique', async (req, res) => { res.json(await Protocole.find({ statut: 'Effectué' }).sort({ date: -1 })); });
+// PROTECTION LECTURE SI BANNI
+app.get('/api/protocoles', async (req, res) => { 
+    if(req.isAuthenticated()) {
+        const perms = await getPermissions(req.user);
+        if(perms.isBanned) return res.status(403).json([]);
+    }
+    res.json(await Protocole.find({ statut: { $ne: 'Effectué' } }).sort({ date: -1 })); 
+});
+app.get('/api/historique', async (req, res) => { 
+    if(req.isAuthenticated()) {
+        const perms = await getPermissions(req.user);
+        if(perms.isBanned) return res.status(403).json([]);
+    }
+    res.json(await Protocole.find({ statut: 'Effectué' }).sort({ date: -1 })); 
+});
 
 app.post('/api/protocoles', checkEdit, async (req, res) => {
     try {
@@ -307,12 +330,9 @@ app.put('/api/protocoles/:id', checkEdit, async (req, res) => {
     try {
         const p = await Protocole.findById(req.params.id);
         const perms = await getPermissions(req.user);
-        
-        // Autoriser si Admin OU Officier Shock OU c'est le sien
         if (!perms.isAdmin && !perms.isShockOfficer && p.discordId !== req.user.id) {
             return res.status(403).json({ message: "Non autorisé" });
         }
-        
         await Protocole.findByIdAndUpdate(req.params.id, req.body);
         res.json({ message: "OK" });
     } catch (e) { res.status(500).json({ error: "Erreur" }); }
@@ -322,7 +342,6 @@ app.put('/api/protocoles/:id/valider', checkValidate, async (req, res) => {
     const { validatorName } = req.body;
     const p = await Protocole.findById(req.params.id);
     
-    // Bloquer si suspendu
     if(p.isSuspended) return res.status(403).json({ message: "Ce protocole est suspendu." });
 
     if(p && validatorName) {
@@ -365,13 +384,12 @@ app.delete('/api/protocoles/:id', async (req, res) => {
         const p = await Protocole.findById(req.params.id);
         if (!p) return res.status(404).json({ message: "Protocole introuvable" });
         
-        // Si Admin OU Officier Shock : suppression autorisée
+        if(perms.isBanned) return res.status(403).json({ message: "Banni." });
+
         if (perms.isAdmin || perms.isShockOfficer) {
             await Protocole.findByIdAndDelete(req.params.id);
             return res.json({ message: "Supprimé par Haut Commandement" });
         }
-        
-        // Si Auteur ET que le protocole n'est PAS encore archivé
         if (p.discordId === req.user.id && p.statut !== 'Effectué') {
             await Protocole.findByIdAndDelete(req.params.id);
             return res.json({ message: "Supprimé par Auteur" });
@@ -382,12 +400,10 @@ app.delete('/api/protocoles/:id', async (req, res) => {
     }
 });
 
-// ROUTE : SUSPENDRE (ADMIN OU SHOCK OFFICER)
 app.put('/api/protocoles/:id/suspend', checkManage, async (req, res) => {
     try {
         const { reason } = req.body;
         const p = await Protocole.findById(req.params.id);
-        
         if (!p) return res.status(404).json({ message: "Introuvable" });
 
         if (p.isSuspended) {
