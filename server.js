@@ -124,8 +124,12 @@ async function sendDiscordWebhook(protocole, shockName) {
         if (regConfig) {
             const hex = regConfig.color.replace('#', '');
             colorInt = parseInt(hex, 16);
+            
+            // MODIFICATION: Gestion de plusieurs rôles séparés par une virgule
             if (regConfig.discordRoleID) {
-                rolePing = `<@&${regConfig.discordRoleID}>`;
+                // On découpe par virgule, on nettoie les espaces, et on formate <@&ID>
+                const roles = regConfig.discordRoleID.split(',');
+                rolePing = roles.map(id => `<@&${id.trim()}>`).join(' ');
             }
         }
 
@@ -329,11 +333,35 @@ app.put('/api/protocoles/:id/rappel', checkValidate, async (req, res) => {
     res.json({ message: "OK", takenBy });
 });
 
-app.delete('/api/protocoles/:id', checkAdmin, async (req, res) => {
-    await Protocole.findByIdAndDelete(req.params.id);
-    res.json({ message: "Supprimé." });
+// MODIFICATION: Route DELETE personnalisée pour permettre à l'auteur de supprimer
+app.delete('/api/protocoles/:id', async (req, res) => {
+    try {
+        if (!req.isAuthenticated()) return res.status(401).json({ message: "Non connecté" });
+        
+        const perms = await getPermissions(req.user);
+        const p = await Protocole.findById(req.params.id);
+
+        if (!p) return res.status(404).json({ message: "Protocole introuvable" });
+
+        // Si Admin : suppression autorisée
+        if (perms.isAdmin) {
+            await Protocole.findByIdAndDelete(req.params.id);
+            return res.json({ message: "Supprimé par Admin" });
+        }
+
+        // Si Auteur ET que le protocole n'est PAS encore archivé ("Effectué")
+        if (p.discordId === req.user.id && p.statut !== 'Effectué') {
+            await Protocole.findByIdAndDelete(req.params.id);
+            return res.json({ message: "Supprimé par Auteur" });
+        }
+
+        // Sinon interdit
+        res.status(403).json({ message: "Vous n'avez pas la permission de supprimer." });
+
+    } catch (e) {
+        res.status(500).json({ error: "Erreur serveur" });
+    }
 });
 
 const PORT = process.env.PORT || 3000;
 app.listen(PORT, () => console.log(`Serveur lancé sur le port ${PORT}`));
-
