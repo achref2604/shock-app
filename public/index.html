@@ -4,9 +4,6 @@
     <meta charset="UTF-8">
     <meta name="viewport" content="width=device-width, initial-scale=1">
     <title>Gestion des Protocoles</title>
-    
-    <link rel="icon" type="image/png" href="https://cdn.discordapp.com/attachments/1066805880928088084/1466837163093004319/Logo_Shock.png?ex=69802c50&is=697edad0&hm=cdd003beec5503dc025fd765ba9a9170f8af79b4f0954f83f072c195ee2ff45c&">
-
     <link href="https://cdn.jsdelivr.net/npm/bootstrap@5.3.2/dist/css/bootstrap.min.css" rel="stylesheet">
     <link href="https://fonts.googleapis.com/css2?family=Rajdhani:wght@400;600;700&display=swap" rel="stylesheet">
     <link rel="stylesheet" href="https://cdnjs.cloudflare.com/ajax/libs/font-awesome/6.4.0/css/all.min.css">
@@ -68,6 +65,9 @@
         @keyframes pulse-red { 0% { opacity: 1; } 50% { opacity: 0.7; } 100% { opacity: 1; } }
         .sanction-alert { background-color: #c0392b; color: white; text-align: center; font-weight: bold; padding: 10px; border-radius: 5px; margin-bottom: 15px; text-transform: uppercase; animation: pulse-red 2s infinite; letter-spacing: 1px; box-shadow: 0 0 10px rgba(192, 57, 43, 0.5); }
     
+        /* NOUVEAU STYLE POUR SUSPENSION */
+        .alert-suspended { background-color: rgba(241, 196, 15, 0.2); border: 1px solid #f1c40f; color: #f1c40f; padding: 10px; border-radius: 5px; text-align: center; margin-bottom: 10px; }
+
         .main-wrapper { max-width: 1800px; margin: 0 auto; }
 
         /* MODALES */
@@ -278,14 +278,12 @@
 
         function customAlert(message) { document.getElementById('customAlertBody').innerText = message; alertModal.show(); }
         
-        // MODIFICATION: Utilisation correcte de la modale custom
         function customConfirm(message) { 
             return new Promise((resolve) => { 
                 document.getElementById('customConfirmBody').innerText = message; 
                 const btnYes = document.getElementById('btnConfirmYes'); 
                 const btnNo = document.getElementById('btnConfirmNo'); 
                 
-                // Cloner pour virer les anciens eventListeners
                 const newYes = btnYes.cloneNode(true); 
                 const newNo = btnNo.cloneNode(true); 
                 btnYes.parentNode.replaceChild(newYes, btnYes); 
@@ -498,7 +496,7 @@
             const container = document.getElementById('listeProtocoles');
             container.innerHTML = '';
             
-            // MODIFICATION: Texte du compteur personnalisé selon le contexte
+            // MODIF : Texte personnalisé du compteur
             if (estEnCours) {
                 document.getElementById('compteur').innerText = `${data.length} protocoles à remettre`;
             } else {
@@ -520,15 +518,47 @@
                 const isAuthor = (p.discordId === user.id);
                 const canModify = user.isAdmin || isAuthor;
 
-                if (estEnCours && canEdit) {
-                    let btnValider = canValidate ? `<button onclick="valider('${p._id}')" class="btn btn-outline-success flex-grow-1 fw-bold">👮‍♂️ Appliquer le protocole</button>` : '';
-                    let btnModifier = canModify ? `<button onclick="preparerAction('${p._id}', 'modifier')" class="btn btn-outline-warning" title="Modifier">✏️</button>` : '';
-                    actionButtons = `<div class="card-footer bg-transparent border-top-0 pt-0 d-flex gap-2">${btnValider}${btnModifier}<button onclick="preparerAction('${p._id}', 'dupliquer')" class="btn btn-outline-info" title="Dupliquer">📋</button></div>`;
+                // NOUVEAU: Logique d'affichage "Suspendu"
+                let suspendedAlert = '';
+                let mainButton = '';
+
+                if (p.isSuspended) {
+                    // SI SUSPENDU
+                    suspendedAlert = `<div class="alert-suspended">⛔ <strong>PROTOCOLE SUSPENDU</strong><br><small>Par ${p.suspendedBy} : ${p.suspendReason}</small></div>`;
+                    
+                    if (user.isAdmin) {
+                        mainButton = `<button onclick="toggleSuspend('${p._id}', true)" class="btn btn-outline-warning w-100 fw-bold mb-2">🔓 Lever la Suspension</button>`;
+                    } else {
+                        mainButton = `<button class="btn btn-secondary w-100 fw-bold mb-2" disabled>⛔ Suspendu</button>`;
+                    }
+
+                } else {
+                    // SI NON SUSPENDU
+                    if (estEnCours && canValidate) {
+                        mainButton = `<button onclick="valider('${p._id}')" class="btn btn-outline-success flex-grow-1 fw-bold">👮‍♂️ Appliquer le protocole</button>`;
+                    }
+                }
+
+                let suspendBtn = '';
+                if (user.isAdmin && estEnCours && !p.isSuspended) {
+                    suspendBtn = `<button onclick="toggleSuspend('${p._id}', false)" class="btn btn-sm btn-outline-warning" title="Suspendre">⏸️</button>`;
+                }
+
+                if (estEnCours) {
+                    let editBtn = canModify && !p.isSuspended ? `<button onclick="preparerAction('${p._id}', 'modifier')" class="btn btn-outline-warning" title="Modifier">✏️</button>` : '';
+                    let dupBtn = `<button onclick="preparerAction('${p._id}', 'dupliquer')" class="btn btn-outline-info" title="Dupliquer">📋</button>`;
+                    
+                    if (p.isSuspended) {
+                        // Si suspendu, on cache appliquer/modifier pour les non-admins
+                        actionButtons = `<div class="card-footer bg-transparent border-top-0 pt-0">${mainButton}</div>`;
+                    } else {
+                        actionButtons = `<div class="card-footer bg-transparent border-top-0 pt-0 d-flex gap-2">${mainButton}${editBtn}${dupBtn}</div>`;
+                    }
+
                 } else if (!estEnCours && canValidate) {
                     actionButtons = `<div class="card-footer bg-transparent border-top-0 pt-0"><button onclick="restaurer('${p._id}')" class="btn btn-outline-light w-100 fw-bold">↩️ Restaurer</button></div>`;
                 }
 
-                // MODIFICATION: Bouton suppression visible pour Admin OU (Auteur ET EnCours)
                 let deleteBtn = '';
                 if (user.isAdmin || (isAuthor && estEnCours)) {
                     deleteBtn = `<button onclick="supprimer('${p._id}')" class="btn btn-sm btn-danger ms-2" title="Supprimer"><i class="fas fa-trash"></i></button>`;
@@ -544,9 +574,10 @@
                     <div class="card h-100" style="background-color: #2b2b2b !important;">
                         <div class="card-header d-flex justify-content-between align-items-center" style="${headerStyle}">
                             <div><span class="fs-5">${p.cibleNom}</span> <span class="small ms-2" style="opacity:0.8">${p.cibleGrade} - ${p.cibleRegiment}</span></div>
-                            <div class="d-flex align-items-center gap-2">${badge}${deleteBtn}</div>
+                            <div class="d-flex align-items-center gap-2">${badge}${suspendBtn}${deleteBtn}</div>
                         </div>
                         <div class="card-body">
+                            ${suspendedAlert}
                             <div class="row">
                                 <div class="col-md-9">
                                     <div class="mb-2"><div class="p-2 bg-dark rounded border border-secondary"><small class="text-muted d-block ls-1">SANCTION</small><span class="fw-bold text-danger">${p.protocoleType}</span></div></div>
@@ -585,6 +616,30 @@
         async function validerRappel(id) { const confirm = await customConfirm("Confirmer que vous prenez en charge ce rappel sur Discord ?"); if(!confirm) return; try { const res = await fetch(`${API_URL}/${id}/rappel`, { method: 'PUT' }); if(res.ok) chargerDelais(); } catch(e) { customAlert("Erreur réseau"); } }
         async function envoyerSignalement() { const body = { validatorManualName: document.getElementById('sigShockName').value, cibleNom: document.getElementById('sigCibleNom').value, cibleGrade: document.getElementById('sigCibleGrade').value, cibleRegiment: document.getElementById('sigCibleRegiment').value, protocoleType: document.getElementById('sigProtocole').value, auteurNom: document.getElementById('sigOrderedBy').value, raison: document.getElementById('sigRaison').value, details: document.getElementById('sigDetails').value, targetSteamID: document.getElementById('sigSteamID').value }; if(!body.validatorManualName || !body.cibleNom || !body.cibleGrade || !body.cibleRegiment || !body.protocoleType || !body.raison) return customAlert("Champs obligatoires manquants."); try { const res = await fetch('/api/protocoles/direct', { method: 'POST', headers: { 'Content-Type': 'application/json' }, body: JSON.stringify(body) }); if(res.ok) { customAlert("Enregistré !"); document.querySelectorAll('#signalementPanel input, #signalementPanel textarea, #signalementPanel select').forEach(i => i.value = ''); document.querySelectorAll('.nav-link')[3].click(); } else customAlert("Erreur"); } catch(e) { customAlert("Erreur connexion"); } }
         
+        // --- GESTION SUSPENSION ---
+        async function toggleSuspend(id, isSuspended) {
+            let reason = null;
+            if (!isSuspended) {
+                // On suspend -> Demander raison
+                reason = await customPrompt("Raison de la suspension ?");
+                if (reason === null) return; // Annulation
+            } else {
+                // On lève -> Confirmation
+                const confirm = await customConfirm("Lever la suspension ?");
+                if (!confirm) return;
+            }
+
+            try {
+                const res = await fetch(`${API_URL}/${id}/suspend`, {
+                    method: 'PUT',
+                    headers: { 'Content-Type': 'application/json' },
+                    body: JSON.stringify({ reason: reason })
+                });
+                if (res.ok) chargerEnCours(); 
+                else customAlert("Erreur / Permission refusée");
+            } catch (e) { customAlert("Erreur réseau"); }
+        }
+
         // --- MISE A JOUR ADMIN UI POUR AJOUTER ID ROLE ---
         function renderAdminUI() { 
             const listAdminR = document.getElementById('listAdminRoles'); const listAdminU = document.getElementById('listAdminUsers'); const listOfficer = document.getElementById('listOfficerRoles'); const listMarine = document.getElementById('listMarineRoles'); 
