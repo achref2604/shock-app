@@ -117,8 +117,8 @@
                         <div class="row">
                             <div class="col-md-4">
                                 <div class="admin-section" style="border-color: #f1c40f;">
-                                    <h5>👑 Administration & Officiers</h5>
-                                    <div class="d-flex gap-2 mb-2"><input type="text" id="newAdminRole" class="form-control form-control-sm" placeholder="ID Rôle Admin"><button onclick="addConfig('adminRoles')" class="btn btn-sm btn-success">+</button></div>
+                                    <h5>👑 Membres Admins</h5>
+                                    <div class="d-flex gap-2 mb-2"><input type="text" id="newAdminRole" class="form-control form-control-sm" placeholder="ID Rôle Discord"><button onclick="addConfig('adminRoles')" class="btn btn-sm btn-success">+</button></div>
                                     <div id="listAdminRoles" class="d-flex flex-wrap gap-2 mb-2"></div>
                                     
                                     <div class="d-flex gap-2 mb-2"><input type="text" id="newAdminUser" class="form-control form-control-sm" placeholder="ID User Admin"><button onclick="addConfig('adminUsers')" class="btn btn-sm btn-success">+</button></div>
@@ -143,7 +143,12 @@
                                 <div class="admin-section">
                                     <h5>🏴 Ajouter Régiment</h5>
                                     <div class="d-flex gap-2 mb-2"><input type="text" id="newRegimentName" class="form-control form-control-sm" placeholder="Nom du Régiment (Ex: 104th)"><button onclick="addNewRegiment()" class="btn btn-sm btn-success">Créer</button></div>
-                                    <p class="small text-muted">Configurez les réglages des régiments ci-dessous.</p>
+                                    <p class="small text-muted mb-3">Configurez les réglages des régiments ci-dessous.</p>
+                                    
+                                    <hr class="border-secondary my-2">
+                                    <h5 class="text-danger">🚫 Utilisateurs Bannis</h5>
+                                    <div class="d-flex gap-2 mb-2"><input type="text" id="newBannedUser" class="form-control form-control-sm" placeholder="ID User Discord"><button onclick="addConfig('bannedUsers')" class="btn btn-sm btn-danger">+</button></div>
+                                    <div id="listBannedUsers" class="d-flex flex-wrap gap-2"></div>
                                 </div>
                             </div>
                         </div>
@@ -282,9 +287,9 @@
     <script>
         const API_URL = '/api/protocoles';
         let currentData = [];
-        let configData = { adminRoles: [], adminUsers: [], shockOfficerUsers: [], officerRoles: [], marineRoles: [], regiments: [] };
+        let configData = { adminRoles: [], adminUsers: [], shockOfficerUsers: [], bannedUsers: [], officerRoles: [], marineRoles: [], regiments: [] };
         let editingId = null; 
-        let user = { connecte: false, id: null, isAdmin: false, isShockOfficer: false, isOfficer: false, isMarine: false };
+        let user = { connecte: false, id: null, isAdmin: false, isShockOfficer: false, isOfficer: false, isMarine: false, isBanned: false };
 
         const alertModal = new bootstrap.Modal(document.getElementById('customAlertModal'));
         const confirmModal = new bootstrap.Modal(document.getElementById('customConfirmModal'));
@@ -319,6 +324,12 @@
                 const data = await res.json();
                 user = data;
                 
+                // GESTION DU BANNISSEMENT
+                if (user.isBanned) {
+                    document.body.innerHTML = '<div class="d-flex justify-content-center align-items-center vh-100"><div class="text-center p-5 bg-danger text-white rounded display-4 fw-bold">⛔ ACCÈS REFUSÉ<br><small class="fs-6 fw-normal">Vous avez été banni de cette interface.</small></div></div>';
+                    return;
+                }
+
                 const canEdit = user.isAdmin || user.isShockOfficer || user.isOfficer || user.isMarine;
                 const canValidate = user.isAdmin || user.isShockOfficer || user.isOfficer;
 
@@ -348,6 +359,9 @@
         async function fetchConfig() {
             try {
                 const res = await fetch('/api/config');
+                // Si l'utilisateur est banni et tente d'accéder, l'API renverra 403
+                if (res.status === 403) return; 
+
                 const data = await res.json();
                 if(data) configData = { ...configData, ...data };
                 if(configData.regiments.length > 0 && typeof configData.regiments[0] === 'string') {
@@ -407,6 +421,8 @@
 
         async function chargerDelais() {
             const res = await fetch('/api/protocoles'); 
+            if (res.status === 403) return; // Si banni
+
             const data = await res.json();
             const container = document.getElementById('listeProtocoles');
             container.innerHTML = '';
@@ -530,7 +546,6 @@
                 const canEdit = user.isAdmin || user.isShockOfficer || user.isOfficer || user.isMarine;
                 const canValidate = user.isAdmin || user.isShockOfficer || user.isOfficer;
                 const isAuthor = (p.discordId === user.id);
-                // Le Shock Officer peut tout modifier
                 const canModify = user.isAdmin || user.isShockOfficer || isAuthor;
 
                 let suspendedAlert = '';
@@ -613,11 +628,15 @@
 
         async function chargerEnCours() {
             const res = await fetch('/api/protocoles');
+            // GESTION ERREUR 403 (Banni)
+            if (res.status === 403) return;
             currentData = await res.json();
             afficherMandats(currentData, true);
         }
         async function chargerHistorique() {
             const res = await fetch('/api/historique');
+            // GESTION ERREUR 403 (Banni)
+            if (res.status === 403) return;
             currentData = await res.json();
             afficherMandats(currentData, false);
         }
@@ -652,13 +671,18 @@
         // --- MISE A JOUR ADMIN UI POUR AJOUTER ID ROLE ---
         function renderAdminUI() { 
             const listAdminR = document.getElementById('listAdminRoles'); const listAdminU = document.getElementById('listAdminUsers'); const listOfficer = document.getElementById('listOfficerRoles'); const listMarine = document.getElementById('listMarineRoles'); 
+            // NOUVEAU
             const listShockUsers = document.getElementById('listShockUsers');
+            const listBannedUsers = document.getElementById('listBannedUsers');
 
             listAdminR.innerHTML = (configData.adminRoles||[]).map(r => `<span class="badge bg-secondary">${r} <i class="fas fa-times tag-remove" onclick="removeConfig('adminRoles', '${r}')"></i></span>`).join(''); 
             listAdminU.innerHTML = (configData.adminUsers||[]).map(r => `<span class="badge bg-secondary">${r} <i class="fas fa-times tag-remove" onclick="removeConfig('adminUsers', '${r}')"></i></span>`).join(''); 
             listOfficer.innerHTML = (configData.officerRoles||[]).map(r => `<span class="badge bg-secondary">${r} <i class="fas fa-times tag-remove" onclick="removeConfig('officerRoles', '${r}')"></i></span>`).join(''); 
             listMarine.innerHTML = (configData.marineRoles||[]).map(r => `<span class="badge bg-secondary">${r} <i class="fas fa-times tag-remove" onclick="removeConfig('marineRoles', '${r}')"></i></span>`).join(''); 
+            
+            // NOUVEAUX CHAMPS
             listShockUsers.innerHTML = (configData.shockOfficerUsers||[]).map(r => `<span class="badge bg-danger">${r} <i class="fas fa-times tag-remove" onclick="removeConfig('shockOfficerUsers', '${r}')"></i></span>`).join('');
+            listBannedUsers.innerHTML = (configData.bannedUsers||[]).map(r => `<span class="badge bg-danger">${r} <i class="fas fa-times tag-remove" onclick="removeConfig('bannedUsers', '${r}')"></i></span>`).join('');
 
             const regList = document.getElementById('regimentConfigList'); 
             regList.innerHTML = ''; 
@@ -689,13 +713,14 @@
         function updateRegiment(index, field, value) { if(field === 'rappelDays' || field === 'sanctionDays') value = parseInt(value); configData.regiments[index][field] = value; }
         function removeRegiment(index) { customConfirm("Supprimer ce régiment ?").then(ok => { if(ok) { configData.regiments.splice(index, 1); renderAdminUI(); }}); }
         function addConfig(key) { 
-            // Mapping des IDs des inputs
             let inputId = '';
             if (key === 'adminRoles') inputId = 'newAdminRole';
             else if (key === 'adminUsers') inputId = 'newAdminUser';
             else if (key === 'officerRoles') inputId = 'newOfficerRole';
             else if (key === 'marineRoles') inputId = 'newMarineRole';
             else if (key === 'shockOfficerUsers') inputId = 'newShockUser';
+            // NOUVEAU
+            else if (key === 'bannedUsers') inputId = 'newBannedUser';
 
             const val = document.getElementById(inputId).value.trim(); 
             if(!val) return; 
