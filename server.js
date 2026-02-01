@@ -23,7 +23,7 @@ const SESSION_SECRET = process.env.SESSION_SECRET || 'secretSuperShock';
 const ALLOWED_GUILD_ID = process.env.ALLOWED_GUILD_ID;
 
 // WEBHOOK
-const DISCORD_WEBHOOK_URL = 'https://discord.com/api/webhooks/1313580821470249122/qe2JVdKoa0k7LF0uJ9t_qusWJgof1p_QxaPpp1yMI2k-QzAfi8gIn2gSQsTHJdlA1Hf_';
+const DISCORD_WEBHOOK_URL = 'https://discord.com/api/webhooks/1313625448504098887/y6DWN9qx9Se5MRCsbJLLQmim4tl34obX7Z2u0u0S5549sA2XMZ1ZXMB2Y_gVtpcnHCM5';
 const SHOCK_LOGO_URL = 'https://cdn.discordapp.com/attachments/1066805880928088084/1466837163093004319/Logo_Shock.png?ex=697e3210&is=697ce090&hm=28787b2cd9f14aff673f044e3374b8c8c850098f51d9600893aea32e3f42cdfb&';
 
 const SPREADSHEET_ID = '1vEQkvkcCMr6wvl0FsSj1oVdS5CUMttXsBNlt5jThXX0';
@@ -385,3 +385,4 @@ app.put('/api/protocoles/:id/suspend', checkAdmin, async (req, res) => {
 
 const PORT = process.env.PORT || 3000;
 app.listen(PORT, () => console.log(`Serveur lancé sur le port ${PORT}`));
+
