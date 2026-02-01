@@ -3,7 +3,7 @@
 <head>
     <meta charset="UTF-8">
     <meta name="viewport" content="width=device-width, initial-scale=1">
-    <title>Gestion Protocoles</title>
+    <title>Gestion des Protocoles</title>
     <link href="https://cdn.jsdelivr.net/npm/bootstrap@5.3.2/dist/css/bootstrap.min.css" rel="stylesheet">
     <link href="https://fonts.googleapis.com/css2?family=Rajdhani:wght@400;600;700&display=swap" rel="stylesheet">
     <link rel="stylesheet" href="https://cdnjs.cloudflare.com/ajax/libs/font-awesome/6.4.0/css/all.min.css">
@@ -21,14 +21,9 @@
             font-family: 'Rajdhani', sans-serif; 
             background-color: var(--bg-dark); 
             color: #e0e0e0; 
-            
-            /* Le dégradé reste le même */
             background-image: radial-gradient(circle at center, #252525 0%, #141414 100%);
-            
-            /* AJOUTEZ CES DEUX LIGNES : */
-            background-attachment: fixed; /* Fige le fond par rapport à l'écran */
-            background-size: cover;       /* Assure que ça couvre tout */
-            
+            background-attachment: fixed;
+            background-size: cover;
             min-height: 100vh;
         }
         h1, h2, h3, h4, h5, .nav-link, .btn { text-transform: uppercase; letter-spacing: 1px; }
@@ -93,7 +88,7 @@
 
         <ul class="nav nav-tabs mb-4 justify-content-center">
             <li class="nav-item" id="navSignalement" style="display:none;"><a class="nav-link" href="#" onclick="changerOnglet('signalement')">⚡ Signalement Protocole</a></li>
-            <li class="nav-item"><a class="nav-link active" href="#" onclick="changerOnglet('encours')">⌚ Protocole à Remettre</a></li>
+            <li class="nav-item"><a class="nav-link active" href="#" onclick="changerOnglet('encours')">🕰️ Protocole à Remettre</a></li>
             <li class="nav-item" id="navDelais" style="display:none;"><a class="nav-link" href="#" onclick="changerOnglet('delais')">⏳ Délai Protocole</a></li>
             <li class="nav-item"><a class="nav-link" href="#" onclick="changerOnglet('historique')">💾 Archives</a></li>
             <li class="nav-item" id="navAdmin" style="display:none;"><a class="nav-link" href="#" onclick="changerOnglet('admin')">⚙️ Admin</a></li>
@@ -171,7 +166,7 @@
                                 </div>
                                 <div class="mb-2"><label class="small text-muted">Raison*</label><textarea id="sigRaison" class="form-control" rows="2"></textarea></div>
                                 <div class="mb-2"><label class="small text-muted">Détails</label><textarea id="sigDetails" class="form-control" rows="4"></textarea></div>
-                                <div class="mb-2"><label class="small text-muted">SteamID</label><input type="text" id="sigSteamID" class="form-control form-control-sm text-secondary border-secondary" placeholder="Si 408th, CT ASP Blanc ou job VIP"></div>
+                                <div class="mb-2"><label class="small text-muted">SteamID</label><input type="text" id="sigSteamID" class="form-control form-control-sm text-secondary border-secondary" placeholder="À remplir si 408th, CT ASP Blanc ou job VIP"></div>
                             </div>
                         </div>
                         <div class="text-center mt-4 pt-3 border-top border-secondary">
@@ -205,7 +200,7 @@
                                 </div>
                                 <div class="mb-2"><label class="small text-muted">Raison*</label><textarea id="raison" class="form-control" rows="2"></textarea></div>
                                 <div class="mb-2"><label class="small text-muted">Détails</label><textarea id="details" class="form-control" rows="4"></textarea></div>
-                                <div class="mb-2"><label class="small text-muted">SteamID</label><input type="text" id="steamid" class="form-control form-control-sm text-secondary border-secondary" placeholder="Si 408th, CT ASP Blanc ou job VIP"></div>
+                                <div class="mb-2"><label class="small text-muted">SteamID</label><input type="text" id="steamid" class="form-control form-control-sm text-secondary border-secondary" placeholder="À remplir si 408th, CT ASP Blanc ou job VIP"></div>
                             </div>
                         </div>
                         <div class="text-center mt-4 pt-3 border-top border-secondary">
@@ -279,7 +274,26 @@
         const promptModal = new bootstrap.Modal(document.getElementById('customPromptModal'));
 
         function customAlert(message) { document.getElementById('customAlertBody').innerText = message; alertModal.show(); }
-        function customConfirm(message) { return new Promise((resolve) => { document.getElementById('customConfirmBody').innerText = message; const btnYes = document.getElementById('btnConfirmYes'); const btnNo = document.getElementById('btnConfirmNo'); const newYes = btnYes.cloneNode(true); const newNo = btnNo.cloneNode(true); btnYes.parentNode.replaceChild(newYes, btnYes); btnNo.parentNode.replaceChild(newNo, btnNo); newYes.onclick = () => { confirmModal.hide(); resolve(true); }; newNo.onclick = () => { confirmModal.hide(); resolve(false); }; confirmModal.show(); }); }
+        
+        // MODIFICATION: Utilisation correcte de la modale custom
+        function customConfirm(message) { 
+            return new Promise((resolve) => { 
+                document.getElementById('customConfirmBody').innerText = message; 
+                const btnYes = document.getElementById('btnConfirmYes'); 
+                const btnNo = document.getElementById('btnConfirmNo'); 
+                
+                // Cloner pour virer les anciens eventListeners
+                const newYes = btnYes.cloneNode(true); 
+                const newNo = btnNo.cloneNode(true); 
+                btnYes.parentNode.replaceChild(newYes, btnYes); 
+                btnNo.parentNode.replaceChild(newNo, btnNo); 
+                
+                newYes.onclick = () => { confirmModal.hide(); resolve(true); }; 
+                newNo.onclick = () => { confirmModal.hide(); resolve(false); }; 
+                confirmModal.show(); 
+            }); 
+        }
+        
         function customPrompt(message, title = "SAISIE REQUISE") { return new Promise((resolve) => { document.getElementById('customPromptTitle').innerText = title; document.getElementById('customPromptBody').innerText = message; const input = document.getElementById('customPromptInput'); input.value = ''; const btnOk = document.getElementById('btnPromptOk'); const btnCancel = document.getElementById('btnPromptCancel'); const newOk = btnOk.cloneNode(true); const newCancel = btnCancel.cloneNode(true); btnOk.parentNode.replaceChild(newOk, btnOk); btnCancel.parentNode.replaceChild(newCancel, btnCancel); newOk.onclick = () => { promptModal.hide(); resolve(input.value); }; newCancel.onclick = () => { promptModal.hide(); resolve(null); }; document.getElementById('customPromptModal').addEventListener('shown.bs.modal', () => { input.focus(); }, { once: true }); promptModal.show(); }); }
 
         async function init() { await fetchConfig(); await checkUserStatus(); }
@@ -480,7 +494,14 @@
         function afficherMandats(data, estEnCours) {
             const container = document.getElementById('listeProtocoles');
             container.innerHTML = '';
-            document.getElementById('compteur').innerText = `${data.length} à remettre`;
+            
+            // MODIFICATION: Texte du compteur personnalisé selon le contexte
+            if (estEnCours) {
+                document.getElementById('compteur').innerText = `${data.length} protocoles à remettre`;
+            } else {
+                document.getElementById('compteur').innerText = `${data.length} archives`;
+            }
+            
             if(data.length === 0) { container.innerHTML = `<div class="col-12 text-center py-5 text-muted"><h3 class="fw-light">Aucun dossier.</h3></div>`; return; }
 
             data.forEach(p => {
@@ -504,7 +525,12 @@
                     actionButtons = `<div class="card-footer bg-transparent border-top-0 pt-0"><button onclick="restaurer('${p._id}')" class="btn btn-outline-light w-100 fw-bold">↩️ Restaurer</button></div>`;
                 }
 
-                let deleteBtn = user.isAdmin ? `<button onclick="supprimer('${p._id}')" class="btn btn-sm btn-danger ms-2" title="Supprimer"><i class="fas fa-trash"></i></button>` : '';
+                // MODIFICATION: Bouton suppression visible pour Admin OU (Auteur ET EnCours)
+                let deleteBtn = '';
+                if (user.isAdmin || (isAuthor && estEnCours)) {
+                    deleteBtn = `<button onclick="supprimer('${p._id}')" class="btn btn-sm btn-danger ms-2" title="Supprimer"><i class="fas fa-trash"></i></button>`;
+                }
+                
                 let timeAlert = (p.tempsRestant && !isDone) ? `<div class="alert-time p-2 rounded mb-2 text-center fw-bold">⚠️ TEMPS RESTANT : ${p.tempsRestant} min</div>` : '';
                 let logName = p.discordNick || p.discordUser; if (p.discordNick && p.discordUser && p.discordNick !== p.discordUser) logName = `${p.discordNick} (${p.discordUser})`; const discordInfo = logName ? `<br><small class="text-secondary"><i class="fab fa-discord"></i> Log: ${logName}</small>` : ''; const steamInfo = p.targetSteamID ? `<small class="text-muted d-block mt-1" style="font-size:0.7rem">${p.targetSteamID}</small>` : ''; const dateStr = new Date(p.date).toLocaleString().slice(0, -3); let validatorInfo = ''; if (p.statut === 'Effectué') { const vName = p.validatorManualName || (p.validatorNick || p.validatorUser); if (vName) validatorInfo = `<div class="mt-2 small text-success border-top border-secondary pt-1"><i class="fas fa-check-circle"></i> Appliqué par : ${p.validatorManualName ? p.validatorManualName + (p.validatorUser ? ` (${p.validatorUser})` : '') : vName}</div>`; }
 
@@ -523,7 +549,7 @@
                                     <div class="mb-2"><div class="p-2 bg-dark rounded border border-secondary"><small class="text-muted d-block ls-1">SANCTION</small><span class="fw-bold text-danger">${p.protocoleType}</span></div></div>
                                     <div class="mb-2"><div class="p-2 bg-dark rounded border-start border-3 border-danger"><small class="text-muted d-block ls-1">RAISON</small><span class="text-light user-text">${p.raison}</span></div></div>
                                     ${p.details ? `<div class="mb-2"><div class="p-2 bg-dark rounded border-start border-3 border-warning"><small class="text-muted d-block ls-1">DÉTAILS</small><span class="text-light user-text">${p.details}</span></div></div>` : ''}
-                                    ${p.targetSteamID ? `<div class="mb-2"><div class="p-2 bg-dark rounded border-start border-3 border-danger"><small class="text-muted d-block ls-1">STEAM ID</small><span class="text-light user-text">${p.targetSteamID}</span></div></div>` : ''}
+                                    ${p.targetSteamID ? `<div class="mb-2"><div class="p-2 bg-dark rounded border-start border-3 border-danger"><small class="text-muted d-block ls-1">STEAM ID</small><span class="text-light font-monospace">${p.targetSteamID}</span></div></div>` : ''}
                                     ${timeAlert}
                                 </div>
                                 <div class="col-md-3 border-start border-secondary ps-4 d-flex flex-column justify-content-center">
@@ -579,7 +605,9 @@
                             <div class="input-group input-group-sm mb-1"><span class="input-group-text bg-dark text-white border-secondary">Temps avant Rappel (j)</span><input type="number" class="form-control" value="${reg.rappelDays}" onchange="updateRegiment(${index}, 'rappelDays', this.value)"></div>
                             <div class="input-group input-group-sm mb-1"><span class="input-group-text bg-dark text-white border-secondary">Temps avant Sanction (j)</span><input type="number" class="form-control" value="${reg.sanctionDays}" onchange="updateRegiment(${index}, 'sanctionDays', this.value)"></div>
                             <div class="input-group input-group-sm mb-2"><span class="input-group-text bg-dark text-white border-secondary">Sanction</span><input type="text" class="form-control" value="${reg.sanctionText}" onchange="updateRegiment(${index}, 'sanctionText', this.value)"></div>
-                            <div class="input-group input-group-sm mb-2"><span class="input-group-text bg-dark text-white border-secondary">ID Rôle Discord</span><input type="text" class="form-control" value="${reg.discordRoleID || ''}" onchange="updateRegiment(${index}, 'discordRoleID', this.value)" placeholder="123456789"></div>
+                            
+                            <div class="input-group input-group-sm mb-2"><span class="input-group-text bg-dark text-white border-secondary">ID Rôle(s) Discord</span><input type="text" class="form-control" value="${reg.discordRoleID || ''}" onchange="updateRegiment(${index}, 'discordRoleID', this.value)" placeholder="123456789, 987654321"></div>
+                            
                             <div class="d-flex align-items-center gap-2"><small class="text-muted">Couleur du Régiment :</small><input type="color" class="form-control form-control-color" value="${currentColor}" onchange="updateRegiment(${index}, 'color', this.value)" title="Choisir la couleur"></div>
                         </div>
                     </div>
@@ -594,11 +622,31 @@
         function removeConfig(key, val) { configData[key] = configData[key].filter(item => item !== val); renderAdminUI(); }
         async function saveConfig() { await fetch('/api/config', { method: 'PUT', headers: { 'Content-Type': 'application/json' }, body: JSON.stringify(configData) }); customAlert("Configuration sauvegardée !"); renderRegimentsSelect(); }
         function preparerAction(id, mode) { const item = currentData.find(p => p._id === id); document.getElementById('auteurNom').value = item.auteurNom; document.getElementById('cibleNom').value = item.cibleNom; document.getElementById('cibleGrade').value = item.cibleGrade; document.getElementById('cibleRegiment').value = item.cibleRegiment; document.getElementById('steamid').value = item.targetSteamID || ''; document.getElementById('protocole').value = item.protocoleType; document.getElementById('raison').value = item.raison; document.getElementById('details').value = item.details; document.getElementById('tempsRestant').value = item.tempsRestant || ''; document.getElementById('protocolFormPanel').style.display = 'block'; document.getElementById('protocolFormPanel').scrollIntoView({ behavior: 'smooth' }); if(mode === 'modifier') { editingId = id; document.getElementById('formTitle').innerText = "📝 MODIFICATION"; document.getElementById('btnSubmit').innerText = "Sauvegarder"; document.getElementById('btnSubmit').className = "btn btn-warning btn-lg px-5"; document.getElementById('btnCancel').style.display = "inline-block"; } else { editingId = null; document.getElementById('formTitle').innerText = "📋 DUPLICATION"; document.getElementById('btnSubmit').innerText = "Créer la copie"; document.getElementById('btnSubmit').className = "btn btn-shock btn-lg px-5"; document.getElementById('btnCancel').style.display = "inline-block"; } }
-        function resetForm() { editingId = null; document.getElementById('formTitle').innerText = "⌚ ORDONNER UN PROTOCOLE À REMETTRE"; document.getElementById('btnSubmit').innerText = "Transmettre"; document.getElementById('btnSubmit').className = "btn btn-shock btn-lg px-5"; document.getElementById('btnCancel').style.display = "none"; document.getElementById('cibleNom').value = ''; document.getElementById('cibleGrade').value = ''; document.getElementById('cibleRegiment').value = ''; document.getElementById('steamid').value = ''; document.getElementById('protocole').value = ''; document.getElementById('raison').value = ''; document.getElementById('details').value = ''; document.getElementById('tempsRestant').value = ''; }
+        function resetForm() { editingId = null; document.getElementById('formTitle').innerText = "🕰️ ORDONNER UN PROTOCOLE À REMETTRE"; document.getElementById('btnSubmit').innerText = "Transmettre"; document.getElementById('btnSubmit').className = "btn btn-shock btn-lg px-5"; document.getElementById('btnCancel').style.display = "none"; document.getElementById('cibleNom').value = ''; document.getElementById('cibleGrade').value = ''; document.getElementById('cibleRegiment').value = ''; document.getElementById('steamid').value = ''; document.getElementById('protocole').value = ''; document.getElementById('raison').value = ''; document.getElementById('details').value = ''; document.getElementById('tempsRestant').value = ''; }
         async function envoyerProtocole() { const body = { auteurNom: document.getElementById('auteurNom').value, cibleNom: document.getElementById('cibleNom').value, cibleGrade: document.getElementById('cibleGrade').value, cibleRegiment: document.getElementById('cibleRegiment').value, targetSteamID: document.getElementById('steamid').value, protocoleType: document.getElementById('protocole').value, raison: document.getElementById('raison').value, details: document.getElementById('details').value, tempsRestant: document.getElementById('tempsRestant').value }; if(!body.cibleNom || !body.cibleGrade || !body.cibleRegiment || !body.protocoleType || !body.raison || !body.auteurNom) return customAlert("Champs obligatoires manquants."); const method = editingId ? 'PUT' : 'POST'; const url = editingId ? `${API_URL}/${editingId}` : API_URL; try { const res = await fetch(url, { method: method, headers: { 'Content-Type': 'application/json' }, body: JSON.stringify(body) }); if(res.ok) { customAlert('✅ Protocole transmis'); resetForm(); chargerEnCours(); if(!editingId) toggleForm(); } else { if(res.status === 403) customAlert("Seul l'auteur ou l'admin peut modifier."); else customAlert('Erreur ou Permissions insuffisantes.'); } } catch(e) { customAlert("Erreur réseau"); } }
         async function valider(id) { const validatorName = await customPrompt("Veuillez entrer votre Matricule + Nom pour appliquer le protocole :"); if (validatorName === null || validatorName.trim() === "") return; try { const res = await fetch(`${API_URL}/${id}/valider`, { method: 'PUT', headers: { 'Content-Type': 'application/json' }, body: JSON.stringify({ validatorName: validatorName }) }); if(res.ok) chargerEnCours(); else customAlert("Erreur validation"); } catch(e) { customAlert("Erreur connexion"); } }
         async function restaurer(id) { const temps = await customPrompt("Temps restant en min ?\nLaisser vide si le protocole n'a pas été commencé"); const res = await fetch(`${API_URL}/${id}/restaurer`, { method: 'PUT', headers: { 'Content-Type': 'application/json' }, body: JSON.stringify({ tempsRestant: temps }) }); if(res.ok) chargerHistorique(); else customAlert("Permission refusée"); }
-        async function supprimer(id) { if(!confirm("⚠️ SUPPRESSION DÉFINITIVE ⚠️\nÊtes-vous sûr ?")) return; try { const res = await fetch(`${API_URL}/${id}`, { method: 'DELETE' }); if(res.ok) { const activeTab = document.querySelector('.nav-link.active').getAttribute('onclick'); if(activeTab.includes('encours')) chargerEnCours(); else chargerHistorique(); } else customAlert("Erreur : Seul l'Admin peut supprimer."); } catch(e) { customAlert("Erreur serveur"); } }
+        
+        // MODIFICATION: Utilisation de customConfirm pour la suppression
+        async function supprimer(id) { 
+            const confirm = await customConfirm("⚠️ SUPPRESSION DÉFINITIVE ⚠️\nÊtes-vous sûr ?"); 
+            if(!confirm) return; 
+            try { 
+                const res = await fetch(`${API_URL}/${id}`, { method: 'DELETE' }); 
+                if(res.ok) { 
+                    const activeTab = document.querySelector('.nav-link.active').getAttribute('onclick'); 
+                    if(activeTab.includes('encours')) chargerEnCours(); 
+                    else chargerHistorique(); 
+                } else {
+                    // Affichage du message d'erreur spécifique du serveur
+                    const err = await res.json();
+                    customAlert(err.message || "Erreur lors de la suppression."); 
+                }
+            } catch(e) { 
+                customAlert("Erreur serveur"); 
+            } 
+        }
+        
         init();
     </script>
 </body>
