@@ -28,7 +28,7 @@
             background-attachment: fixed;
             background-size: cover;
             min-height: 100vh;
-            position: relative; /* Pour positionner le footer si besoin */
+            position: relative; 
         }
         h1, h2, h3, h4, h5, .nav-link, .btn { text-transform: uppercase; letter-spacing: 1px; }
         
@@ -89,8 +89,8 @@
         <div class="user-bar" id="userZone"></div>
 
         <header class="text-center mb-5 mt-4">
-            <h1 class="display-4 fw-bold text-shock">Gestion des Protocoles</h1>
-            <p class="lead text-muted">Shock Trooper - Flotte Cosmos</p>
+            <h1 class="display-4 fw-bold text-shock">Shock Trooper</h1>
+            <p class="lead text-muted">Système de Gestion des Protocoles</p>
         </header>
 
         <ul class="nav nav-tabs mb-4 justify-content-center">
@@ -102,7 +102,7 @@
         </ul>
 
         <div id="btnAdminZone" class="text-center mb-4" style="display:none;">
-            <button class="btn btn-outline-danger btn-sm px-4 py-2" onclick="toggleForm()">➕ Ordonner un Protocole à Remettre</button>
+            <button class="btn btn-outline-danger btn-sm px-4 py-2" onclick="toggleForm()">🕰️ Ordonner un Protocole à Remettre</button>
         </div>
 
         <div id="loginWarning" class="text-center mb-4 text-muted fst-italic">
@@ -117,11 +117,17 @@
                         <div class="row">
                             <div class="col-md-4">
                                 <div class="admin-section" style="border-color: #f1c40f;">
-                                    <h5>👑 Membres Admins</h5>
-                                    <div class="d-flex gap-2 mb-2"><input type="text" id="newAdminRole" class="form-control form-control-sm" placeholder="ID Rôle Discord"><button onclick="addConfig('adminRoles')" class="btn btn-sm btn-success">+</button></div>
+                                    <h5>👑 Administration & Officiers</h5>
+                                    <div class="d-flex gap-2 mb-2"><input type="text" id="newAdminRole" class="form-control form-control-sm" placeholder="ID Rôle Admin"><button onclick="addConfig('adminRoles')" class="btn btn-sm btn-success">+</button></div>
                                     <div id="listAdminRoles" class="d-flex flex-wrap gap-2 mb-2"></div>
-                                    <div class="d-flex gap-2 mb-2"><input type="text" id="newAdminUser" class="form-control form-control-sm" placeholder="ID Utilisateur Discord"><button onclick="addConfig('adminUsers')" class="btn btn-sm btn-success">+</button></div>
-                                    <div id="listAdminUsers" class="d-flex flex-wrap gap-2"></div>
+                                    
+                                    <div class="d-flex gap-2 mb-2"><input type="text" id="newAdminUser" class="form-control form-control-sm" placeholder="ID User Admin"><button onclick="addConfig('adminUsers')" class="btn btn-sm btn-success">+</button></div>
+                                    <div id="listAdminUsers" class="d-flex flex-wrap gap-2 mb-3"></div>
+
+                                    <hr class="border-secondary my-2">
+                                    <small class="text-muted d-block mb-1">Officiers Shock (ID User uniquement) :</small>
+                                    <div class="d-flex gap-2 mb-2"><input type="text" id="newShockUser" class="form-control form-control-sm" placeholder="ID User Shock Officer"><button onclick="addConfig('shockOfficerUsers')" class="btn btn-sm btn-success">+</button></div>
+                                    <div id="listShockUsers" class="d-flex flex-wrap gap-2"></div>
                                 </div>
                             </div>
                             <div class="col-md-4">
@@ -168,7 +174,7 @@
                                     <div class="col-6"><label class="small text-muted">Son Régiment*</label><select id="sigCibleRegiment" class="form-select"><option value="" disabled selected>Chargement...</option></select></div>
                                 </div>
                                 <div class="row g-2 mb-2">
-                                    <div class="col-6"><label class="small text-muted">Protocole*</label><select id="sigProtocole" class="form-select"><option value="" selected disabled>Choisir...</option><option>Protocole 1</option><option>Protocole 2</option><option>Protocole 3</option><option>Protocole 4</option><option>Protocole 5</option><option>Protocole 6</option><option>Protocole 7</option><option>Protocole 8</option><option>Protocole 9</option><option>Protocole 10</option></select></div>
+                                    <div class="col-6"><label class="small text-muted">Protocole (1-10)*</label><select id="sigProtocole" class="form-select"><option value="" selected disabled>Choisir...</option><option>Protocole 1</option><option>Protocole 2</option><option>Protocole 3</option><option>Protocole 4</option><option>Protocole 5</option><option>Protocole 6</option><option>Protocole 7</option><option>Protocole 8</option><option>Protocole 9</option><option>Protocole 10</option></select></div>
                                     <div class="col-6"><label class="small text-muted">Ordonné / Demandé par</label><input type="text" id="sigOrderedBy" class="form-control" placeholder="Laisser vide si c'est vous qui l'avez ordonné"></div>
                                 </div>
                                 <div class="mb-2"><label class="small text-muted">Raison*</label><textarea id="sigRaison" class="form-control" rows="2"></textarea></div>
@@ -276,9 +282,9 @@
     <script>
         const API_URL = '/api/protocoles';
         let currentData = [];
-        let configData = { adminRoles: [], adminUsers: [], officerRoles: [], marineRoles: [], regiments: [] };
+        let configData = { adminRoles: [], adminUsers: [], shockOfficerUsers: [], officerRoles: [], marineRoles: [], regiments: [] };
         let editingId = null; 
-        let user = { connecte: false, id: null, isAdmin: false, isOfficer: false, isMarine: false };
+        let user = { connecte: false, id: null, isAdmin: false, isShockOfficer: false, isOfficer: false, isMarine: false };
 
         const alertModal = new bootstrap.Modal(document.getElementById('customAlertModal'));
         const confirmModal = new bootstrap.Modal(document.getElementById('customConfirmModal'));
@@ -313,8 +319,8 @@
                 const data = await res.json();
                 user = data;
                 
-                const canEdit = user.isAdmin || user.isOfficer || user.isMarine;
-                const canValidate = user.isAdmin || user.isOfficer;
+                const canEdit = user.isAdmin || user.isShockOfficer || user.isOfficer || user.isMarine;
+                const canValidate = user.isAdmin || user.isShockOfficer || user.isOfficer;
 
                 document.getElementById('navAdmin').style.display = user.isAdmin ? 'block' : 'none';
                 document.getElementById('navSignalement').style.display = canValidate ? 'block' : 'none';
@@ -324,6 +330,7 @@
                 if (user.connecte) {
                     let badge = '<span class="badge bg-secondary">LECTURE SEUL</span>';
                     if (user.isAdmin) badge = '<span class="badge bg-warning text-dark">ADMIN</span>';
+                    else if (user.isShockOfficer) badge = '<span class="badge bg-danger text-white">OFFICIER SHOCK</span>';
                     else if (user.isOfficer) badge = '<span class="badge bg-danger">SHOCK</span>';
                     else if (user.isMarine) badge = '<span class="badge bg-info text-dark">ACCRÉDITÉ</span>';
                     document.getElementById('userZone').innerHTML = `<div class="d-flex align-items-center gap-2"><img src="${data.avatar}" class="avatar"><span class="fw-bold">${data.nickname}</span>${badge}<a href="/auth/logout" class="btn btn-sm btn-outline-danger"><i class="fas fa-sign-out-alt"></i></a></div>`;
@@ -390,7 +397,7 @@
                 chargerDelais();
             } else if(type === 'encours') {
                 document.getElementById('titreListe').innerHTML = '<span class="text-shock">►</span> Liste des Protocoles à Remettre';
-                if (user.isAdmin || user.isOfficer || user.isMarine) document.getElementById('btnAdminZone').style.display = 'block';
+                if (user.isAdmin || user.isOfficer || user.isMarine || user.isShockOfficer) document.getElementById('btnAdminZone').style.display = 'block';
                 chargerEnCours();
             } else {
                 document.getElementById('titreListe').innerHTML = '<span class="text-shock">►</span> Archives';
@@ -446,7 +453,7 @@
                     afficherRappels(container, p, regConfig, retardJours, sanctionBanner, deadlineText);
                 }
             });
-            document.getElementById('compteur').innerText = `${count} délai(s) dépassé(s)`;
+            document.getElementById('compteur').innerText = `${count} délais dépassés`;
             if(count === 0) container.innerHTML = `<div class="col-12 text-center py-5 text-muted"><h3>✅ Aucun délai dépassé.</h3></div>`;
         }
 
@@ -504,9 +511,8 @@
             const container = document.getElementById('listeProtocoles');
             container.innerHTML = '';
             
-            // Compteurs personnalisés
             if (estEnCours) {
-                document.getElementById('compteur').innerText = `${data.length} protocole(s) à remettre`;
+                document.getElementById('compteur').innerText = `${data.length} protocoles à remettre`;
             } else {
                 document.getElementById('compteur').innerText = `${data.length} archives`;
             }
@@ -521,19 +527,19 @@
                 const headerStyle = `background-color: ${regColor}20; border-bottom: 2px solid ${regColor}; color: white; font-weight: bold;`;
 
                 let actionButtons = '';
-                const canEdit = user.isAdmin || user.isOfficer || user.isMarine;
-                const canValidate = user.isAdmin || user.isOfficer;
+                const canEdit = user.isAdmin || user.isShockOfficer || user.isOfficer || user.isMarine;
+                const canValidate = user.isAdmin || user.isShockOfficer || user.isOfficer;
                 const isAuthor = (p.discordId === user.id);
-                const canModify = user.isAdmin || isAuthor;
+                // Le Shock Officer peut tout modifier
+                const canModify = user.isAdmin || user.isShockOfficer || isAuthor;
 
-                // LOGIQUE D'AFFICHAGE "SUSPENDU"
                 let suspendedAlert = '';
                 let mainButton = '';
 
                 if (p.isSuspended) {
                     suspendedAlert = `<div class="alert-suspended">⛔ <strong>PROTOCOLE SUSPENDU</strong><br><small>Par ${p.suspendedBy} : ${p.suspendReason}</small></div>`;
                     
-                    if (user.isAdmin) {
+                    if (user.isAdmin || user.isShockOfficer) {
                         mainButton = `<button onclick="toggleSuspend('${p._id}', true)" class="btn btn-outline-warning w-100 fw-bold mb-2">🔓 Lever la Suspension</button>`;
                     } else {
                         mainButton = `<button class="btn btn-secondary w-100 fw-bold mb-2" disabled>⛔ Suspendu</button>`;
@@ -545,7 +551,7 @@
                 }
 
                 let suspendBtn = '';
-                if (user.isAdmin && estEnCours && !p.isSuspended) {
+                if ((user.isAdmin || user.isShockOfficer) && estEnCours && !p.isSuspended) {
                     suspendBtn = `<button onclick="toggleSuspend('${p._id}', false)" class="btn btn-sm btn-outline-warning" title="Suspendre">⏸️</button>`;
                 }
 
@@ -563,9 +569,9 @@
                     actionButtons = `<div class="card-footer bg-transparent border-top-0 pt-0"><button onclick="restaurer('${p._id}')" class="btn btn-outline-light w-100 fw-bold">↩️ Restaurer</button></div>`;
                 }
 
-                // Bouton suppression
                 let deleteBtn = '';
-                if (user.isAdmin || (isAuthor && estEnCours)) {
+                // Admin ou ShockOfficer ou (Auteur ET EnCours)
+                if (user.isAdmin || user.isShockOfficer || (isAuthor && estEnCours)) {
                     deleteBtn = `<button onclick="supprimer('${p._id}')" class="btn btn-sm btn-danger ms-2" title="Supprimer"><i class="fas fa-trash"></i></button>`;
                 }
                 
@@ -593,7 +599,7 @@
                                 </div>
                                 <div class="col-md-3 border-start border-secondary ps-4 d-flex flex-column justify-content-center">
                                     <div class="small text-muted mb-1">📅 ${dateStr}</div>
-                                    <div class="mb-1">Personne qui l'a ordonné :<br><strong>${p.auteurNom || "?"}</strong></div>
+                                    <div class="mb-1">Personne qui l'a ordonné : <strong>${p.auteurNom || "?"}</strong></div>
                                     ${discordInfo}
                                     ${validatorInfo}
                                 </div>
@@ -625,11 +631,9 @@
         async function toggleSuspend(id, isSuspended) {
             let reason = null;
             if (!isSuspended) {
-                // On suspend -> Demander raison
                 reason = await customPrompt("Raison de la suspension ?");
-                if (reason === null) return; // Annulation
+                if (reason === null) return; 
             } else {
-                // On lève -> Confirmation
                 const confirm = await customConfirm("Lever la suspension ?");
                 if (!confirm) return;
             }
@@ -648,11 +652,14 @@
         // --- MISE A JOUR ADMIN UI POUR AJOUTER ID ROLE ---
         function renderAdminUI() { 
             const listAdminR = document.getElementById('listAdminRoles'); const listAdminU = document.getElementById('listAdminUsers'); const listOfficer = document.getElementById('listOfficerRoles'); const listMarine = document.getElementById('listMarineRoles'); 
+            const listShockUsers = document.getElementById('listShockUsers');
+
             listAdminR.innerHTML = (configData.adminRoles||[]).map(r => `<span class="badge bg-secondary">${r} <i class="fas fa-times tag-remove" onclick="removeConfig('adminRoles', '${r}')"></i></span>`).join(''); 
             listAdminU.innerHTML = (configData.adminUsers||[]).map(r => `<span class="badge bg-secondary">${r} <i class="fas fa-times tag-remove" onclick="removeConfig('adminUsers', '${r}')"></i></span>`).join(''); 
             listOfficer.innerHTML = (configData.officerRoles||[]).map(r => `<span class="badge bg-secondary">${r} <i class="fas fa-times tag-remove" onclick="removeConfig('officerRoles', '${r}')"></i></span>`).join(''); 
             listMarine.innerHTML = (configData.marineRoles||[]).map(r => `<span class="badge bg-secondary">${r} <i class="fas fa-times tag-remove" onclick="removeConfig('marineRoles', '${r}')"></i></span>`).join(''); 
-            
+            listShockUsers.innerHTML = (configData.shockOfficerUsers||[]).map(r => `<span class="badge bg-danger">${r} <i class="fas fa-times tag-remove" onclick="removeConfig('shockOfficerUsers', '${r}')"></i></span>`).join('');
+
             const regList = document.getElementById('regimentConfigList'); 
             regList.innerHTML = ''; 
             (configData.regiments || []).forEach((reg, index) => { 
@@ -681,7 +688,22 @@
         function addNewRegiment() { const name = document.getElementById('newRegimentName').value.trim(); if(!name) return; if(!configData.regiments) configData.regiments = []; configData.regiments.push({ name: name, rappelDays: 10, sanctionDays: 14, sanctionText: 'Protocole 6', color: '#c0392b', discordRoleID: '' }); document.getElementById('newRegimentName').value = ''; renderAdminUI(); }
         function updateRegiment(index, field, value) { if(field === 'rappelDays' || field === 'sanctionDays') value = parseInt(value); configData.regiments[index][field] = value; }
         function removeRegiment(index) { customConfirm("Supprimer ce régiment ?").then(ok => { if(ok) { configData.regiments.splice(index, 1); renderAdminUI(); }}); }
-        function addConfig(key) { let inputId = (key==='adminRoles')?'newAdminRole':(key==='adminUsers')?'newAdminUser':(key==='officerRoles')?'newOfficerRole':'newMarineRole'; const val = document.getElementById(inputId).value.trim(); if(!val) return; if(!configData[key]) configData[key] = []; configData[key].push(val); document.getElementById(inputId).value = ''; renderAdminUI(); }
+        function addConfig(key) { 
+            // Mapping des IDs des inputs
+            let inputId = '';
+            if (key === 'adminRoles') inputId = 'newAdminRole';
+            else if (key === 'adminUsers') inputId = 'newAdminUser';
+            else if (key === 'officerRoles') inputId = 'newOfficerRole';
+            else if (key === 'marineRoles') inputId = 'newMarineRole';
+            else if (key === 'shockOfficerUsers') inputId = 'newShockUser';
+
+            const val = document.getElementById(inputId).value.trim(); 
+            if(!val) return; 
+            if(!configData[key]) configData[key] = []; 
+            configData[key].push(val); 
+            document.getElementById(inputId).value = ''; 
+            renderAdminUI(); 
+        }
         function removeConfig(key, val) { configData[key] = configData[key].filter(item => item !== val); renderAdminUI(); }
         async function saveConfig() { await fetch('/api/config', { method: 'PUT', headers: { 'Content-Type': 'application/json' }, body: JSON.stringify(configData) }); customAlert("Configuration sauvegardée !"); renderRegimentsSelect(); }
         function preparerAction(id, mode) { const item = currentData.find(p => p._id === id); document.getElementById('auteurNom').value = item.auteurNom; document.getElementById('cibleNom').value = item.cibleNom; document.getElementById('cibleGrade').value = item.cibleGrade; document.getElementById('cibleRegiment').value = item.cibleRegiment; document.getElementById('steamid').value = item.targetSteamID || ''; document.getElementById('protocole').value = item.protocoleType; document.getElementById('raison').value = item.raison; document.getElementById('details').value = item.details; document.getElementById('tempsRestant').value = item.tempsRestant || ''; document.getElementById('protocolFormPanel').style.display = 'block'; document.getElementById('protocolFormPanel').scrollIntoView({ behavior: 'smooth' }); if(mode === 'modifier') { editingId = id; document.getElementById('formTitle').innerText = "📝 MODIFICATION"; document.getElementById('btnSubmit').innerText = "Sauvegarder"; document.getElementById('btnSubmit').className = "btn btn-warning btn-lg px-5"; document.getElementById('btnCancel').style.display = "inline-block"; } else { editingId = null; document.getElementById('formTitle').innerText = "📋 DUPLICATION"; document.getElementById('btnSubmit').innerText = "Créer la copie"; document.getElementById('btnSubmit').className = "btn btn-shock btn-lg px-5"; document.getElementById('btnCancel').style.display = "inline-block"; } }
@@ -690,7 +712,6 @@
         async function valider(id) { const validatorName = await customPrompt("Veuillez entrer votre Matricule + Nom pour appliquer le protocole :"); if (validatorName === null || validatorName.trim() === "") return; try { const res = await fetch(`${API_URL}/${id}/valider`, { method: 'PUT', headers: { 'Content-Type': 'application/json' }, body: JSON.stringify({ validatorName: validatorName }) }); if(res.ok) chargerEnCours(); else customAlert("Erreur validation"); } catch(e) { customAlert("Erreur connexion"); } }
         async function restaurer(id) { const temps = await customPrompt("Temps restant en min ?\nLaisser vide si le protocole n'a pas été commencé"); const res = await fetch(`${API_URL}/${id}/restaurer`, { method: 'PUT', headers: { 'Content-Type': 'application/json' }, body: JSON.stringify({ tempsRestant: temps }) }); if(res.ok) chargerHistorique(); else customAlert("Permission refusée"); }
         
-        // MODIFICATION: Utilisation de customConfirm pour la suppression
         async function supprimer(id) { 
             const confirm = await customConfirm("⚠️ SUPPRESSION DÉFINITIVE ⚠️\nÊtes-vous sûr ?"); 
             if(!confirm) return; 
@@ -701,7 +722,6 @@
                     if(activeTab.includes('encours')) chargerEnCours(); 
                     else chargerHistorique(); 
                 } else {
-                    // Affichage du message d'erreur spécifique du serveur
                     const err = await res.json();
                     customAlert(err.message || "Erreur lors de la suppression."); 
                 }
