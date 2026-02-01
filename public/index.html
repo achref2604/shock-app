@@ -21,7 +21,14 @@
             font-family: 'Rajdhani', sans-serif; 
             background-color: var(--bg-dark); 
             color: #e0e0e0; 
+            
+            /* Le dégradé reste le même */
             background-image: radial-gradient(circle at center, #252525 0%, #141414 100%);
+            
+            /* AJOUTEZ CES DEUX LIGNES : */
+            background-attachment: fixed; /* Fige le fond par rapport à l'écran */
+            background-size: cover;       /* Assure que ça couvre tout */
+            
             min-height: 100vh;
         }
         h1, h2, h3, h4, h5, .nav-link, .btn { text-transform: uppercase; letter-spacing: 1px; }
@@ -31,6 +38,7 @@
         .btn-shock:hover { background-color: #a93226; box-shadow: 0 0 15px rgba(192, 57, 43, 0.5); color: white; }
         
         .text-signal { color: var(--signal-orange) !important; text-shadow: 0 0 10px rgba(230, 126, 34, 0.3); }
+        .text-matricule { color: var(--shock-red) !important; text-shadow: 0 0 10px rgba(230, 126, 34, 0.3); }
         .border-signal { border-color: var(--signal-orange) !important; }
         .btn-signal { background-color: var(--signal-orange); border: none; color: white; font-weight: 600; }
         .btn-signal:hover { background-color: #d35400; box-shadow: 0 0 15px rgba(230, 126, 34, 0.5); color: white; }
@@ -182,7 +190,7 @@
                         <div class="row g-3">
                             <div class="col-md-3 border-end border-secondary pe-md-4">
                                 <h5 class="text-muted mb-3"><i class="fas fa-user-shield"></i> L'Officier</h5>
-                                <div class="mb-3"><label class="small text-muted">Votre Nom*</label><input type="text" id="auteurNom" class="form-control fw-bold text-signal" placeholder="Matricule + Nom"></div>
+                                <div class="mb-3"><label class="small text-muted">Votre Nom*</label><input type="text" id="auteurNom" class="form-control fw-bold text-matricule" placeholder="Matricule + Nom"></div>
                             </div>
                             <div class="col-md-9 ps-md-4">
                                 <h5 class="text-muted mb-3"><i class="fas fa-bullseye"></i> Informations Cible</h5>
