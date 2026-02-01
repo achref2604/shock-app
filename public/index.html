@@ -446,7 +446,7 @@
                     afficherRappels(container, p, regConfig, retardJours, sanctionBanner, deadlineText);
                 }
             });
-            document.getElementById('compteur').innerText = `${count} délais dépassés`;
+            document.getElementById('compteur').innerText = `${count} délai(s) dépassé(s)`;
             if(count === 0) container.innerHTML = `<div class="col-12 text-center py-5 text-muted"><h3>✅ Aucun délai dépassé.</h3></div>`;
         }
 
@@ -506,7 +506,7 @@
             
             // Compteurs personnalisés
             if (estEnCours) {
-                document.getElementById('compteur').innerText = `${data.length} protocoles à remettre`;
+                document.getElementById('compteur').innerText = `${data.length} protocole(s) à remettre`;
             } else {
                 document.getElementById('compteur').innerText = `${data.length} archives`;
             }
