@@ -72,12 +72,17 @@ const ProtocoleSchema = new mongoose.Schema({
     validatorUser: String, validatorNick: String, validatorId: String, validatorManualName: String,
     rappelPrisEnChargeBy: String, 
     rappelDate: Date, 
+    // NOUVEAUX CHAMPS SUSPENSION
+    isSuspended: { type: Boolean, default: false },
+    suspendedBy: String,
+    suspendReason: String,
+    
     statut: { type: String, default: 'En Attente' },
     date: { type: Date, default: Date.now }
 });
 const Protocole = mongoose.model('Protocole', ProtocoleSchema);
 
-// --- FONCTIONS DE SÉCURITÉ (AVANT LES ROUTES) ---
+// --- FONCTIONS DE SÉCURITÉ ---
 
 async function getPermissions(user) {
     if (!user || !user.roles) return { isAdmin: false, isOfficer: false, isMarine: false };
@@ -112,7 +117,7 @@ const checkValidate = async (req, res, next) => {
     res.status(403).json({ message: "Officiers Only." }); 
 };
 
-// --- WEBHOOK FORMATÉ SELON DEMANDE ---
+// --- WEBHOOK ---
 async function sendDiscordWebhook(protocole, shockName) {
     try {
         const config = await Config.findOne();
@@ -124,19 +129,13 @@ async function sendDiscordWebhook(protocole, shockName) {
         if (regConfig) {
             const hex = regConfig.color.replace('#', '');
             colorInt = parseInt(hex, 16);
-            
-            // MODIFICATION: Gestion de plusieurs rôles séparés par une virgule
             if (regConfig.discordRoleID) {
-                // On découpe par virgule, on nettoie les espaces, et on formate <@&ID>
                 const roles = regConfig.discordRoleID.split(',');
                 rolePing = roles.map(id => `<@&${id.trim()}>`).join(' ');
             }
         }
 
-        // Construction du corps de l'embed (Description)
         let contentArray = [];
-
-        // Fonction helper pour le formatage *Italique* \n **Gras**
         const pushItem = (label, value) => {
             if (value && value.toString().trim() !== "") {
                 contentArray.push(`*${label}*\n**${value}**`);
@@ -153,12 +152,11 @@ async function sendDiscordWebhook(protocole, shockName) {
         pushItem("Détails", protocole.details);
         pushItem("SteamID", protocole.targetSteamID);
 
-        // On joint tout avec un double saut de ligne pour bien espacer
         const descriptionBody = contentArray.join("\n\n");
 
         const embed = {
             title: "Signalement Protocole",
-            description: descriptionBody, // Tout le texte est ici
+            description: descriptionBody, 
             color: colorInt,
             thumbnail: { url: SHOCK_LOGO_URL },
             timestamp: new Date().toISOString()
@@ -300,6 +298,9 @@ app.put('/api/protocoles/:id/valider', checkValidate, async (req, res) => {
     const { validatorName } = req.body;
     const p = await Protocole.findById(req.params.id);
     
+    // Bloquer si suspendu
+    if(p.isSuspended) return res.status(403).json({ message: "Ce protocole est suspendu." });
+
     if(p && validatorName) {
         await sendToGoogleSheet(p, validatorName);
         await sendDiscordWebhook(p, validatorName);
@@ -333,33 +334,52 @@ app.put('/api/protocoles/:id/rappel', checkValidate, async (req, res) => {
     res.json({ message: "OK", takenBy });
 });
 
-// MODIFICATION: Route DELETE personnalisée pour permettre à l'auteur de supprimer
 app.delete('/api/protocoles/:id', async (req, res) => {
     try {
         if (!req.isAuthenticated()) return res.status(401).json({ message: "Non connecté" });
-        
         const perms = await getPermissions(req.user);
         const p = await Protocole.findById(req.params.id);
-
         if (!p) return res.status(404).json({ message: "Protocole introuvable" });
-
-        // Si Admin : suppression autorisée
         if (perms.isAdmin) {
             await Protocole.findByIdAndDelete(req.params.id);
             return res.json({ message: "Supprimé par Admin" });
         }
-
-        // Si Auteur ET que le protocole n'est PAS encore archivé ("Effectué")
         if (p.discordId === req.user.id && p.statut !== 'Effectué') {
             await Protocole.findByIdAndDelete(req.params.id);
             return res.json({ message: "Supprimé par Auteur" });
         }
-
-        // Sinon interdit
         res.status(403).json({ message: "Vous n'avez pas la permission de supprimer." });
-
     } catch (e) {
         res.status(500).json({ error: "Erreur serveur" });
+    }
+});
+
+// NOUVELLE ROUTE : SUSPENDRE (ADMIN ONLY)
+app.put('/api/protocoles/:id/suspend', checkAdmin, async (req, res) => {
+    try {
+        const { reason } = req.body;
+        const p = await Protocole.findById(req.params.id);
+        
+        if (!p) return res.status(404).json({ message: "Introuvable" });
+
+        // Bascule : Si déjà suspendu -> on enlève. Sinon -> on met.
+        if (p.isSuspended) {
+            await Protocole.findByIdAndUpdate(req.params.id, { 
+                isSuspended: false, 
+                suspendedBy: null, 
+                suspendReason: null 
+            });
+            res.json({ message: "Suspension levée" });
+        } else {
+            await Protocole.findByIdAndUpdate(req.params.id, { 
+                isSuspended: true, 
+                suspendedBy: req.user.serverNick || req.user.username, 
+                suspendReason: reason 
+            });
+            res.json({ message: "Protocole suspendu" });
+        }
+    } catch(e) {
+        res.status(500).json({ error: e.message });
     }
 });
 
