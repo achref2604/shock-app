@@ -49,8 +49,8 @@ const ConfigSchema = new mongoose.Schema({
     adminRoles: [String], adminUsers: [String], officerRoles: [String], marineRoles: [String], 
     regiments: [{ 
         name: String, 
-        rappelDays: { type: Number, default: 7 }, 
-        sanctionDays: { type: Number, default: 3 }, 
+        rappelDays: { type: Number, default: 10 }, 
+        sanctionDays: { type: Number, default: 14 }, 
         sanctionText: { type: String, default: "Sanction par défaut" },
         color: { type: String, default: '#c0392b' },
         discordRoleID: { type: String, default: '' }
@@ -60,7 +60,7 @@ const Config = mongoose.model('Config', ConfigSchema);
 
 async function initConfig() {
     const exists = await Config.findOne();
-    if (!exists) { await new Config({ adminRoles: [], adminUsers: [], officerRoles: [], marineRoles: [], regiments: [{ name: 'Shock', rappelDays: 7, sanctionDays: 3, sanctionText: 'Arrêts', color: '#c0392b', discordRoleID: '' }] }).save(); }
+    if (!exists) { await new Config({ adminRoles: [], adminUsers: [], officerRoles: [], marineRoles: [], regiments: [{ name: 'Shock', rappelDays: 10, sanctionDays: 14, sanctionText: 'Protocole 6', color: '#c0392b', discordRoleID: '' }] }).save(); }
 }
 initConfig();
 
@@ -114,7 +114,7 @@ const checkValidate = async (req, res, next) => {
     if (!req.isAuthenticated()) return res.status(401).json({ message: "Non connecté" });
     const perms = await getPermissions(req.user);
     if (perms.isAdmin || perms.isOfficer) return next(); 
-    res.status(403).json({ message: "Officiers Only." }); 
+    res.status(403).json({ message: "Shock Only." }); 
 };
 
 // --- WEBHOOK ---
@@ -142,15 +142,15 @@ async function sendDiscordWebhook(protocole, shockName) {
             }
         };
 
-        pushItem("Identification du Shock :", shockName);
-        pushItem("Matricule + nom du protocolé", protocole.cibleNom);
-        pushItem("Grade", protocole.cibleGrade);
-        pushItem("Régiment", protocole.cibleRegiment);
-        pushItem("Protocole :", protocole.protocoleType.replace(/Protocole\s+/i, ''));
-        pushItem("Ordonné / Demandé par :", protocole.auteurNom);
-        pushItem("Raison", protocole.raison);
-        pushItem("Détails", protocole.details);
-        pushItem("SteamID", protocole.targetSteamID);
+        pushItem("Shock qui a appliqué le protocole 👮‍♂️", shockName);
+        pushItem("Matricule + nom du protocolé 🏃‍♂️", protocole.cibleNom);
+        pushItem("Son grade 🏅", protocole.cibleGrade);
+        pushItem("Régiment 📊", protocole.cibleRegiment);
+        pushItem("Protocole 📕", protocole.protocoleType.replace(/Protocole\s+/i, ''));
+        pushItem("Ordonné / Demandé par 📢", protocole.auteurNom);
+        pushItem("Raison ❓", protocole.raison);
+        pushItem("Détails 👀", protocole.details);
+        pushItem("SteamID 💻", protocole.targetSteamID);
 
         const descriptionBody = contentArray.join("\n\n");
 
@@ -166,10 +166,10 @@ async function sendDiscordWebhook(protocole, shockName) {
             content: rolePing,
             embeds: [embed]
         });
-        console.log("✅ Webhook envoyé.");
+        console.log("✅ Webhook de",protocole.cibleNom," envoyé.");
 
     } catch (error) {
-        console.error("❌ Erreur Webhook:", error.message);
+        console.error("❌ Erreur Webhook pour ",protocole.cibleNom," : ", error.message);
     }
 }
 
@@ -194,7 +194,7 @@ async function sendToGoogleSheet(protocole, shockName) {
         await sheets.spreadsheets.values.update({
             spreadsheetId: SPREADSHEET_ID, range: `${SHEET_NAME}!A${nextRow}`, valueInputOption: 'USER_ENTERED', resource: { values }
         });
-    } catch (error) { console.error("❌ Erreur Google Sheet:", error); }
+    } catch (error) { console.error("❌ Erreur Google Sheet pour ",protocole.cibleNom," : ",error); }
 }
 
 // --- MIDDLEWARES & ROUTES ---
