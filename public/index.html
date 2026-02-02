@@ -5,7 +5,7 @@
     <meta name="viewport" content="width=device-width, initial-scale=1">
     <title>Gestion des Protocoles</title>
     
-    <link rel="icon" type="image/png" href="https://cdn.discordapp.com/attachments/1066805880928088084/1466837163093004319/Logo_Shock.png?ex=69802c50&is=697edad0&hm=cdd003beec5503dc025fd765ba9a9170f8af79b4f0954f83f072c195ee2ff45c&">
+    <link rel="icon" type="image/png" href="https://cdn.discordapp.com/attachments/1066805880928088084/1466837163093004319/Logo_Shock.png?ex=69822690&is=6980d510&hm=e5306564e29a09e5a21d55de05b23ad5852adc031d5ba04922e838fea99ef146&">
 
     <link href="https://cdn.jsdelivr.net/npm/bootstrap@5.3.2/dist/css/bootstrap.min.css" rel="stylesheet">
     <link href="https://fonts.googleapis.com/css2?family=Rajdhani:wght@400;600;700&display=swap" rel="stylesheet">
@@ -41,6 +41,16 @@
         .border-signal { border-color: var(--signal-orange) !important; }
         .btn-signal { background-color: var(--signal-orange); border: none; color: white; font-weight: 600; }
         .btn-signal:hover { background-color: #d35400; box-shadow: 0 0 15px rgba(230, 126, 34, 0.5); color: white; }
+        
+        /* Bouton Outline Signal (Orange) */
+        .btn-outline-signal {
+            color: var(--signal-orange);
+            border-color: var(--signal-orange);
+        }
+        .btn-outline-signal:hover {
+            background-color: var(--signal-orange);
+            color: white;
+        }
 
         .card { background-color: var(--card-bg) !important; border: 1px solid #333; box-shadow: 0 4px 6px rgba(0,0,0,0.3); }
         
@@ -89,8 +99,8 @@
         <div class="user-bar" id="userZone"></div>
 
         <header class="text-center mb-5 mt-4">
-            <h1 class="display-4 fw-bold text-shock">Gestion des Protocoles</h1>
-            <p class="lead text-muted">Shock Trooper - Flotte Cosmos</p>
+            <h1 class="display-4 fw-bold text-shock">Shock Trooper</h1>
+            <p class="lead text-muted">Système de Gestion des Protocoles</p>
         </header>
 
         <ul class="nav nav-tabs mb-4 justify-content-center">
@@ -120,14 +130,8 @@
                                     <h5>👑 Membres Admins</h5>
                                     <div class="d-flex gap-2 mb-2"><input type="text" id="newAdminRole" class="form-control form-control-sm" placeholder="ID Rôle Discord"><button onclick="addConfig('adminRoles')" class="btn btn-sm btn-success">+</button></div>
                                     <div id="listAdminRoles" class="d-flex flex-wrap gap-2 mb-2"></div>
-                                    
-                                    <div class="d-flex gap-2 mb-2"><input type="text" id="newAdminUser" class="form-control form-control-sm" placeholder="ID User Admin"><button onclick="addConfig('adminUsers')" class="btn btn-sm btn-success">+</button></div>
-                                    <div id="listAdminUsers" class="d-flex flex-wrap gap-2 mb-3"></div>
-
-                                    <hr class="border-secondary my-2">
-                                    <small class="text-muted d-block mb-1">Officiers Shock (ID User uniquement) :</small>
-                                    <div class="d-flex gap-2 mb-2"><input type="text" id="newShockUser" class="form-control form-control-sm" placeholder="ID User Officier Shockr"><button onclick="addConfig('shockOfficerUsers')" class="btn btn-sm btn-success">+</button></div>
-                                    <div id="listShockUsers" class="d-flex flex-wrap gap-2"></div>
+                                    <div class="d-flex gap-2 mb-2"><input type="text" id="newAdminUser" class="form-control form-control-sm" placeholder="ID Utilisateur Discord"><button onclick="addConfig('adminUsers')" class="btn btn-sm btn-success">+</button></div>
+                                    <div id="listAdminUsers" class="d-flex flex-wrap gap-2"></div>
                                 </div>
                             </div>
                             <div class="col-md-4">
@@ -144,7 +148,6 @@
                                     <h5>🏴 Ajouter Régiment</h5>
                                     <div class="d-flex gap-2 mb-2"><input type="text" id="newRegimentName" class="form-control form-control-sm" placeholder="Nom du Régiment (Ex: 104th)"><button onclick="addNewRegiment()" class="btn btn-sm btn-success">Créer</button></div>
                                     <p class="small text-muted mb-3">Configurez les réglages des régiments ci-dessous.</p>
-                                    
                                     <hr class="border-secondary my-2">
                                     <h5 class="text-danger">🚫 Utilisateurs Bannis</h5>
                                     <div class="d-flex gap-2 mb-2"><input type="text" id="newBannedUser" class="form-control form-control-sm" placeholder="ID User Discord"><button onclick="addConfig('bannedUsers')" class="btn btn-sm btn-danger">+</button></div>
@@ -163,13 +166,13 @@
 
         <div class="row" id="signalementPanel" style="display: none;">
             <div class="col-12 mb-5">
-                <div class="card border-danger">
-                    <div class="card-header text-center text-shock fw-bold py-3">⚡ SIGNALEMENT PROTOCOLE</div>
+                <div class="card border-signal">
+                    <div class="card-header text-center text-signal fw-bold py-3">⚡ SIGNALEMENT PROTOCOLE</div>
                     <div class="card-body p-4">
                         <div class="row g-3">
                             <div class="col-md-3 border-end border-secondary pe-md-4">
                                 <h5 class="text-muted mb-3"><i class="fas fa-user-shield"></i> Le Shock</h5>
-                                <div class="mb-3"><label class="small text-muted">Votre Identité*</label><input type="text" id="sigShockName" class="form-control fw-bold text-matricule" placeholder="Matricule + Nom"></div>
+                                <div class="mb-3"><label class="small text-muted">Votre Identité*</label><input type="text" id="sigShockName" class="form-control fw-bold text-signal" placeholder="Matricule + Nom"></div>
                             </div>
                             <div class="col-md-9 ps-md-4">
                                 <h5 class="text-muted mb-3"><i class="fas fa-bullseye"></i> Clone Sanctionné</h5>
@@ -179,7 +182,7 @@
                                     <div class="col-6"><label class="small text-muted">Son Régiment*</label><select id="sigCibleRegiment" class="form-select"><option value="" disabled selected>Chargement...</option></select></div>
                                 </div>
                                 <div class="row g-2 mb-2">
-                                    <div class="col-6"><label class="small text-muted">Protocole*</label><select id="sigProtocole" class="form-select"><option value="" selected disabled>Choisir...</option><option>Protocole 1</option><option>Protocole 2</option><option>Protocole 3</option><option>Protocole 4</option><option>Protocole 5</option><option>Protocole 6</option><option>Protocole 7</option><option>Protocole 8</option><option>Protocole 9</option><option>Protocole 10</option></select></div>
+                                    <div class="col-6"><label class="small text-muted">Protocole (1-10)*</label><select id="sigProtocole" class="form-select"><option value="" selected disabled>Choisir...</option><option>Protocole 1</option><option>Protocole 2</option><option>Protocole 3</option><option>Protocole 4</option><option>Protocole 5</option><option>Protocole 6</option><option>Protocole 7</option><option>Protocole 8</option><option>Protocole 9</option><option>Protocole 10</option></select></div>
                                     <div class="col-6"><label class="small text-muted">Ordonné / Demandé par</label><input type="text" id="sigOrderedBy" class="form-control" placeholder="Laisser vide si c'est vous qui l'avez ordonné"></div>
                                 </div>
                                 <div class="mb-2"><label class="small text-muted">Raison*</label><textarea id="sigRaison" class="form-control" rows="2"></textarea></div>
@@ -188,7 +191,7 @@
                             </div>
                         </div>
                         <div class="text-center mt-4 pt-3 border-top border-secondary">
-                            <button type="button" onclick="envoyerSignalement()" class="btn btn-shock btn-lg px-5 fw-bold">Envoyer le Signalement</button>
+                            <button type="button" onclick="envoyerSignalement()" class="btn btn-signal btn-lg px-5 fw-bold">Envoyer le Signalement</button>
                         </div>
                     </div>
                 </div>
@@ -197,13 +200,13 @@
 
         <div class="row" id="protocolFormPanel" style="display: none;">
             <div class="col-12 mb-5"> 
-                <div class="card border-signal">
-                    <div class="card-header text-center text-signal fw-bold py-3" id="formTitle">🕰️ ORDONNER UN NOUVEAU PROTOCOLE A REMETTRE</div>
+                <div class="card border-danger">
+                    <div class="card-header text-center text-shock fw-bold py-3" id="formTitle">🕰️ ORDONNER UN NOUVEAU PROTOCOLE A REMETTRE</div>
                     <div class="card-body p-4">
                         <div class="row g-3">
                             <div class="col-md-3 border-end border-secondary pe-md-4">
                                 <h5 class="text-muted mb-3"><i class="fas fa-user-shield"></i> Personne qui ordonne le protocole</h5>
-                                <div class="mb-3"><label class="small text-muted">Votre Identité*</label><input type="text" id="auteurNom" class="form-control fw-bold text-signal" placeholder="Régiment + Gade + Matricule + Nom"></div>
+                                <div class="mb-3"><label class="small text-muted">Votre Identité*</label><input type="text" id="auteurNom" class="form-control fw-bold text-matricule" placeholder="Régiment + Gade + Matricule + Nom"></div>
                             </div>
                             <div class="col-md-9 ps-md-4">
                                 <h5 class="text-muted mb-3"><i class="fas fa-bullseye"></i> Informations du Clone à Sanctionner</h5>
@@ -533,7 +536,7 @@
                 document.getElementById('compteur').innerText = `${data.length} archives`;
             }
             
-            if(data.length === 0) { container.innerHTML = `<div class="col-12 text-center py-5 text-muted"><h3 class="fw-light">Aucun protocole à remettre.</h3></div>`; return; }
+            if(data.length === 0) { container.innerHTML = `<div class="col-12 text-center py-5 text-muted"><h3 class="fw-light">Aucun dossier.</h3></div>`; return; }
 
             data.forEach(p => {
                 const isDone = p.statut === 'Effectué';
@@ -713,6 +716,7 @@
         function updateRegiment(index, field, value) { if(field === 'rappelDays' || field === 'sanctionDays') value = parseInt(value); configData.regiments[index][field] = value; }
         function removeRegiment(index) { customConfirm("Supprimer ce régiment ?").then(ok => { if(ok) { configData.regiments.splice(index, 1); renderAdminUI(); }}); }
         function addConfig(key) { 
+            // Mapping des IDs des inputs
             let inputId = '';
             if (key === 'adminRoles') inputId = 'newAdminRole';
             else if (key === 'adminUsers') inputId = 'newAdminUser';
@@ -732,7 +736,24 @@
         function removeConfig(key, val) { configData[key] = configData[key].filter(item => item !== val); renderAdminUI(); }
         async function saveConfig() { await fetch('/api/config', { method: 'PUT', headers: { 'Content-Type': 'application/json' }, body: JSON.stringify(configData) }); customAlert("Configuration sauvegardée !"); renderRegimentsSelect(); }
         function preparerAction(id, mode) { const item = currentData.find(p => p._id === id); document.getElementById('auteurNom').value = item.auteurNom; document.getElementById('cibleNom').value = item.cibleNom; document.getElementById('cibleGrade').value = item.cibleGrade; document.getElementById('cibleRegiment').value = item.cibleRegiment; document.getElementById('steamid').value = item.targetSteamID || ''; document.getElementById('protocole').value = item.protocoleType; document.getElementById('raison').value = item.raison; document.getElementById('details').value = item.details; document.getElementById('tempsRestant').value = item.tempsRestant || ''; document.getElementById('protocolFormPanel').style.display = 'block'; document.getElementById('protocolFormPanel').scrollIntoView({ behavior: 'smooth' }); if(mode === 'modifier') { editingId = id; document.getElementById('formTitle').innerText = "📝 MODIFICATION"; document.getElementById('btnSubmit').innerText = "Sauvegarder"; document.getElementById('btnSubmit').className = "btn btn-warning btn-lg px-5"; document.getElementById('btnCancel').style.display = "inline-block"; } else { editingId = null; document.getElementById('formTitle').innerText = "📋 DUPLICATION"; document.getElementById('btnSubmit').innerText = "Créer la copie"; document.getElementById('btnSubmit').className = "btn btn-shock btn-lg px-5"; document.getElementById('btnCancel').style.display = "inline-block"; } }
-        function resetForm() { editingId = null; document.getElementById('formTitle').innerText = "➕ ORDONNER UN PROTOCOLE À REMETTRE"; document.getElementById('btnSubmit').innerText = "Transmettre"; document.getElementById('btnSubmit').className = "btn btn-signal btn-lg px-5"; document.getElementById('btnCancel').style.display = "none"; document.getElementById('cibleNom').value = ''; document.getElementById('cibleGrade').value = ''; document.getElementById('cibleRegiment').value = ''; document.getElementById('steamid').value = ''; document.getElementById('protocole').value = ''; document.getElementById('raison').value = ''; document.getElementById('details').value = ''; document.getElementById('tempsRestant').value = ''; }
+        
+        // MODIFICATION ICI POUR LE BOUTON ORANGE (BTN-SIGNAL)
+        function resetForm() { 
+            editingId = null; 
+            document.getElementById('formTitle').innerText = "🕰️ ORDONNER UN PROTOCOLE À REMETTRE"; 
+            document.getElementById('btnSubmit').innerText = "Transmettre"; 
+            document.getElementById('btnSubmit').className = "btn btn-signal btn-lg px-5"; // C'est ici
+            document.getElementById('btnCancel').style.display = "none"; 
+            document.getElementById('cibleNom').value = ''; 
+            document.getElementById('cibleGrade').value = ''; 
+            document.getElementById('cibleRegiment').value = ''; 
+            document.getElementById('steamid').value = ''; 
+            document.getElementById('protocole').value = ''; 
+            document.getElementById('raison').value = ''; 
+            document.getElementById('details').value = ''; 
+            document.getElementById('tempsRestant').value = ''; 
+        }
+
         async function envoyerProtocole() { const body = { auteurNom: document.getElementById('auteurNom').value, cibleNom: document.getElementById('cibleNom').value, cibleGrade: document.getElementById('cibleGrade').value, cibleRegiment: document.getElementById('cibleRegiment').value, targetSteamID: document.getElementById('steamid').value, protocoleType: document.getElementById('protocole').value, raison: document.getElementById('raison').value, details: document.getElementById('details').value, tempsRestant: document.getElementById('tempsRestant').value }; if(!body.cibleNom || !body.cibleGrade || !body.cibleRegiment || !body.protocoleType || !body.raison || !body.auteurNom) return customAlert("Champs obligatoires manquants."); const method = editingId ? 'PUT' : 'POST'; const url = editingId ? `${API_URL}/${editingId}` : API_URL; try { const res = await fetch(url, { method: method, headers: { 'Content-Type': 'application/json' }, body: JSON.stringify(body) }); if(res.ok) { customAlert('✅ Protocole transmis'); resetForm(); chargerEnCours(); if(!editingId) toggleForm(); } else { if(res.status === 403) customAlert("Seul l'auteur ou l'admin peut modifier."); else customAlert('Erreur ou Permissions insuffisantes.'); } } catch(e) { customAlert("Erreur réseau"); } }
         async function valider(id) { const validatorName = await customPrompt("Veuillez entrer votre Matricule + Nom pour appliquer le protocole :"); if (validatorName === null || validatorName.trim() === "") return; try { const res = await fetch(`${API_URL}/${id}/valider`, { method: 'PUT', headers: { 'Content-Type': 'application/json' }, body: JSON.stringify({ validatorName: validatorName }) }); if(res.ok) chargerEnCours(); else customAlert("Erreur validation"); } catch(e) { customAlert("Erreur connexion"); } }
         async function restaurer(id) { const temps = await customPrompt("Temps restant en min ?\nLaisser vide si le protocole n'a pas été commencé"); const res = await fetch(`${API_URL}/${id}/restaurer`, { method: 'PUT', headers: { 'Content-Type': 'application/json' }, body: JSON.stringify({ tempsRestant: temps }) }); if(res.ok) chargerHistorique(); else customAlert("Permission refusée"); }
