@@ -48,8 +48,8 @@ mongoose.connect(MONGO_URI, { useNewUrlParser: true, useUnifiedTopology: true })
 const ConfigSchema = new mongoose.Schema({
     adminRoles: [String], 
     adminUsers: [String], 
-    shockOfficerUsers: [String], 
-    bannedUsers: [String], // NOUVEAU : LISTE DES BANNIS
+    shockOfficerUsers: { type: [String], default: [] }, // Sécurisation avec default
+    bannedUsers: { type: [String], default: [] },
     officerRoles: [String], 
     marineRoles: [String], 
     regiments: [{ 
@@ -94,7 +94,7 @@ async function getPermissions(user) {
     const config = await Config.findOne();
     if (!config) return { isAdmin: false, isShockOfficer: false, isOfficer: false, isMarine: false, isBanned: false };
 
-    // VÉRIFICATION BANNISSEMENT (Prioritaire)
+    // VÉRIFICATION BANNISSEMENT
     if (config.bannedUsers && config.bannedUsers.includes(user.id)) {
         return { isAdmin: false, isShockOfficer: false, isOfficer: false, isMarine: false, isBanned: true };
     }
@@ -107,8 +107,8 @@ async function getPermissions(user) {
     const isAdminDB = config.adminUsers.includes(user.id) || user.roles.some(r => config.adminRoles.includes(r));
     if (isAdminDB) return { isAdmin: true, isShockOfficer: true, isOfficer: true, isMarine: true, isBanned: false };
 
-    // Shock Officer
-    const isShockOfficer = config.shockOfficerUsers.includes(user.id);
+    // Shock Officer (Sécurisé avec || [])
+    const isShockOfficer = (config.shockOfficerUsers || []).includes(user.id);
     if (isShockOfficer) return { isAdmin: false, isShockOfficer: true, isOfficer: true, isMarine: true, isBanned: false };
 
     const isOfficer = user.roles.some(r => config.officerRoles.includes(r));
@@ -280,7 +280,6 @@ app.get('/api/config', async (req, res) => {
 });
 app.put('/api/config', checkAdmin, async (req, res) => { await Config.findOneAndUpdate({}, req.body, { upsert: true }); res.json({ message: "OK" }); });
 
-// PROTECTION LECTURE SI BANNI
 app.get('/api/protocoles', async (req, res) => { 
     if(req.isAuthenticated()) {
         const perms = await getPermissions(req.user);
