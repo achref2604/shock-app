@@ -5,7 +5,7 @@
     <meta name="viewport" content="width=device-width, initial-scale=1">
     <title>Gestion des Protocoles</title>
     
-    <link rel="icon" type="image/png" href="https://cdn.discordapp.com/attachments/1066805880928088084/1466837163093004319/Logo_Shock.png?ex=69822690&is=6980d510&hm=e5306564e29a09e5a21d55de05b23ad5852adc031d5ba04922e838fea99ef146&">
+    <link rel="icon" type="image/png" href="/favicon.png">
 
     <link href="https://cdn.jsdelivr.net/npm/bootstrap@5.3.2/dist/css/bootstrap.min.css" rel="stylesheet">
     <link href="https://fonts.googleapis.com/css2?family=Rajdhani:wght@400;600;700&display=swap" rel="stylesheet">
@@ -38,18 +38,24 @@
         
         .text-signal { color: var(--signal-orange) !important; text-shadow: 0 0 10px rgba(230, 126, 34, 0.3); }
         .text-matricule { color: var(--shock-red) !important; text-shadow: 0 0 10px rgba(230, 126, 34, 0.3); }
+        
         .border-signal { border-color: var(--signal-orange) !important; }
+        
+        /* Bouton Orange Plein */
         .btn-signal { background-color: var(--signal-orange); border: none; color: white; font-weight: 600; }
         .btn-signal:hover { background-color: #d35400; box-shadow: 0 0 15px rgba(230, 126, 34, 0.5); color: white; }
-        
-        /* Bouton Outline Signal (Orange) */
+
+        /* AJOUT : Bouton Orange Contour (Outline) */
         .btn-outline-signal {
             color: var(--signal-orange);
-            border-color: var(--signal-orange);
+            border: 2px solid var(--signal-orange);
+            background-color: transparent;
+            font-weight: 600;
         }
         .btn-outline-signal:hover {
             background-color: var(--signal-orange);
             color: white;
+            box-shadow: 0 0 15px rgba(230, 126, 34, 0.5);
         }
 
         .card { background-color: var(--card-bg) !important; border: 1px solid #333; box-shadow: 0 4px 6px rgba(0,0,0,0.3); }
@@ -130,8 +136,14 @@
                                     <h5>👑 Membres Admins</h5>
                                     <div class="d-flex gap-2 mb-2"><input type="text" id="newAdminRole" class="form-control form-control-sm" placeholder="ID Rôle Discord"><button onclick="addConfig('adminRoles')" class="btn btn-sm btn-success">+</button></div>
                                     <div id="listAdminRoles" class="d-flex flex-wrap gap-2 mb-2"></div>
-                                    <div class="d-flex gap-2 mb-2"><input type="text" id="newAdminUser" class="form-control form-control-sm" placeholder="ID Utilisateur Discord"><button onclick="addConfig('adminUsers')" class="btn btn-sm btn-success">+</button></div>
-                                    <div id="listAdminUsers" class="d-flex flex-wrap gap-2"></div>
+                                    
+                                    <div class="d-flex gap-2 mb-2"><input type="text" id="newAdminUser" class="form-control form-control-sm" placeholder="ID User Admin"><button onclick="addConfig('adminUsers')" class="btn btn-sm btn-success">+</button></div>
+                                    <div id="listAdminUsers" class="d-flex flex-wrap gap-2 mb-3"></div>
+
+                                    <hr class="border-secondary my-2">
+                                    <small class="text-muted d-block mb-1">Officiers Shock (ID User uniquement) :</small>
+                                    <div class="d-flex gap-2 mb-2"><input type="text" id="newShockUser" class="form-control form-control-sm" placeholder="ID User Shock Officer"><button onclick="addConfig('shockOfficerUsers')" class="btn btn-sm btn-success">+</button></div>
+                                    <div id="listShockUsers" class="d-flex flex-wrap gap-2"></div>
                                 </div>
                             </div>
                             <div class="col-md-4">
@@ -299,24 +311,7 @@
         const promptModal = new bootstrap.Modal(document.getElementById('customPromptModal'));
 
         function customAlert(message) { document.getElementById('customAlertBody').innerText = message; alertModal.show(); }
-        
-        function customConfirm(message) { 
-            return new Promise((resolve) => { 
-                document.getElementById('customConfirmBody').innerText = message; 
-                const btnYes = document.getElementById('btnConfirmYes'); 
-                const btnNo = document.getElementById('btnConfirmNo'); 
-                
-                const newYes = btnYes.cloneNode(true); 
-                const newNo = btnNo.cloneNode(true); 
-                btnYes.parentNode.replaceChild(newYes, btnYes); 
-                btnNo.parentNode.replaceChild(newNo, btnNo); 
-                
-                newYes.onclick = () => { confirmModal.hide(); resolve(true); }; 
-                newNo.onclick = () => { confirmModal.hide(); resolve(false); }; 
-                confirmModal.show(); 
-            }); 
-        }
-        
+        function customConfirm(message) { return new Promise((resolve) => { document.getElementById('customConfirmBody').innerText = message; const btnYes = document.getElementById('btnConfirmYes'); const btnNo = document.getElementById('btnConfirmNo'); const newYes = btnYes.cloneNode(true); const newNo = btnNo.cloneNode(true); btnYes.parentNode.replaceChild(newYes, btnYes); btnNo.parentNode.replaceChild(newNo, btnNo); newYes.onclick = () => { confirmModal.hide(); resolve(true); }; newNo.onclick = () => { confirmModal.hide(); resolve(false); }; confirmModal.show(); }); }
         function customPrompt(message, title = "SAISIE REQUISE") { return new Promise((resolve) => { document.getElementById('customPromptTitle').innerText = title; document.getElementById('customPromptBody').innerText = message; const input = document.getElementById('customPromptInput'); input.value = ''; const btnOk = document.getElementById('btnPromptOk'); const btnCancel = document.getElementById('btnPromptCancel'); const newOk = btnOk.cloneNode(true); const newCancel = btnCancel.cloneNode(true); btnOk.parentNode.replaceChild(newOk, btnOk); btnCancel.parentNode.replaceChild(newCancel, btnCancel); newOk.onclick = () => { promptModal.hide(); resolve(input.value); }; newCancel.onclick = () => { promptModal.hide(); resolve(null); }; document.getElementById('customPromptModal').addEventListener('shown.bs.modal', () => { input.focus(); }, { once: true }); promptModal.show(); }); }
 
         async function init() { await fetchConfig(); await checkUserStatus(); }
@@ -327,7 +322,6 @@
                 const data = await res.json();
                 user = data;
                 
-                // GESTION DU BANNISSEMENT
                 if (user.isBanned) {
                     document.body.innerHTML = '<div class="d-flex justify-content-center align-items-center vh-100"><div class="text-center p-5 bg-danger text-white rounded display-4 fw-bold">⛔ ACCÈS REFUSÉ<br><small class="fs-6 fw-normal">Vous avez été banni de ce site.</small></div></div>';
                     return;
@@ -362,7 +356,6 @@
         async function fetchConfig() {
             try {
                 const res = await fetch('/api/config');
-                // Si l'utilisateur est banni et tente d'accéder, l'API renverra 403
                 if (res.status === 403) return; 
 
                 const data = await res.json();
@@ -424,7 +417,7 @@
 
         async function chargerDelais() {
             const res = await fetch('/api/protocoles'); 
-            if (res.status === 403) return; // Si banni
+            if (res.status === 403) return; 
 
             const data = await res.json();
             const container = document.getElementById('listeProtocoles');
@@ -631,62 +624,28 @@
 
         async function chargerEnCours() {
             const res = await fetch('/api/protocoles');
-            // GESTION ERREUR 403 (Banni)
-            if (res.status === 403) return;
             currentData = await res.json();
             afficherMandats(currentData, true);
         }
         async function chargerHistorique() {
             const res = await fetch('/api/historique');
-            // GESTION ERREUR 403 (Banni)
-            if (res.status === 403) return;
             currentData = await res.json();
             afficherMandats(currentData, false);
         }
 
         function generateAndShow(id, reg, grade, nom, auteur, proto, raison, details, steam, sanctionDays, sanctionText) { const dateFinale = new Date(); dateFinale.setDate(dateFinale.getDate() + parseInt(sanctionDays)); const dateFinaleStr = dateFinale.toLocaleDateString('fr-FR'); const titlePost = `${reg} ${grade} ${nom} -> ${dateFinaleStr}`; const bodyPost = `<:FlecheVert:990651262976528414> Protocole à effectuer avant le ${dateFinaleStr} sinon : ${sanctionText}\n<:FlecheVert:990651262976528414> Le ping Discord\n\n...........................................................................\n\n- **Qui l'a ordonné :** ${auteur}\n- **Protocole :** ${proto.replace(/Protocole\s+/i, '')}\n- **Raison :** ${raison}${details ? `\n- **Détails :** ${details}` : ''}${steam ? `\n- **Steam ID :** ${steam}` : ''}`; document.getElementById(`title-${id}`).innerText = titlePost; document.getElementById(`body-${id}`).innerText = bodyPost; toggleBox(id); }
         function toggleBox(id) { const el = document.getElementById(`gen-${id}`); el.style.display = el.style.display === 'none' ? 'block' : 'none'; }
-        async function validerRappel(id) { const confirm = await customConfirm("Confirmer que vous prenez en charge ce rappel sur Discord ?"); if(!confirm) return; try { const res = await fetch(`${API_URL}/${id}/rappel`, { method: 'PUT' }); if(res.ok) chargerDelais(); } catch(e) { customAlert("Erreur réseau"); } }
+        async function validerRappel(id) { const confirm = await customConfirm("Confirmer que vous prenez en charge ce rappel sur le forum ?"); if(!confirm) return; try { const res = await fetch(`${API_URL}/${id}/rappel`, { method: 'PUT' }); if(res.ok) chargerDelais(); } catch(e) { customAlert("Erreur réseau"); } }
         async function envoyerSignalement() { const body = { validatorManualName: document.getElementById('sigShockName').value, cibleNom: document.getElementById('sigCibleNom').value, cibleGrade: document.getElementById('sigCibleGrade').value, cibleRegiment: document.getElementById('sigCibleRegiment').value, protocoleType: document.getElementById('sigProtocole').value, auteurNom: document.getElementById('sigOrderedBy').value, raison: document.getElementById('sigRaison').value, details: document.getElementById('sigDetails').value, targetSteamID: document.getElementById('sigSteamID').value }; if(!body.validatorManualName || !body.cibleNom || !body.cibleGrade || !body.cibleRegiment || !body.protocoleType || !body.raison) return customAlert("Champs obligatoires manquants."); try { const res = await fetch('/api/protocoles/direct', { method: 'POST', headers: { 'Content-Type': 'application/json' }, body: JSON.stringify(body) }); if(res.ok) { customAlert("Enregistré !"); document.querySelectorAll('#signalementPanel input, #signalementPanel textarea, #signalementPanel select').forEach(i => i.value = ''); document.querySelectorAll('.nav-link')[3].click(); } else customAlert("Erreur"); } catch(e) { customAlert("Erreur connexion"); } }
         
-        // --- GESTION SUSPENSION ---
-        async function toggleSuspend(id, isSuspended) {
-            let reason = null;
-            if (!isSuspended) {
-                reason = await customPrompt("Raison de la suspension ?");
-                if (reason === null) return; 
-            } else {
-                const confirm = await customConfirm("Lever la suspension ?");
-                if (!confirm) return;
-            }
-
-            try {
-                const res = await fetch(`${API_URL}/${id}/suspend`, {
-                    method: 'PUT',
-                    headers: { 'Content-Type': 'application/json' },
-                    body: JSON.stringify({ reason: reason })
-                });
-                if (res.ok) chargerEnCours(); 
-                else customAlert("Erreur / Permission refusée");
-            } catch (e) { customAlert("Erreur réseau"); }
-        }
-
         // --- MISE A JOUR ADMIN UI POUR AJOUTER ID ROLE ---
         function renderAdminUI() { 
             const listAdminR = document.getElementById('listAdminRoles'); const listAdminU = document.getElementById('listAdminUsers'); const listOfficer = document.getElementById('listOfficerRoles'); const listMarine = document.getElementById('listMarineRoles'); 
-            // NOUVEAU
-            const listShockUsers = document.getElementById('listShockUsers');
-            const listBannedUsers = document.getElementById('listBannedUsers');
-
             listAdminR.innerHTML = (configData.adminRoles||[]).map(r => `<span class="badge bg-secondary">${r} <i class="fas fa-times tag-remove" onclick="removeConfig('adminRoles', '${r}')"></i></span>`).join(''); 
             listAdminU.innerHTML = (configData.adminUsers||[]).map(r => `<span class="badge bg-secondary">${r} <i class="fas fa-times tag-remove" onclick="removeConfig('adminUsers', '${r}')"></i></span>`).join(''); 
             listOfficer.innerHTML = (configData.officerRoles||[]).map(r => `<span class="badge bg-secondary">${r} <i class="fas fa-times tag-remove" onclick="removeConfig('officerRoles', '${r}')"></i></span>`).join(''); 
             listMarine.innerHTML = (configData.marineRoles||[]).map(r => `<span class="badge bg-secondary">${r} <i class="fas fa-times tag-remove" onclick="removeConfig('marineRoles', '${r}')"></i></span>`).join(''); 
             
-            // NOUVEAUX CHAMPS
-            listShockUsers.innerHTML = (configData.shockOfficerUsers||[]).map(r => `<span class="badge bg-danger">${r} <i class="fas fa-times tag-remove" onclick="removeConfig('shockOfficerUsers', '${r}')"></i></span>`).join('');
-            listBannedUsers.innerHTML = (configData.bannedUsers||[]).map(r => `<span class="badge bg-danger">${r} <i class="fas fa-times tag-remove" onclick="removeConfig('bannedUsers', '${r}')"></i></span>`).join('');
-
             const regList = document.getElementById('regimentConfigList'); 
             regList.innerHTML = ''; 
             (configData.regiments || []).forEach((reg, index) => { 
@@ -699,8 +658,8 @@
                             <button class="btn btn-sm btn-outline-danger" onclick="removeRegiment(${index})">🗑️</button>
                         </div>
                         <div class="card-body p-2">
-                            <div class="input-group input-group-sm mb-1"><span class="input-group-text bg-dark text-white border-secondary">Temps avant Rappel (j)</span><input type="number" class="form-control" value="${reg.rappelDays}" onchange="updateRegiment(${index}, 'rappelDays', this.value)"></div>
-                            <div class="input-group input-group-sm mb-1"><span class="input-group-text bg-dark text-white border-secondary">Temps avant Sanction (j)</span><input type="number" class="form-control" value="${reg.sanctionDays}" onchange="updateRegiment(${index}, 'sanctionDays', this.value)"></div>
+                            <div class="input-group input-group-sm mb-1"><span class="input-group-text bg-dark text-white border-secondary">Rappel (j)</span><input type="number" class="form-control" value="${reg.rappelDays}" onchange="updateRegiment(${index}, 'rappelDays', this.value)"></div>
+                            <div class="input-group input-group-sm mb-1"><span class="input-group-text bg-dark text-white border-secondary">Sanction (j)</span><input type="number" class="form-control" value="${reg.sanctionDays}" onchange="updateRegiment(${index}, 'sanctionDays', this.value)"></div>
                             <div class="input-group input-group-sm mb-2"><span class="input-group-text bg-dark text-white border-secondary">Sanction</span><input type="text" class="form-control" value="${reg.sanctionText}" onchange="updateRegiment(${index}, 'sanctionText', this.value)"></div>
                             
                             <div class="input-group input-group-sm mb-2"><span class="input-group-text bg-dark text-white border-secondary">ID Rôle(s) Discord</span><input type="text" class="form-control" value="${reg.discordRoleID || ''}" onchange="updateRegiment(${index}, 'discordRoleID', this.value)" placeholder="123456789, 987654321"></div>
@@ -715,49 +674,16 @@
         function addNewRegiment() { const name = document.getElementById('newRegimentName').value.trim(); if(!name) return; if(!configData.regiments) configData.regiments = []; configData.regiments.push({ name: name, rappelDays: 10, sanctionDays: 14, sanctionText: 'Protocole 6', color: '#c0392b', discordRoleID: '' }); document.getElementById('newRegimentName').value = ''; renderAdminUI(); }
         function updateRegiment(index, field, value) { if(field === 'rappelDays' || field === 'sanctionDays') value = parseInt(value); configData.regiments[index][field] = value; }
         function removeRegiment(index) { customConfirm("Supprimer ce régiment ?").then(ok => { if(ok) { configData.regiments.splice(index, 1); renderAdminUI(); }}); }
-        function addConfig(key) { 
-            // Mapping des IDs des inputs
-            let inputId = '';
-            if (key === 'adminRoles') inputId = 'newAdminRole';
-            else if (key === 'adminUsers') inputId = 'newAdminUser';
-            else if (key === 'officerRoles') inputId = 'newOfficerRole';
-            else if (key === 'marineRoles') inputId = 'newMarineRole';
-            else if (key === 'shockOfficerUsers') inputId = 'newShockUser';
-            // NOUVEAU
-            else if (key === 'bannedUsers') inputId = 'newBannedUser';
-
-            const val = document.getElementById(inputId).value.trim(); 
-            if(!val) return; 
-            if(!configData[key]) configData[key] = []; 
-            configData[key].push(val); 
-            document.getElementById(inputId).value = ''; 
-            renderAdminUI(); 
-        }
+        function addConfig(key) { let inputId = (key==='adminRoles')?'newAdminRole':(key==='adminUsers')?'newAdminUser':(key==='officerRoles')?'newOfficerRole':'newMarineRole'; const val = document.getElementById(inputId).value.trim(); if(!val) return; if(!configData[key]) configData[key] = []; configData[key].push(val); document.getElementById(inputId).value = ''; renderAdminUI(); }
         function removeConfig(key, val) { configData[key] = configData[key].filter(item => item !== val); renderAdminUI(); }
         async function saveConfig() { await fetch('/api/config', { method: 'PUT', headers: { 'Content-Type': 'application/json' }, body: JSON.stringify(configData) }); customAlert("Configuration sauvegardée !"); renderRegimentsSelect(); }
         function preparerAction(id, mode) { const item = currentData.find(p => p._id === id); document.getElementById('auteurNom').value = item.auteurNom; document.getElementById('cibleNom').value = item.cibleNom; document.getElementById('cibleGrade').value = item.cibleGrade; document.getElementById('cibleRegiment').value = item.cibleRegiment; document.getElementById('steamid').value = item.targetSteamID || ''; document.getElementById('protocole').value = item.protocoleType; document.getElementById('raison').value = item.raison; document.getElementById('details').value = item.details; document.getElementById('tempsRestant').value = item.tempsRestant || ''; document.getElementById('protocolFormPanel').style.display = 'block'; document.getElementById('protocolFormPanel').scrollIntoView({ behavior: 'smooth' }); if(mode === 'modifier') { editingId = id; document.getElementById('formTitle').innerText = "📝 MODIFICATION"; document.getElementById('btnSubmit').innerText = "Sauvegarder"; document.getElementById('btnSubmit').className = "btn btn-warning btn-lg px-5"; document.getElementById('btnCancel').style.display = "inline-block"; } else { editingId = null; document.getElementById('formTitle').innerText = "📋 DUPLICATION"; document.getElementById('btnSubmit').innerText = "Créer la copie"; document.getElementById('btnSubmit').className = "btn btn-shock btn-lg px-5"; document.getElementById('btnCancel').style.display = "inline-block"; } }
-        
-        // MODIFICATION ICI POUR LE BOUTON ORANGE (BTN-SIGNAL)
-        function resetForm() { 
-            editingId = null; 
-            document.getElementById('formTitle').innerText = "🕰️ ORDONNER UN PROTOCOLE À REMETTRE"; 
-            document.getElementById('btnSubmit').innerText = "Transmettre"; 
-            document.getElementById('btnSubmit').className = "btn btn-signal btn-lg px-5"; // C'est ici
-            document.getElementById('btnCancel').style.display = "none"; 
-            document.getElementById('cibleNom').value = ''; 
-            document.getElementById('cibleGrade').value = ''; 
-            document.getElementById('cibleRegiment').value = ''; 
-            document.getElementById('steamid').value = ''; 
-            document.getElementById('protocole').value = ''; 
-            document.getElementById('raison').value = ''; 
-            document.getElementById('details').value = ''; 
-            document.getElementById('tempsRestant').value = ''; 
-        }
-
+        function resetForm() { editingId = null; document.getElementById('formTitle').innerText = "🕰️ ORDONNER UN PROTOCOLE À REMETTRE"; document.getElementById('btnSubmit').innerText = "Transmettre"; document.getElementById('btnSubmit').className = "btn btn-shock btn-lg px-5"; document.getElementById('btnCancel').style.display = "none"; document.getElementById('cibleNom').value = ''; document.getElementById('cibleGrade').value = ''; document.getElementById('cibleRegiment').value = ''; document.getElementById('steamid').value = ''; document.getElementById('protocole').value = ''; document.getElementById('raison').value = ''; document.getElementById('details').value = ''; document.getElementById('tempsRestant').value = ''; }
         async function envoyerProtocole() { const body = { auteurNom: document.getElementById('auteurNom').value, cibleNom: document.getElementById('cibleNom').value, cibleGrade: document.getElementById('cibleGrade').value, cibleRegiment: document.getElementById('cibleRegiment').value, targetSteamID: document.getElementById('steamid').value, protocoleType: document.getElementById('protocole').value, raison: document.getElementById('raison').value, details: document.getElementById('details').value, tempsRestant: document.getElementById('tempsRestant').value }; if(!body.cibleNom || !body.cibleGrade || !body.cibleRegiment || !body.protocoleType || !body.raison || !body.auteurNom) return customAlert("Champs obligatoires manquants."); const method = editingId ? 'PUT' : 'POST'; const url = editingId ? `${API_URL}/${editingId}` : API_URL; try { const res = await fetch(url, { method: method, headers: { 'Content-Type': 'application/json' }, body: JSON.stringify(body) }); if(res.ok) { customAlert('✅ Protocole transmis'); resetForm(); chargerEnCours(); if(!editingId) toggleForm(); } else { if(res.status === 403) customAlert("Seul l'auteur ou l'admin peut modifier."); else customAlert('Erreur ou Permissions insuffisantes.'); } } catch(e) { customAlert("Erreur réseau"); } }
         async function valider(id) { const validatorName = await customPrompt("Veuillez entrer votre Matricule + Nom pour appliquer le protocole :"); if (validatorName === null || validatorName.trim() === "") return; try { const res = await fetch(`${API_URL}/${id}/valider`, { method: 'PUT', headers: { 'Content-Type': 'application/json' }, body: JSON.stringify({ validatorName: validatorName }) }); if(res.ok) chargerEnCours(); else customAlert("Erreur validation"); } catch(e) { customAlert("Erreur connexion"); } }
         async function restaurer(id) { const temps = await customPrompt("Temps restant en min ?\nLaisser vide si le protocole n'a pas été commencé"); const res = await fetch(`${API_URL}/${id}/restaurer`, { method: 'PUT', headers: { 'Content-Type': 'application/json' }, body: JSON.stringify({ tempsRestant: temps }) }); if(res.ok) chargerHistorique(); else customAlert("Permission refusée"); }
         
+        // MODIFICATION: Utilisation de customConfirm pour la suppression
         async function supprimer(id) { 
             const confirm = await customConfirm("⚠️ SUPPRESSION DÉFINITIVE ⚠️\nÊtes-vous sûr ?"); 
             if(!confirm) return; 
@@ -768,6 +694,7 @@
                     if(activeTab.includes('encours')) chargerEnCours(); 
                     else chargerHistorique(); 
                 } else {
+                    // Affichage du message d'erreur spécifique du serveur
                     const err = await res.json();
                     customAlert(err.message || "Erreur lors de la suppression."); 
                 }
