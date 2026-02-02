@@ -89,8 +89,8 @@
         <div class="user-bar" id="userZone"></div>
 
         <header class="text-center mb-5 mt-4">
-            <h1 class="display-4 fw-bold text-shock">Shock Trooper</h1>
-            <p class="lead text-muted">Système de Gestion des Protocoles</p>
+            <h1 class="display-4 fw-bold text-shock">Gestion des Protocoles</h1>
+            <p class="lead text-muted">Shock Trooper - Flotte Cosmos</p>
         </header>
 
         <ul class="nav nav-tabs mb-4 justify-content-center">
@@ -102,7 +102,7 @@
         </ul>
 
         <div id="btnAdminZone" class="text-center mb-4" style="display:none;">
-            <button class="btn btn-outline-danger btn-sm px-4 py-2" onclick="toggleForm()">🕰️ Ordonner un Protocole à Remettre</button>
+            <button class="btn btn-outline-danger btn-sm px-4 py-2" onclick="toggleForm()">➕ Ordonner un Protocole à Remettre</button>
         </div>
 
         <div id="loginWarning" class="text-center mb-4 text-muted fst-italic">
@@ -179,7 +179,7 @@
                                     <div class="col-6"><label class="small text-muted">Son Régiment*</label><select id="sigCibleRegiment" class="form-select"><option value="" disabled selected>Chargement...</option></select></div>
                                 </div>
                                 <div class="row g-2 mb-2">
-                                    <div class="col-6"><label class="small text-muted">Protocole (1-10)*</label><select id="sigProtocole" class="form-select"><option value="" selected disabled>Choisir...</option><option>Protocole 1</option><option>Protocole 2</option><option>Protocole 3</option><option>Protocole 4</option><option>Protocole 5</option><option>Protocole 6</option><option>Protocole 7</option><option>Protocole 8</option><option>Protocole 9</option><option>Protocole 10</option></select></div>
+                                    <div class="col-6"><label class="small text-muted">Protocole*</label><select id="sigProtocole" class="form-select"><option value="" selected disabled>Choisir...</option><option>Protocole 1</option><option>Protocole 2</option><option>Protocole 3</option><option>Protocole 4</option><option>Protocole 5</option><option>Protocole 6</option><option>Protocole 7</option><option>Protocole 8</option><option>Protocole 9</option><option>Protocole 10</option></select></div>
                                     <div class="col-6"><label class="small text-muted">Ordonné / Demandé par</label><input type="text" id="sigOrderedBy" class="form-control" placeholder="Laisser vide si c'est vous qui l'avez ordonné"></div>
                                 </div>
                                 <div class="mb-2"><label class="small text-muted">Raison*</label><textarea id="sigRaison" class="form-control" rows="2"></textarea></div>
@@ -197,7 +197,7 @@
 
         <div class="row" id="protocolFormPanel" style="display: none;">
             <div class="col-12 mb-5"> 
-                <div class="card border-danger">
+                <div class="card border-signal">
                     <div class="card-header text-center text-shock fw-bold py-3" id="formTitle">🕰️ ORDONNER UN NOUVEAU PROTOCOLE A REMETTRE</div>
                     <div class="card-body p-4">
                         <div class="row g-3">
