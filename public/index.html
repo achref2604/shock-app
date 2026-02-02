@@ -178,13 +178,13 @@
 
         <div class="row" id="signalementPanel" style="display: none;">
             <div class="col-12 mb-5">
-                <div class="card border-signal">
-                    <div class="card-header text-center text-signal fw-bold py-3">⚡ SIGNALEMENT PROTOCOLE</div>
+                <div class="card border-danger">
+                    <div class="card-header text-center text-matricule fw-bold py-3">⚡ SIGNALEMENT PROTOCOLE</div>
                     <div class="card-body p-4">
                         <div class="row g-3">
                             <div class="col-md-3 border-end border-secondary pe-md-4">
                                 <h5 class="text-muted mb-3"><i class="fas fa-user-shield"></i> Le Shock</h5>
-                                <div class="mb-3"><label class="small text-muted">Votre Identité*</label><input type="text" id="sigShockName" class="form-control fw-bold text-signal" placeholder="Matricule + Nom"></div>
+                                <div class="mb-3"><label class="small text-muted">Votre Identité*</label><input type="text" id="sigShockName" class="form-control fw-bold text-matricule" placeholder="Matricule + Nom"></div>
                             </div>
                             <div class="col-md-9 ps-md-4">
                                 <h5 class="text-muted mb-3"><i class="fas fa-bullseye"></i> Clone Sanctionné</h5>
@@ -203,7 +203,7 @@
                             </div>
                         </div>
                         <div class="text-center mt-4 pt-3 border-top border-secondary">
-                            <button type="button" onclick="envoyerSignalement()" class="btn btn-signal btn-lg px-5 fw-bold">Envoyer le Signalement</button>
+                            <button type="button" onclick="envoyerSignalement()" class="btn btn-shock btn-lg px-5 fw-bold">Envoyer le Signalement</button>
                         </div>
                     </div>
                 </div>
@@ -212,13 +212,13 @@
 
         <div class="row" id="protocolFormPanel" style="display: none;">
             <div class="col-12 mb-5"> 
-                <div class="card border-danger">
-                    <div class="card-header text-center text-shock fw-bold py-3" id="formTitle">🕰️ ORDONNER UN NOUVEAU PROTOCOLE A REMETTRE</div>
+                <div class="card border-signal">
+                    <div class="card-header text-center text-signal fw-bold py-3" id="formTitle">🕰️ ORDONNER UN NOUVEAU PROTOCOLE A REMETTRE</div>
                     <div class="card-body p-4">
                         <div class="row g-3">
                             <div class="col-md-3 border-end border-secondary pe-md-4">
                                 <h5 class="text-muted mb-3"><i class="fas fa-user-shield"></i> Personne qui ordonne le protocole</h5>
-                                <div class="mb-3"><label class="small text-muted">Votre Identité*</label><input type="text" id="auteurNom" class="form-control fw-bold text-matricule" placeholder="Régiment + Gade + Matricule + Nom"></div>
+                                <div class="mb-3"><label class="small text-muted">Votre Identité*</label><input type="text" id="auteurNom" class="form-control fw-bold text-signal" placeholder="Régiment + Gade + Matricule + Nom"></div>
                             </div>
                             <div class="col-md-9 ps-md-4">
                                 <h5 class="text-muted mb-3"><i class="fas fa-bullseye"></i> Informations du Clone à Sanctionner</h5>
@@ -678,7 +678,7 @@
         function removeConfig(key, val) { configData[key] = configData[key].filter(item => item !== val); renderAdminUI(); }
         async function saveConfig() { await fetch('/api/config', { method: 'PUT', headers: { 'Content-Type': 'application/json' }, body: JSON.stringify(configData) }); customAlert("Configuration sauvegardée !"); renderRegimentsSelect(); }
         function preparerAction(id, mode) { const item = currentData.find(p => p._id === id); document.getElementById('auteurNom').value = item.auteurNom; document.getElementById('cibleNom').value = item.cibleNom; document.getElementById('cibleGrade').value = item.cibleGrade; document.getElementById('cibleRegiment').value = item.cibleRegiment; document.getElementById('steamid').value = item.targetSteamID || ''; document.getElementById('protocole').value = item.protocoleType; document.getElementById('raison').value = item.raison; document.getElementById('details').value = item.details; document.getElementById('tempsRestant').value = item.tempsRestant || ''; document.getElementById('protocolFormPanel').style.display = 'block'; document.getElementById('protocolFormPanel').scrollIntoView({ behavior: 'smooth' }); if(mode === 'modifier') { editingId = id; document.getElementById('formTitle').innerText = "📝 MODIFICATION"; document.getElementById('btnSubmit').innerText = "Sauvegarder"; document.getElementById('btnSubmit').className = "btn btn-warning btn-lg px-5"; document.getElementById('btnCancel').style.display = "inline-block"; } else { editingId = null; document.getElementById('formTitle').innerText = "📋 DUPLICATION"; document.getElementById('btnSubmit').innerText = "Créer la copie"; document.getElementById('btnSubmit').className = "btn btn-shock btn-lg px-5"; document.getElementById('btnCancel').style.display = "inline-block"; } }
-        function resetForm() { editingId = null; document.getElementById('formTitle').innerText = "🕰️ ORDONNER UN PROTOCOLE À REMETTRE"; document.getElementById('btnSubmit').innerText = "Transmettre"; document.getElementById('btnSubmit').className = "btn btn-shock btn-lg px-5"; document.getElementById('btnCancel').style.display = "none"; document.getElementById('cibleNom').value = ''; document.getElementById('cibleGrade').value = ''; document.getElementById('cibleRegiment').value = ''; document.getElementById('steamid').value = ''; document.getElementById('protocole').value = ''; document.getElementById('raison').value = ''; document.getElementById('details').value = ''; document.getElementById('tempsRestant').value = ''; }
+        function resetForm() { editingId = null; document.getElementById('formTitle').innerText = "🕰️ ORDONNER UN PROTOCOLE À REMETTRE"; document.getElementById('btnSubmit').innerText = "Transmettre"; document.getElementById('btnSubmit').className = "btn btn-signal btn-lg px-5"; document.getElementById('btnCancel').style.display = "none"; document.getElementById('cibleNom').value = ''; document.getElementById('cibleGrade').value = ''; document.getElementById('cibleRegiment').value = ''; document.getElementById('steamid').value = ''; document.getElementById('protocole').value = ''; document.getElementById('raison').value = ''; document.getElementById('details').value = ''; document.getElementById('tempsRestant').value = ''; }
         async function envoyerProtocole() { const body = { auteurNom: document.getElementById('auteurNom').value, cibleNom: document.getElementById('cibleNom').value, cibleGrade: document.getElementById('cibleGrade').value, cibleRegiment: document.getElementById('cibleRegiment').value, targetSteamID: document.getElementById('steamid').value, protocoleType: document.getElementById('protocole').value, raison: document.getElementById('raison').value, details: document.getElementById('details').value, tempsRestant: document.getElementById('tempsRestant').value }; if(!body.cibleNom || !body.cibleGrade || !body.cibleRegiment || !body.protocoleType || !body.raison || !body.auteurNom) return customAlert("Champs obligatoires manquants."); const method = editingId ? 'PUT' : 'POST'; const url = editingId ? `${API_URL}/${editingId}` : API_URL; try { const res = await fetch(url, { method: method, headers: { 'Content-Type': 'application/json' }, body: JSON.stringify(body) }); if(res.ok) { customAlert('✅ Protocole transmis'); resetForm(); chargerEnCours(); if(!editingId) toggleForm(); } else { if(res.status === 403) customAlert("Seul l'auteur ou l'admin peut modifier."); else customAlert('Erreur ou Permissions insuffisantes.'); } } catch(e) { customAlert("Erreur réseau"); } }
         async function valider(id) { const validatorName = await customPrompt("Veuillez entrer votre Matricule + Nom pour appliquer le protocole :"); if (validatorName === null || validatorName.trim() === "") return; try { const res = await fetch(`${API_URL}/${id}/valider`, { method: 'PUT', headers: { 'Content-Type': 'application/json' }, body: JSON.stringify({ validatorName: validatorName }) }); if(res.ok) chargerEnCours(); else customAlert("Erreur validation"); } catch(e) { customAlert("Erreur connexion"); } }
         async function restaurer(id) { const temps = await customPrompt("Temps restant en min ?\nLaisser vide si le protocole n'a pas été commencé"); const res = await fetch(`${API_URL}/${id}/restaurer`, { method: 'PUT', headers: { 'Content-Type': 'application/json' }, body: JSON.stringify({ tempsRestant: temps }) }); if(res.ok) chargerHistorique(); else customAlert("Permission refusée"); }
