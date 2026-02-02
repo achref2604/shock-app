@@ -102,7 +102,7 @@
         </ul>
 
         <div id="btnAdminZone" class="text-center mb-4" style="display:none;">
-            <button class="btn btn-outline-danger btn-sm px-4 py-2" onclick="toggleForm()">➕ Ordonner un Protocole à Remettre</button>
+            <button class="btn btn-outline-signal btn-sm px-4 py-2" onclick="toggleForm()">➕ Ordonner un Protocole à Remettre</button>
         </div>
 
         <div id="loginWarning" class="text-center mb-4 text-muted fst-italic">
@@ -163,13 +163,13 @@
 
         <div class="row" id="signalementPanel" style="display: none;">
             <div class="col-12 mb-5">
-                <div class="card border-signal">
-                    <div class="card-header text-center text-signal fw-bold py-3">⚡ SIGNALEMENT PROTOCOLE</div>
+                <div class="card border-danger">
+                    <div class="card-header text-center text-shock fw-bold py-3">⚡ SIGNALEMENT PROTOCOLE</div>
                     <div class="card-body p-4">
                         <div class="row g-3">
                             <div class="col-md-3 border-end border-secondary pe-md-4">
                                 <h5 class="text-muted mb-3"><i class="fas fa-user-shield"></i> Le Shock</h5>
-                                <div class="mb-3"><label class="small text-muted">Votre Identité*</label><input type="text" id="sigShockName" class="form-control fw-bold text-signal" placeholder="Matricule + Nom"></div>
+                                <div class="mb-3"><label class="small text-muted">Votre Identité*</label><input type="text" id="sigShockName" class="form-control fw-bold text-matricule" placeholder="Matricule + Nom"></div>
                             </div>
                             <div class="col-md-9 ps-md-4">
                                 <h5 class="text-muted mb-3"><i class="fas fa-bullseye"></i> Clone Sanctionné</h5>
@@ -188,7 +188,7 @@
                             </div>
                         </div>
                         <div class="text-center mt-4 pt-3 border-top border-secondary">
-                            <button type="button" onclick="envoyerSignalement()" class="btn btn-signal btn-lg px-5 fw-bold">Envoyer le Signalement</button>
+                            <button type="button" onclick="envoyerSignalement()" class="btn btn-shock btn-lg px-5 fw-bold">Envoyer le Signalement</button>
                         </div>
                     </div>
                 </div>
@@ -198,7 +198,7 @@
         <div class="row" id="protocolFormPanel" style="display: none;">
             <div class="col-12 mb-5"> 
                 <div class="card border-signal">
-                    <div class="card-header text-center text-shock fw-bold py-3" id="formTitle">🕰️ ORDONNER UN NOUVEAU PROTOCOLE A REMETTRE</div>
+                    <div class="card-header text-center text-matricule fw-bold py-3" id="formTitle">🕰️ ORDONNER UN NOUVEAU PROTOCOLE A REMETTRE</div>
                     <div class="card-body p-4">
                         <div class="row g-3">
                             <div class="col-md-3 border-end border-secondary pe-md-4">
@@ -222,7 +222,7 @@
                             </div>
                         </div>
                         <div class="text-center mt-4 pt-3 border-top border-secondary">
-                            <button type="button" id="btnSubmit" onclick="envoyerProtocole()" class="btn btn-shock btn-lg px-5">Transmettre</button>
+                            <button type="button" id="btnSubmit" onclick="envoyerProtocole()" class="btn btn-signal btn-lg px-5">Transmettre</button>
                             <button type="button" id="btnCancel" onclick="resetForm()" class="btn btn-outline-secondary btn-lg px-3 ms-2" style="display:none;">Annuler</button>
                         </div>
                     </div>
