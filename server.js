@@ -59,7 +59,7 @@ const ConfigSchema = new mongoose.Schema({
         sanctionText: { type: String, default: "Sanction par défaut" },
         color: { type: String, default: '#c0392b' },
         discordRoleID: { type: String, default: '' }
-    }]     
+    }]      
 });
 const Config = mongoose.model('Config', ConfigSchema);
 
@@ -337,25 +337,49 @@ app.put('/api/protocoles/:id', checkEdit, async (req, res) => {
     } catch (e) { res.status(500).json({ error: "Erreur" }); }
 });
 
+// --- MODIFICATION ICI : ROUTE VALIDER ---
 app.put('/api/protocoles/:id/valider', checkValidate, async (req, res) => {
-    const { validatorName } = req.body;
+    // On récupère aussi validatorComment
+    const { validatorName, validatorComment } = req.body;
+    
+    // On charge le protocole
     const p = await Protocole.findById(req.params.id);
     
     if(p.isSuspended) return res.status(403).json({ message: "Ce protocole est suspendu." });
 
     if(p && validatorName) {
+        // --- NOUVELLE LOGIQUE POUR LE COMMENTAIRE ---
+        if (validatorComment && validatorComment.trim() !== "") {
+            // On prépare le texte à ajouter
+            const ajoutCommentaire = `\n\nCommentaire de ${validatorName} : ${validatorComment}`;
+            
+            // On l'ajoute aux détails existants (ou on crée les détails si vides)
+            p.details = (p.details || "") + ajoutCommentaire;
+        }
+        // ---------------------------------------------
+
+        // On envoie les webhooks avec l'objet p qui contient maintenant les détails mis à jour
         await sendToGoogleSheet(p, validatorName);
         await sendDiscordWebhook(p, validatorName);
     }
 
+    // On sauvegarde en base de données avec les nouveaux détails
     await Protocole.findByIdAndUpdate(req.params.id, {
-        statut: 'Effectué', validatorUser: req.user.username, validatorNick: req.user.serverNick, validatorId: req.user.id, validatorManualName: validatorName
+        statut: 'Effectué', 
+        validatorUser: req.user.username, 
+        validatorNick: req.user.serverNick, 
+        validatorId: req.user.id, 
+        validatorManualName: validatorName,
+        details: p.details // IMPORTANT : On sauvegarde bien les détails modifiés
     });
+
+    // Nettoyage de l'historique (> 30 éléments)
     const historique = await Protocole.find({ statut: 'Effectué' }).sort({ date: -1 });
     if (historique.length > 30) {
         const tropVieux = historique.slice(30);
         await Protocole.deleteMany({ _id: { $in: tropVieux.map(p => p._id) } });
     }
+    
     res.json({ message: "OK" });
 });
 
