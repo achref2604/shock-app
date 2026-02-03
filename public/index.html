@@ -312,7 +312,6 @@
         const promptModal = new bootstrap.Modal(document.getElementById('customPromptModal'));
 
         // --- SÉCURITÉ XSS ---
-        // Cette fonction empêche l'injection de code HTML/JS
         function escapeHtml(text) {
             if (text === null || text === undefined) return "";
             return String(text)
@@ -392,7 +391,6 @@
                     else if (user.isOfficer) badge = '<span class="badge bg-danger">SHOCK</span>';
                     else if (user.isMarine) badge = '<span class="badge bg-info text-dark">ACCRÉDITÉ</span>';
                     
-                    // Note: avatar URL is usually safe from Discord, but nickname should be escaped
                     const safeNick = escapeHtml(data.nickname);
                     document.getElementById('userZone').innerHTML = `<div class="d-flex align-items-center gap-2"><img src="${data.avatar}" class="avatar"><span class="fw-bold">${safeNick}</span>${badge}<a href="/auth/logout" class="btn btn-sm btn-outline-danger"><i class="fas fa-sign-out-alt"></i></a></div>`;
                     
@@ -474,7 +472,7 @@
             if (res.status === 403) return; 
 
             const data = await res.json();
-            currentData = data; // IMPORTANT: Mise à jour globale pour que generateAndShow fonctionne
+            currentData = data; 
             const container = document.getElementById('listeProtocoles');
             container.innerHTML = '';
             
@@ -526,17 +524,14 @@
 
         function afficherRappels(container, p, regConfig, retardJours, sanctionBanner, deadlineText) {
             const regColor = getRegimentColor(p.cibleRegiment);
-            // regColor comes from config, assume safe or validate color hex format if needed. 
             const headerStyle = `background-color: ${regColor}33; border-bottom: 1px solid #c0392b; color: white; font-weight: bold;`;
 
-            // MODIFICATION: On passe seulement l'ID. On récupère les données via JS pour éviter XSS dans onclick
             const btnGen = `<button class="btn btn-outline-light btn-sm w-100 mb-2" onclick="generateAndShow('${p._id}')">📄 Générer le Message Discord</button>`;
 
             let statusPriseEnCharge = p.rappelPrisEnChargeBy 
                 ? `<div class="text-success fw-bold mt-2"><i class="fas fa-check"></i> Pris en charge par ${escapeHtml(p.rappelPrisEnChargeBy)}</div>${deadlineText}` 
                 : `<div class="text-warning fw-bold mt-2"><i class="fas fa-clock"></i> Pas encore pris en charge</div>`;
 
-            // TOUTES LES VARIABLES SONT ÉCHAPPÉES ICI
             container.innerHTML += `
             <div class="col-12">
                 <div class="card h-100 rappel-card" style="background-color: #2b2b2b !important;">
@@ -660,7 +655,6 @@
 
                 const styleCard = ''; 
 
-                // TOUTES LES VARIABLES SONT ÉCHAPPÉES ICI
                 container.innerHTML += `
                 <div class="col-12" style="${styleCard}">
                     <div class="card h-100" style="background-color: #2b2b2b !important;">
@@ -703,9 +697,7 @@
             afficherMandats(currentData, false);
         }
 
-        // --- NOUVELLE FONCTION GENERATE SECURISEE ---
         function generateAndShow(id) { 
-            // On retrouve les données proprement dans le tableau en mémoire
             const p = currentData.find(item => item._id === id);
             if(!p) return;
 
@@ -717,7 +709,6 @@
             dateFinale.setDate(dateFinale.getDate() + parseInt(sanctionDays)); 
             const dateFinaleStr = dateFinale.toLocaleDateString('fr-FR'); 
             
-            // Pas besoin d'escapeHtml ici car innerText s'en charge
             const titlePost = `${p.cibleRegiment} ${p.cibleGrade} ${p.cibleNom} -> ${dateFinaleStr}`; 
             const bodyPost = `<:FlecheVert:990651262976528414> Protocole à effectuer avant le ${dateFinaleStr} sinon : ${sanctionText}\n<:FlecheVert:990651262976528414> Le ping Discord\n\n...........................................................................\n\n- **Qui l'a ordonné :** ${p.auteurNom}\n- **Protocole :** ${p.protocoleType.replace(/Protocole\s+/i, '')}\n- **Raison :** ${p.raison}${p.details ? `\n- **Détails :** ${p.details}` : ''}${p.targetSteamID ? `\n- **Steam ID :** ${p.targetSteamID}` : ''}`; 
             
@@ -757,7 +748,6 @@
             const listShockUsers = document.getElementById('listShockUsers');
             const listBannedUsers = document.getElementById('listBannedUsers');
 
-            // UTILISATION DE ESCAPEHTML
             listAdminR.innerHTML = (configData.adminRoles||[]).map(r => `<span class="badge bg-secondary">${escapeHtml(r)} <i class="fas fa-times tag-remove" onclick="removeConfig('adminRoles', '${escapeHtml(r)}')"></i></span>`).join(''); 
             listAdminU.innerHTML = (configData.adminUsers||[]).map(r => `<span class="badge bg-secondary">${escapeHtml(r)} <i class="fas fa-times tag-remove" onclick="removeConfig('adminUsers', '${escapeHtml(r)}')"></i></span>`).join(''); 
             listOfficer.innerHTML = (configData.officerRoles||[]).map(r => `<span class="badge bg-secondary">${escapeHtml(r)} <i class="fas fa-times tag-remove" onclick="removeConfig('officerRoles', '${escapeHtml(r)}')"></i></span>`).join(''); 
@@ -812,7 +802,6 @@
         
         function preparerAction(id, mode) { 
             const item = currentData.find(p => p._id === id); 
-            // .value est safe (ne parse pas le HTML)
             document.getElementById('auteurNom').value = item.auteurNom; 
             document.getElementById('cibleNom').value = item.cibleNom; 
             document.getElementById('cibleGrade').value = item.cibleGrade; 
@@ -844,7 +833,33 @@
         }
 
         async function envoyerProtocole() { const body = { auteurNom: document.getElementById('auteurNom').value, cibleNom: document.getElementById('cibleNom').value, cibleGrade: document.getElementById('cibleGrade').value, cibleRegiment: document.getElementById('cibleRegiment').value, targetSteamID: document.getElementById('steamid').value, protocoleType: document.getElementById('protocole').value, raison: document.getElementById('raison').value, details: document.getElementById('details').value, tempsRestant: document.getElementById('tempsRestant').value }; if(!body.cibleNom || !body.cibleGrade || !body.cibleRegiment || !body.protocoleType || !body.raison || !body.auteurNom) return customAlert("Champs obligatoires manquants."); const method = editingId ? 'PUT' : 'POST'; const url = editingId ? `${API_URL}/${editingId}` : API_URL; try { const res = await fetch(url, { method: method, headers: { 'Content-Type': 'application/json' }, body: JSON.stringify(body) }); if(res.ok) { customAlert('✅ Protocole transmis'); resetForm(); chargerEnCours(); if(!editingId) toggleForm(); } else { if(res.status === 403) customAlert("Seul l'auteur ou l'admin peut modifier."); else customAlert('Erreur ou Permissions insuffisantes.'); } } catch(e) { customAlert("Erreur réseau"); } }
-        async function valider(id) { const validatorName = await customPrompt("Veuillez entrer votre Matricule + Nom pour appliquer le protocole :"); if (validatorName === null || validatorName.trim() === "") return; try { const res = await fetch(`${API_URL}/${id}/valider`, { method: 'PUT', headers: { 'Content-Type': 'application/json' }, body: JSON.stringify({ validatorName: validatorName }) }); if(res.ok) chargerEnCours(); else customAlert("Erreur validation"); } catch(e) { customAlert("Erreur connexion"); } }
+        
+        // --- MODIFICATION ICI : FONCTION VALIDER ---
+        async function valider(id) { 
+            // 1. Demande du Nom
+            const validatorName = await customPrompt("Veuillez entrer votre Matricule + Nom pour appliquer le protocole :"); 
+            if (validatorName === null || validatorName.trim() === "") return; 
+            
+            // 2. Demande du Commentaire (Optionnel)
+            const validatorComment = await customPrompt("Un commentaire sur l'application ? (Laissez vide si aucun)", "COMMENTAIRE (OPTIONNEL)");
+            const finalComment = validatorComment === null ? "" : validatorComment.trim();
+
+            try { 
+                const res = await fetch(`${API_URL}/${id}/valider`, { 
+                    method: 'PUT', 
+                    headers: { 'Content-Type': 'application/json' }, 
+                    body: JSON.stringify({ 
+                        validatorName: validatorName,
+                        validatorComment: finalComment 
+                    }) 
+                }); 
+                if(res.ok) chargerEnCours(); 
+                else customAlert("Erreur validation"); 
+            } catch(e) { 
+                customAlert("Erreur connexion"); 
+            } 
+        }
+        
         async function restaurer(id) { const temps = await customPrompt("Temps restant en min ?\nLaisser vide si le protocole n'a pas été commencé"); const res = await fetch(`${API_URL}/${id}/restaurer`, { method: 'PUT', headers: { 'Content-Type': 'application/json' }, body: JSON.stringify({ tempsRestant: temps }) }); if(res.ok) chargerHistorique(); else customAlert("Permission refusée"); }
         
         async function supprimer(id) { 
