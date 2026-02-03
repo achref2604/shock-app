@@ -48,7 +48,7 @@ mongoose.connect(MONGO_URI, { useNewUrlParser: true, useUnifiedTopology: true })
 const ConfigSchema = new mongoose.Schema({
     adminRoles: [String], 
     adminUsers: [String], 
-    shockOfficerUsers: { type: [String], default: [] }, 
+    shockOfficerUsers: { type: [String], default: [] }, // Sécurisation avec default
     bannedUsers: { type: [String], default: [] },
     officerRoles: [String], 
     marineRoles: [String], 
@@ -94,16 +94,20 @@ async function getPermissions(user) {
     const config = await Config.findOne();
     if (!config) return { isAdmin: false, isShockOfficer: false, isOfficer: false, isMarine: false, isBanned: false };
 
+    // VÉRIFICATION BANNISSEMENT
     if (config.bannedUsers && config.bannedUsers.includes(user.id)) {
         return { isAdmin: false, isShockOfficer: false, isOfficer: false, isMarine: false, isBanned: true };
     }
 
+    // Super Admin
     const isSuperAdmin = SUPER_ADMIN_USERS.includes(user.id) || user.roles.some(r => SUPER_ADMIN_ROLES.includes(r));
     if (isSuperAdmin) return { isAdmin: true, isShockOfficer: true, isOfficer: true, isMarine: true, isBanned: false };
 
+    // Admin DB
     const isAdminDB = config.adminUsers.includes(user.id) || user.roles.some(r => config.adminRoles.includes(r));
     if (isAdminDB) return { isAdmin: true, isShockOfficer: true, isOfficer: true, isMarine: true, isBanned: false };
 
+    // Shock Officer (Sécurisé avec || [])
     const isShockOfficer = (config.shockOfficerUsers || []).includes(user.id);
     if (isShockOfficer) return { isAdmin: false, isShockOfficer: true, isOfficer: true, isMarine: true, isBanned: false };
 
@@ -333,39 +337,20 @@ app.put('/api/protocoles/:id', checkEdit, async (req, res) => {
     } catch (e) { res.status(500).json({ error: "Erreur" }); }
 });
 
-// --- ROUTE VALIDATION AVEC COMMENTAIRE ---
 app.put('/api/protocoles/:id/valider', checkValidate, async (req, res) => {
-    const { validatorName, commentaire } = req.body; 
+    const { validatorName } = req.body;
     const p = await Protocole.findById(req.params.id);
     
     if(p.isSuspended) return res.status(403).json({ message: "Ce protocole est suspendu." });
-
-    // AJOUT COMMENTAIRE AUX DETAILS
-    let newDetails = p.details || "";
-    if (commentaire && commentaire.trim() !== "") {
-        // Ajout d'un saut de ligne propre
-        if (newDetails.length > 0) newDetails += "\n\n";
-        newDetails += `💬 Commentaire de ${validatorName} : ${commentaire}`;
-    }
-
-    // Mise à jour de l'objet temporaire (pour Webhook/Sheet)
-    p.details = newDetails;
 
     if(p && validatorName) {
         await sendToGoogleSheet(p, validatorName);
         await sendDiscordWebhook(p, validatorName);
     }
 
-    // Sauvegarde en base
     await Protocole.findByIdAndUpdate(req.params.id, {
-        statut: 'Effectué', 
-        validatorUser: req.user.username, 
-        validatorNick: req.user.serverNick, 
-        validatorId: req.user.id, 
-        validatorManualName: validatorName,
-        details: newDetails 
+        statut: 'Effectué', validatorUser: req.user.username, validatorNick: req.user.serverNick, validatorId: req.user.id, validatorManualName: validatorName
     });
-
     const historique = await Protocole.find({ statut: 'Effectué' }).sort({ date: -1 });
     if (historique.length > 30) {
         const tropVieux = historique.slice(30);
