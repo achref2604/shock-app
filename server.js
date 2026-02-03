@@ -351,7 +351,7 @@ app.put('/api/protocoles/:id/valider', checkValidate, async (req, res) => {
     // --- NOUVELLE LOGIQUE POUR LE COMMENTAIRE ---
         if (validatorComment && validatorComment.trim() !== "") {
             // 1. On prépare le texte du commentaire uniquement
-            const texteCommentaire = `Commentaire de ${validatorName} : ${validatorComment}`;
+            const texteCommentaire = `💬 Commentaire de ${validatorName} : ${validatorComment}`;
             
             // 2. On détermine le séparateur : 
             // Si p.details existe et n'est pas vide, on met "\n\n", sinon on ne met rien.
