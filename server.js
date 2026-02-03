@@ -48,7 +48,7 @@ mongoose.connect(MONGO_URI, { useNewUrlParser: true, useUnifiedTopology: true })
 const ConfigSchema = new mongoose.Schema({
     adminRoles: [String], 
     adminUsers: [String], 
-    shockOfficerUsers: { type: [String], default: [] }, // Sécurisation avec default
+    shockOfficerUsers: { type: [String], default: [] },
     bannedUsers: { type: [String], default: [] },
     officerRoles: [String], 
     marineRoles: [String], 
@@ -107,7 +107,7 @@ async function getPermissions(user) {
     const isAdminDB = config.adminUsers.includes(user.id) || user.roles.some(r => config.adminRoles.includes(r));
     if (isAdminDB) return { isAdmin: true, isShockOfficer: true, isOfficer: true, isMarine: true, isBanned: false };
 
-    // Shock Officer (Sécurisé avec || [])
+    // Shock Officer
     const isShockOfficer = (config.shockOfficerUsers || []).includes(user.id);
     if (isShockOfficer) return { isAdmin: false, isShockOfficer: true, isOfficer: true, isMarine: true, isBanned: false };
 
@@ -337,20 +337,38 @@ app.put('/api/protocoles/:id', checkEdit, async (req, res) => {
     } catch (e) { res.status(500).json({ error: "Erreur" }); }
 });
 
+// ROUTE VALIDER AVEC COMMENTAIRE
 app.put('/api/protocoles/:id/valider', checkValidate, async (req, res) => {
-    const { validatorName } = req.body;
+    const { validatorName, commentaire } = req.body; // Récupère le commentaire
     const p = await Protocole.findById(req.params.id);
     
     if(p.isSuspended) return res.status(403).json({ message: "Ce protocole est suspendu." });
+
+    // AJOUT DU COMMENTAIRE AUX DETAILS S'IL EXISTE
+    let newDetails = p.details || "";
+    if (commentaire && commentaire.trim() !== "") {
+        const ajout = `\n\n💬 Commentaire de ${validatorName} : ${commentaire}`;
+        newDetails += ajout;
+    }
+
+    // Mise à jour de l'objet temporaire pour l'envoi
+    p.details = newDetails;
 
     if(p && validatorName) {
         await sendToGoogleSheet(p, validatorName);
         await sendDiscordWebhook(p, validatorName);
     }
 
+    // Mise à jour finale en BDD
     await Protocole.findByIdAndUpdate(req.params.id, {
-        statut: 'Effectué', validatorUser: req.user.username, validatorNick: req.user.serverNick, validatorId: req.user.id, validatorManualName: validatorName
+        statut: 'Effectué', 
+        validatorUser: req.user.username, 
+        validatorNick: req.user.serverNick, 
+        validatorId: req.user.id, 
+        validatorManualName: validatorName,
+        details: newDetails // On sauvegarde les détails enrichis
     });
+
     const historique = await Protocole.find({ statut: 'Effectué' }).sort({ date: -1 });
     if (historique.length > 30) {
         const tropVieux = historique.slice(30);
