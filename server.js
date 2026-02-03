@@ -348,13 +348,17 @@ app.put('/api/protocoles/:id/valider', checkValidate, async (req, res) => {
     if(p.isSuspended) return res.status(403).json({ message: "Ce protocole est suspendu." });
 
     if(p && validatorName) {
-        // --- NOUVELLE LOGIQUE POUR LE COMMENTAIRE ---
+    // --- NOUVELLE LOGIQUE POUR LE COMMENTAIRE ---
         if (validatorComment && validatorComment.trim() !== "") {
-            // On prépare le texte à ajouter
-            const ajoutCommentaire = `\n\nCommentaire de ${validatorName} : ${validatorComment}`;
+            // 1. On prépare le texte du commentaire uniquement
+            const texteCommentaire = `Commentaire de ${validatorName} : ${validatorComment}`;
             
-            // On l'ajoute aux détails existants (ou on crée les détails si vides)
-            p.details = (p.details || "") + ajoutCommentaire;
+            // 2. On détermine le séparateur : 
+            // Si p.details existe et n'est pas vide, on met "\n\n", sinon on ne met rien.
+            const separateur = (p.details && p.details !== "") ? "\n\n" : "";
+
+            // 3. On construit la chaîne finale
+            p.details = (p.details || "") + separateur + texteCommentaire;
         }
         // ---------------------------------------------
 
