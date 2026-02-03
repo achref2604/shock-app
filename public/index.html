@@ -37,7 +37,7 @@
         .btn-shock:hover { background-color: #a93226; box-shadow: 0 0 15px rgba(192, 57, 43, 0.5); color: white; }
         
         .text-signal { color: var(--signal-orange) !important; text-shadow: 0 0 10px rgba(230, 126, 34, 0.3); }
-        .text-matricule { color: var(--shock-red) !important; text-shadow: 0 0 10px rgba(230, 126, 34, 0.3); }
+        .text-matricule { color: var(--shock-red) !important; text-shadow: 0 0 10px rgba(230, 34, 34, 0.3); }
         
         .border-signal { border-color: var(--signal-orange) !important; }
         
@@ -61,6 +61,7 @@
         .card { background-color: var(--card-bg) !important; border: 1px solid #333; box-shadow: 0 4px 6px rgba(0,0,0,0.3); }
         
         .card-header { border-bottom: 1px solid #333; background-color: rgba(192, 57, 43, 0.1); }
+        .card-remettre { border-bottom: 1px solid #333; background-color: rgba(192, 115, 43, 0.1); }
         .form-control, .form-select { background-color: #2a2a2a; border: 1px solid #444; color: #fff; }
         .form-control:focus, .form-select:focus { background-color: #333; border-color: var(--shock-red); color: #fff; }
         .nav-tabs { border-bottom: 2px solid #333; }
@@ -105,15 +106,15 @@
         <div class="user-bar" id="userZone"></div>
 
         <header class="text-center mb-5 mt-4">
-            <h1 class="display-4 fw-bold text-shock">Shock Trooper</h1>
-            <p class="lead text-muted">Système de Gestion des Protocoles</p>
+            <h1 class="display-4 fw-bold text-shock">Gestion des Protocoles</h1>
+            <p class="lead text-muted">Shock Trooper - Flotte Cosmos</p>
         </header>
 
         <ul class="nav nav-tabs mb-4 justify-content-center">
             <li class="nav-item" id="navSignalement" style="display:none;"><a class="nav-link" href="#" onclick="changerOnglet('signalement')">⚡ Signalement Protocole</a></li>
-            <li class="nav-item" id="navEncours"><a class="nav-link active" href="#" onclick="changerOnglet('encours')">🕰️ Protocole à Remettre</a></li>
+            <li class="nav-item"><a class="nav-link active" href="#" onclick="changerOnglet('encours')">🕰️ Protocole à Remettre</a></li>
             <li class="nav-item" id="navDelais" style="display:none;"><a class="nav-link" href="#" onclick="changerOnglet('delais')">⏳ Délai Protocole</a></li>
-            <li class="nav-item" id="navHistorique"><a class="nav-link" href="#" onclick="changerOnglet('historique')">💾 Archives</a></li>
+            <li class="nav-item"><a class="nav-link" href="#" onclick="changerOnglet('historique')">💾 Archives</a></li>
             <li class="nav-item" id="navAdmin" style="display:none;"><a class="nav-link" href="#" onclick="changerOnglet('admin')">⚙️ Admin</a></li>
         </ul>
 
@@ -178,13 +179,13 @@
 
         <div class="row" id="signalementPanel" style="display: none;">
             <div class="col-12 mb-5">
-                <div class="card border-signal">
-                    <div class="card-header text-center text-signal fw-bold py-3">⚡ SIGNALEMENT PROTOCOLE</div>
+                <div class="card border-danger">
+                    <div class="card-header text-center text-shock fw-bold py-3">⚡ SIGNALEMENT PROTOCOLE</div>
                     <div class="card-body p-4">
                         <div class="row g-3">
                             <div class="col-md-3 border-end border-secondary pe-md-4">
                                 <h5 class="text-muted mb-3"><i class="fas fa-user-shield"></i> Le Shock</h5>
-                                <div class="mb-3"><label class="small text-muted">Votre Identité*</label><input type="text" id="sigShockName" class="form-control fw-bold text-signal" placeholder="Matricule + Nom"></div>
+                                <div class="mb-3"><label class="small text-muted">Votre Identité*</label><input type="text" id="sigShockName" class="form-control fw-bold text-matricule" placeholder="Matricule + Nom"></div>
                             </div>
                             <div class="col-md-9 ps-md-4">
                                 <h5 class="text-muted mb-3"><i class="fas fa-bullseye"></i> Clone Sanctionné</h5>
@@ -194,16 +195,16 @@
                                     <div class="col-6"><label class="small text-muted">Son Régiment*</label><select id="sigCibleRegiment" class="form-select"><option value="" disabled selected>Chargement...</option></select></div>
                                 </div>
                                 <div class="row g-2 mb-2">
-                                    <div class="col-6"><label class="small text-muted">Protocole (1-10)*</label><select id="sigProtocole" class="form-select"><option value="" selected disabled>Choisir...</option><option>Protocole 1</option><option>Protocole 2</option><option>Protocole 3</option><option>Protocole 4</option><option>Protocole 5</option><option>Protocole 6</option><option>Protocole 7</option><option>Protocole 8</option><option>Protocole 9</option><option>Protocole 10</option></select></div>
+                                    <div class="col-6"><label class="small text-muted">Protocole*</label><select id="sigProtocole" class="form-select"><option value="" selected disabled>Choisir...</option><option>Protocole 1</option><option>Protocole 2</option><option>Protocole 3</option><option>Protocole 4</option><option>Protocole 5</option><option>Protocole 6</option><option>Protocole 7</option><option>Protocole 8</option><option>Protocole 9</option><option>Protocole 10</option></select></div>
                                     <div class="col-6"><label class="small text-muted">Ordonné / Demandé par</label><input type="text" id="sigOrderedBy" class="form-control" placeholder="Laisser vide si c'est vous qui l'avez ordonné"></div>
                                 </div>
                                 <div class="mb-2"><label class="small text-muted">Raison*</label><textarea id="sigRaison" class="form-control" rows="2"></textarea></div>
                                 <div class="mb-2"><label class="small text-muted">Détails</label><textarea id="sigDetails" class="form-control" rows="4"></textarea></div>
-                                <div class="mb-2"><label class="small text-muted">SteamID</label><input type="text" id="sigSteamID" class="form-control form-control-sm text-secondary border-secondary" placeholder="À remplir si 408th, CT ASP Blanc ou job VIP"></div>
+                                <div class="mb-2"><label class="small text-muted">SteamID</label><input type="text" id="sigSteamID" class="form-control form-control-sm text-secondary border-secondary" placeholder="À remplir si 408th, CT ASP Blanc, CCT ou job VIP"></div>
                             </div>
                         </div>
                         <div class="text-center mt-4 pt-3 border-top border-secondary">
-                            <button type="button" onclick="envoyerSignalement()" class="btn btn-signal btn-lg px-5 fw-bold">Envoyer le Signalement</button>
+                            <button type="button" onclick="envoyerSignalement()" class="btn btn-shock btn-lg px-5 fw-bold">Envoyer le Signalement</button>
                         </div>
                     </div>
                 </div>
@@ -212,13 +213,13 @@
 
         <div class="row" id="protocolFormPanel" style="display: none;">
             <div class="col-12 mb-5"> 
-                <div class="card border-danger">
-                    <div class="card-header text-center text-shock fw-bold py-3" id="formTitle">🕰️ ORDONNER UN NOUVEAU PROTOCOLE A REMETTRE</div>
+                <div class="card border-signal">
+                    <div class="card-remettre text-center text-signal fw-bold py-3" id="formTitle">🕰️ ORDONNER UN NOUVEAU PROTOCOLE A REMETTRE</div>
                     <div class="card-body p-4">
                         <div class="row g-3">
                             <div class="col-md-3 border-end border-secondary pe-md-4">
                                 <h5 class="text-muted mb-3"><i class="fas fa-user-shield"></i> Personne qui ordonne le protocole</h5>
-                                <div class="mb-3"><label class="small text-muted">Votre Identité*</label><input type="text" id="auteurNom" class="form-control fw-bold text-matricule" placeholder="Régiment + Gade + Matricule + Nom"></div>
+                                <div class="mb-3"><label class="small text-muted">Votre Identité*</label><input type="text" id="auteurNom" class="form-control fw-bold text-signal" placeholder="Régiment + Gade + Matricule + Nom"></div>
                             </div>
                             <div class="col-md-9 ps-md-4">
                                 <h5 class="text-muted mb-3"><i class="fas fa-bullseye"></i> Informations du Clone à Sanctionner</h5>
@@ -233,7 +234,7 @@
                                 </div>
                                 <div class="mb-2"><label class="small text-muted">Raison*</label><textarea id="raison" class="form-control" rows="2"></textarea></div>
                                 <div class="mb-2"><label class="small text-muted">Détails</label><textarea id="details" class="form-control" rows="4"></textarea></div>
-                                <div class="mb-2"><label class="small text-muted">SteamID</label><input type="text" id="steamid" class="form-control form-control-sm text-secondary border-secondary" placeholder="À remplir si 408th, CT ASP Blanc ou job VIP"></div>
+                                <div class="mb-2"><label class="small text-muted">SteamID</label><input type="text" id="steamid" class="form-control form-control-sm text-secondary border-secondary" placeholder="À remplir si 408th, CT ASP Blanc, CCT ou job VIP"></div>
                             </div>
                         </div>
                         <div class="text-center mt-4 pt-3 border-top border-secondary">
@@ -310,6 +311,8 @@
         const confirmModal = new bootstrap.Modal(document.getElementById('customConfirmModal'));
         const promptModal = new bootstrap.Modal(document.getElementById('customPromptModal'));
 
+        // --- SÉCURITÉ XSS ---
+        // Cette fonction empêche l'injection de code HTML/JS
         function escapeHtml(text) {
             if (text === null || text === undefined) return "";
             return String(text)
@@ -389,6 +392,7 @@
                     else if (user.isOfficer) badge = '<span class="badge bg-danger">SHOCK</span>';
                     else if (user.isMarine) badge = '<span class="badge bg-info text-dark">ACCRÉDITÉ</span>';
                     
+                    // Note: avatar URL is usually safe from Discord, but nickname should be escaped
                     const safeNick = escapeHtml(data.nickname);
                     document.getElementById('userZone').innerHTML = `<div class="d-flex align-items-center gap-2"><img src="${data.avatar}" class="avatar"><span class="fw-bold">${safeNick}</span>${badge}<a href="/auth/logout" class="btn btn-sm btn-outline-danger"><i class="fas fa-sign-out-alt"></i></a></div>`;
                     
@@ -428,26 +432,15 @@
             panel.style.display = panel.style.display === 'none' ? 'block' : 'none';
         }
 
-        // --- CORRECTION NAVIGATION ICI ---
         function changerOnglet(type) {
             resetForm();
             document.querySelectorAll('.nav-link').forEach(el => el.classList.remove('active'));
+            if(type === 'signalement') document.querySelector('a[onclick="changerOnglet(\'signalement\')"]').classList.add('active');
+            if(type === 'encours') document.querySelector('a[onclick="changerOnglet(\'encours\')"]').classList.add('active');
+            if(type === 'delais') document.querySelector('a[onclick="changerOnglet(\'delais\')"]').classList.add('active');
+            if(type === 'historique') document.querySelector('a[onclick="changerOnglet(\'historique\')"]').classList.add('active');
+            if(type === 'admin') document.querySelector('a[onclick="changerOnglet(\'admin\')"]').classList.add('active');
             
-            // Map des IDs pour la sélection
-            const map = {
-                'signalement': 'navSignalement',
-                'encours': 'navEncours',
-                'delais': 'navDelais',
-                'historique': 'navHistorique',
-                'admin': 'navAdmin'
-            };
-            
-            const liId = map[type];
-            if(liId) {
-                const li = document.getElementById(liId);
-                if(li) li.querySelector('a').classList.add('active');
-            }
-
             document.getElementById('adminConfigPanel').style.display = 'none';
             document.getElementById('listeSection').style.display = 'block';
             document.getElementById('protocolFormPanel').style.display = 'none';
@@ -481,7 +474,7 @@
             if (res.status === 403) return; 
 
             const data = await res.json();
-            currentData = data; // Important
+            currentData = data; // IMPORTANT: Mise à jour globale pour que generateAndShow fonctionne
             const container = document.getElementById('listeProtocoles');
             container.innerHTML = '';
             
@@ -533,14 +526,17 @@
 
         function afficherRappels(container, p, regConfig, retardJours, sanctionBanner, deadlineText) {
             const regColor = getRegimentColor(p.cibleRegiment);
+            // regColor comes from config, assume safe or validate color hex format if needed. 
             const headerStyle = `background-color: ${regColor}33; border-bottom: 1px solid #c0392b; color: white; font-weight: bold;`;
 
+            // MODIFICATION: On passe seulement l'ID. On récupère les données via JS pour éviter XSS dans onclick
             const btnGen = `<button class="btn btn-outline-light btn-sm w-100 mb-2" onclick="generateAndShow('${p._id}')">📄 Générer le Message Discord</button>`;
 
             let statusPriseEnCharge = p.rappelPrisEnChargeBy 
                 ? `<div class="text-success fw-bold mt-2"><i class="fas fa-check"></i> Pris en charge par ${escapeHtml(p.rappelPrisEnChargeBy)}</div>${deadlineText}` 
                 : `<div class="text-warning fw-bold mt-2"><i class="fas fa-clock"></i> Pas encore pris en charge</div>`;
 
+            // TOUTES LES VARIABLES SONT ÉCHAPPÉES ICI
             container.innerHTML += `
             <div class="col-12">
                 <div class="card h-100 rappel-card" style="background-color: #2b2b2b !important;">
@@ -664,6 +660,7 @@
 
                 const styleCard = ''; 
 
+                // TOUTES LES VARIABLES SONT ÉCHAPPÉES ICI
                 container.innerHTML += `
                 <div class="col-12" style="${styleCard}">
                     <div class="card h-100" style="background-color: #2b2b2b !important;">
@@ -697,15 +694,11 @@
 
         async function chargerEnCours() {
             const res = await fetch('/api/protocoles');
-            // GESTION ERREUR 403 (Banni)
-            if (res.status === 403) return;
             currentData = await res.json();
             afficherMandats(currentData, true);
         }
         async function chargerHistorique() {
             const res = await fetch('/api/historique');
-            // GESTION ERREUR 403 (Banni)
-            if (res.status === 403) return;
             currentData = await res.json();
             afficherMandats(currentData, false);
         }
@@ -722,35 +715,19 @@
 
             const dateFinale = new Date(); 
             dateFinale.setDate(dateFinale.getDate() + parseInt(sanctionDays)); 
-            
-            // Formatage JJ/MM/AA
-            const day = String(dateFinale.getDate()).padStart(2, '0');
-            const month = String(dateFinale.getMonth() + 1).padStart(2, '0');
-            const year = String(dateFinale.getFullYear()).slice(-2);
-            const dateFinaleStr = `${day}/${month}/${year}`;
+            const dateFinaleStr = dateFinale.toLocaleDateString('fr-FR'); 
             
             // Pas besoin d'escapeHtml ici car innerText s'en charge
             const titlePost = `${p.cibleRegiment} ${p.cibleGrade} ${p.cibleNom} -> ${dateFinaleStr}`; 
             const bodyPost = `<:FlecheVert:990651262976528414> Protocole à effectuer avant le ${dateFinaleStr} sinon : ${sanctionText}\n<:FlecheVert:990651262976528414> Le ping Discord\n\n...........................................................................\n\n- **Qui l'a ordonné :** ${p.auteurNom}\n- **Protocole :** ${p.protocoleType.replace(/Protocole\s+/i, '')}\n- **Raison :** ${p.raison}${p.details ? `\n- **Détails :** ${p.details}` : ''}${p.targetSteamID ? `\n- **Steam ID :** ${p.targetSteamID}` : ''}`; 
             
-            document.getElementById(`title-${p._id}`).innerText = titlePost; 
-            document.getElementById(`body-${p._id}`).innerText = bodyPost; 
+            document.getElementById(`title-${id}`).innerText = titlePost; 
+            document.getElementById(`body-${id}`).innerText = bodyPost; 
             toggleBox(id); 
         }
 
         function toggleBox(id) { const el = document.getElementById(`gen-${id}`); el.style.display = el.style.display === 'none' ? 'block' : 'none'; }
-        
-        async function validerRappel(id) { 
-            const confirm = await customConfirm("Confirmer que vous prenez en charge ce rappel sur Discord ?"); 
-            if(!confirm) return; 
-            try { 
-                const res = await fetch(`${API_URL}/${id}/rappel`, { method: 'PUT' }); 
-                if(res.ok) chargerDelais(); 
-            } catch(e) { 
-                customAlert("Erreur réseau"); 
-            } 
-        }
-        
+        async function validerRappel(id) { const confirm = await customConfirm("Confirmer que vous prenez en charge ce rappel sur Discord ?"); if(!confirm) return; try { const res = await fetch(`${API_URL}/${id}/rappel`, { method: 'PUT' }); if(res.ok) chargerDelais(); } catch(e) { customAlert("Erreur réseau"); } }
         async function envoyerSignalement() { const body = { validatorManualName: document.getElementById('sigShockName').value, cibleNom: document.getElementById('sigCibleNom').value, cibleGrade: document.getElementById('sigCibleGrade').value, cibleRegiment: document.getElementById('sigCibleRegiment').value, protocoleType: document.getElementById('sigProtocole').value, auteurNom: document.getElementById('sigOrderedBy').value, raison: document.getElementById('sigRaison').value, details: document.getElementById('sigDetails').value, targetSteamID: document.getElementById('sigSteamID').value }; if(!body.validatorManualName || !body.cibleNom || !body.cibleGrade || !body.cibleRegiment || !body.protocoleType || !body.raison) return customAlert("Champs obligatoires manquants."); try { const res = await fetch('/api/protocoles/direct', { method: 'POST', headers: { 'Content-Type': 'application/json' }, body: JSON.stringify(body) }); if(res.ok) { customAlert("Enregistré !"); document.querySelectorAll('#signalementPanel input, #signalementPanel textarea, #signalementPanel select').forEach(i => i.value = ''); document.querySelectorAll('.nav-link')[3].click(); } else customAlert("Erreur"); } catch(e) { customAlert("Erreur connexion"); } }
         
         // --- GESTION SUSPENSION ---
@@ -775,17 +752,16 @@
             } catch (e) { customAlert("Erreur réseau"); }
         }
 
-        // --- MISE A JOUR ADMIN UI POUR AJOUTER ID ROLE ---
         function renderAdminUI() { 
             const listAdminR = document.getElementById('listAdminRoles'); const listAdminU = document.getElementById('listAdminUsers'); const listOfficer = document.getElementById('listOfficerRoles'); const listMarine = document.getElementById('listMarineRoles'); 
             const listShockUsers = document.getElementById('listShockUsers');
             const listBannedUsers = document.getElementById('listBannedUsers');
 
+            // UTILISATION DE ESCAPEHTML
             listAdminR.innerHTML = (configData.adminRoles||[]).map(r => `<span class="badge bg-secondary">${escapeHtml(r)} <i class="fas fa-times tag-remove" onclick="removeConfig('adminRoles', '${escapeHtml(r)}')"></i></span>`).join(''); 
             listAdminU.innerHTML = (configData.adminUsers||[]).map(r => `<span class="badge bg-secondary">${escapeHtml(r)} <i class="fas fa-times tag-remove" onclick="removeConfig('adminUsers', '${escapeHtml(r)}')"></i></span>`).join(''); 
             listOfficer.innerHTML = (configData.officerRoles||[]).map(r => `<span class="badge bg-secondary">${escapeHtml(r)} <i class="fas fa-times tag-remove" onclick="removeConfig('officerRoles', '${escapeHtml(r)}')"></i></span>`).join(''); 
             listMarine.innerHTML = (configData.marineRoles||[]).map(r => `<span class="badge bg-secondary">${escapeHtml(r)} <i class="fas fa-times tag-remove" onclick="removeConfig('marineRoles', '${escapeHtml(r)}')"></i></span>`).join(''); 
-            
             listShockUsers.innerHTML = (configData.shockOfficerUsers||[]).map(r => `<span class="badge bg-danger">${escapeHtml(r)} <i class="fas fa-times tag-remove" onclick="removeConfig('shockOfficerUsers', '${escapeHtml(r)}')"></i></span>`).join('');
             listBannedUsers.innerHTML = (configData.bannedUsers||[]).map(r => `<span class="badge bg-danger">${escapeHtml(r)} <i class="fas fa-times tag-remove" onclick="removeConfig('bannedUsers', '${escapeHtml(r)}')"></i></span>`).join('');
 
@@ -804,9 +780,7 @@
                             <div class="input-group input-group-sm mb-1"><span class="input-group-text bg-dark text-white border-secondary">Temps avant Rappel (j)</span><input type="number" class="form-control" value="${reg.rappelDays}" onchange="updateRegiment(${index}, 'rappelDays', this.value)"></div>
                             <div class="input-group input-group-sm mb-1"><span class="input-group-text bg-dark text-white border-secondary">Temps avant Sanction (j)</span><input type="number" class="form-control" value="${reg.sanctionDays}" onchange="updateRegiment(${index}, 'sanctionDays', this.value)"></div>
                             <div class="input-group input-group-sm mb-2"><span class="input-group-text bg-dark text-white border-secondary">Sanction</span><input type="text" class="form-control" value="${escapeHtml(reg.sanctionText)}" onchange="updateRegiment(${index}, 'sanctionText', this.value)"></div>
-                            
                             <div class="input-group input-group-sm mb-2"><span class="input-group-text bg-dark text-white border-secondary">ID Rôle(s) Discord</span><input type="text" class="form-control" value="${escapeHtml(reg.discordRoleID || '')}" onchange="updateRegiment(${index}, 'discordRoleID', this.value)" placeholder="123456789, 987654321"></div>
-                            
                             <div class="d-flex align-items-center gap-2"><small class="text-muted">Couleur Bandeau :</small><input type="color" class="form-control form-control-color" value="${currentColor}" onchange="updateRegiment(${index}, 'color', this.value)" title="Choisir la couleur"></div>
                         </div>
                     </div>
@@ -835,7 +809,23 @@
         }
         function removeConfig(key, val) { configData[key] = configData[key].filter(item => item !== val); renderAdminUI(); }
         async function saveConfig() { await fetch('/api/config', { method: 'PUT', headers: { 'Content-Type': 'application/json' }, body: JSON.stringify(configData) }); customAlert("Configuration sauvegardée !"); renderRegimentsSelect(); }
-        function preparerAction(id, mode) { const item = currentData.find(p => p._id === id); document.getElementById('auteurNom').value = item.auteurNom; document.getElementById('cibleNom').value = item.cibleNom; document.getElementById('cibleGrade').value = item.cibleGrade; document.getElementById('cibleRegiment').value = item.cibleRegiment; document.getElementById('steamid').value = item.targetSteamID || ''; document.getElementById('protocole').value = item.protocoleType; document.getElementById('raison').value = item.raison; document.getElementById('details').value = item.details; document.getElementById('tempsRestant').value = item.tempsRestant || ''; document.getElementById('protocolFormPanel').style.display = 'block'; document.getElementById('protocolFormPanel').scrollIntoView({ behavior: 'smooth' }); if(mode === 'modifier') { editingId = id; document.getElementById('formTitle').innerText = "📝 MODIFICATION"; document.getElementById('btnSubmit').innerText = "Sauvegarder"; document.getElementById('btnSubmit').className = "btn btn-warning btn-lg px-5"; document.getElementById('btnCancel').style.display = "inline-block"; } else { editingId = null; document.getElementById('formTitle').innerText = "📋 DUPLICATION"; document.getElementById('btnSubmit').innerText = "Créer la copie"; document.getElementById('btnSubmit').className = "btn btn-shock btn-lg px-5"; document.getElementById('btnCancel').style.display = "inline-block"; } }
+        
+        function preparerAction(id, mode) { 
+            const item = currentData.find(p => p._id === id); 
+            // .value est safe (ne parse pas le HTML)
+            document.getElementById('auteurNom').value = item.auteurNom; 
+            document.getElementById('cibleNom').value = item.cibleNom; 
+            document.getElementById('cibleGrade').value = item.cibleGrade; 
+            document.getElementById('cibleRegiment').value = item.cibleRegiment; 
+            document.getElementById('steamid').value = item.targetSteamID || ''; 
+            document.getElementById('protocole').value = item.protocoleType; 
+            document.getElementById('raison').value = item.raison; 
+            document.getElementById('details').value = item.details; 
+            document.getElementById('tempsRestant').value = item.tempsRestant || ''; 
+            document.getElementById('protocolFormPanel').style.display = 'block'; 
+            document.getElementById('protocolFormPanel').scrollIntoView({ behavior: 'smooth' }); 
+            if(mode === 'modifier') { editingId = id; document.getElementById('formTitle').innerText = "📝 MODIFICATION"; document.getElementById('btnSubmit').innerText = "Sauvegarder"; document.getElementById('btnSubmit').className = "btn btn-warning btn-lg px-5"; document.getElementById('btnCancel').style.display = "inline-block"; } else { editingId = null; document.getElementById('formTitle').innerText = "📋 DUPLICATION"; document.getElementById('btnSubmit').innerText = "Créer la copie"; document.getElementById('btnSubmit').className = "btn btn-shock btn-lg px-5"; document.getElementById('btnCancel').style.display = "inline-block"; } 
+        }
         
         function resetForm() { 
             editingId = null; 
@@ -854,32 +844,7 @@
         }
 
         async function envoyerProtocole() { const body = { auteurNom: document.getElementById('auteurNom').value, cibleNom: document.getElementById('cibleNom').value, cibleGrade: document.getElementById('cibleGrade').value, cibleRegiment: document.getElementById('cibleRegiment').value, targetSteamID: document.getElementById('steamid').value, protocoleType: document.getElementById('protocole').value, raison: document.getElementById('raison').value, details: document.getElementById('details').value, tempsRestant: document.getElementById('tempsRestant').value }; if(!body.cibleNom || !body.cibleGrade || !body.cibleRegiment || !body.protocoleType || !body.raison || !body.auteurNom) return customAlert("Champs obligatoires manquants."); const method = editingId ? 'PUT' : 'POST'; const url = editingId ? `${API_URL}/${editingId}` : API_URL; try { const res = await fetch(url, { method: method, headers: { 'Content-Type': 'application/json' }, body: JSON.stringify(body) }); if(res.ok) { customAlert('✅ Protocole transmis'); resetForm(); chargerEnCours(); if(!editingId) toggleForm(); } else { if(res.status === 403) customAlert("Seul l'auteur ou l'admin peut modifier."); else customAlert('Erreur ou Permissions insuffisantes.'); } } catch(e) { customAlert("Erreur réseau"); } }
-        
-        // MODIFICATION: Valider avec commentaire
-        async function valider(id) { 
-            const validatorName = await customPrompt("Veuillez entrer votre Matricule + Nom pour appliquer le protocole :"); 
-            if (validatorName === null || validatorName.trim() === "") return; 
-            
-            // SECOND POPUP POUR LE COMMENTAIRE
-            const commentaire = await customPrompt("Avez-vous un commentaire à ajouter ? (Laisser vide si aucun)");
-            
-            try { 
-                const res = await fetch(`${API_URL}/${id}/valider`, { 
-                    method: 'PUT', 
-                    headers: { 'Content-Type': 'application/json' }, 
-                    body: JSON.stringify({ 
-                        validatorName: validatorName,
-                        commentaire: commentaire // On envoie le commentaire au serveur
-                    }) 
-                }); 
-                
-                if(res.ok) chargerEnCours(); 
-                else customAlert("Erreur validation"); 
-            } catch(e) { 
-                customAlert("Erreur connexion"); 
-            } 
-        }
-
+        async function valider(id) { const validatorName = await customPrompt("Veuillez entrer votre Matricule + Nom pour appliquer le protocole :"); if (validatorName === null || validatorName.trim() === "") return; try { const res = await fetch(`${API_URL}/${id}/valider`, { method: 'PUT', headers: { 'Content-Type': 'application/json' }, body: JSON.stringify({ validatorName: validatorName }) }); if(res.ok) chargerEnCours(); else customAlert("Erreur validation"); } catch(e) { customAlert("Erreur connexion"); } }
         async function restaurer(id) { const temps = await customPrompt("Temps restant en min ?\nLaisser vide si le protocole n'a pas été commencé"); const res = await fetch(`${API_URL}/${id}/restaurer`, { method: 'PUT', headers: { 'Content-Type': 'application/json' }, body: JSON.stringify({ tempsRestant: temps }) }); if(res.ok) chargerHistorique(); else customAlert("Permission refusée"); }
         
         async function supprimer(id) { 
