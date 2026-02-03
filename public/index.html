@@ -37,7 +37,7 @@
         .btn-shock:hover { background-color: #a93226; box-shadow: 0 0 15px rgba(192, 57, 43, 0.5); color: white; }
         
         .text-signal { color: var(--signal-orange) !important; text-shadow: 0 0 10px rgba(230, 126, 34, 0.3); }
-        .text-matricule { color: var(--shock-red) !important; text-shadow: 0 0 10px rgba(230, 34, 34, 0.3); }
+        .text-matricule { color: var(--shock-red) !important; text-shadow: 0 0 10px rgba(230, 126, 34, 0.3); }
         
         .border-signal { border-color: var(--signal-orange) !important; }
         
@@ -45,7 +45,7 @@
         .btn-signal { background-color: var(--signal-orange); border: none; color: white; font-weight: 600; }
         .btn-signal:hover { background-color: #d35400; box-shadow: 0 0 15px rgba(230, 126, 34, 0.5); color: white; }
 
-        /* Bouton Orange Contour (Outline) */
+        /* AJOUT : Bouton Orange Contour (Outline) */
         .btn-outline-signal {
             color: var(--signal-orange);
             border: 2px solid var(--signal-orange);
@@ -61,7 +61,6 @@
         .card { background-color: var(--card-bg) !important; border: 1px solid #333; box-shadow: 0 4px 6px rgba(0,0,0,0.3); }
         
         .card-header { border-bottom: 1px solid #333; background-color: rgba(192, 57, 43, 0.1); }
-        .card-remettre { border-bottom: 1px solid #333; background-color: rgba(192, 115, 43, 0.1); }
         .form-control, .form-select { background-color: #2a2a2a; border: 1px solid #444; color: #fff; }
         .form-control:focus, .form-select:focus { background-color: #333; border-color: var(--shock-red); color: #fff; }
         .nav-tabs { border-bottom: 2px solid #333; }
@@ -106,8 +105,8 @@
         <div class="user-bar" id="userZone"></div>
 
         <header class="text-center mb-5 mt-4">
-            <h1 class="display-4 fw-bold text-shock">Gestion des Protocoles</h1>
-            <p class="lead text-muted">Shock Trooper - Flotte Cosmos</p>
+            <h1 class="display-4 fw-bold text-shock">Shock Trooper</h1>
+            <p class="lead text-muted">Système de Gestion des Protocoles</p>
         </header>
 
         <ul class="nav nav-tabs mb-4 justify-content-center">
@@ -179,13 +178,13 @@
 
         <div class="row" id="signalementPanel" style="display: none;">
             <div class="col-12 mb-5">
-                <div class="card border-danger">
-                    <div class="card-header text-center text-shock fw-bold py-3">⚡ SIGNALEMENT PROTOCOLE</div>
+                <div class="card border-signal">
+                    <div class="card-header text-center text-signal fw-bold py-3">⚡ SIGNALEMENT PROTOCOLE</div>
                     <div class="card-body p-4">
                         <div class="row g-3">
                             <div class="col-md-3 border-end border-secondary pe-md-4">
                                 <h5 class="text-muted mb-3"><i class="fas fa-user-shield"></i> Le Shock</h5>
-                                <div class="mb-3"><label class="small text-muted">Votre Identité*</label><input type="text" id="sigShockName" class="form-control fw-bold text-matricule" placeholder="Matricule + Nom"></div>
+                                <div class="mb-3"><label class="small text-muted">Votre Identité*</label><input type="text" id="sigShockName" class="form-control fw-bold text-signal" placeholder="Matricule + Nom"></div>
                             </div>
                             <div class="col-md-9 ps-md-4">
                                 <h5 class="text-muted mb-3"><i class="fas fa-bullseye"></i> Clone Sanctionné</h5>
@@ -195,16 +194,16 @@
                                     <div class="col-6"><label class="small text-muted">Son Régiment*</label><select id="sigCibleRegiment" class="form-select"><option value="" disabled selected>Chargement...</option></select></div>
                                 </div>
                                 <div class="row g-2 mb-2">
-                                    <div class="col-6"><label class="small text-muted">Protocole*</label><select id="sigProtocole" class="form-select"><option value="" selected disabled>Choisir...</option><option>Protocole 1</option><option>Protocole 2</option><option>Protocole 3</option><option>Protocole 4</option><option>Protocole 5</option><option>Protocole 6</option><option>Protocole 7</option><option>Protocole 8</option><option>Protocole 9</option><option>Protocole 10</option></select></div>
+                                    <div class="col-6"><label class="small text-muted">Protocole (1-10)*</label><select id="sigProtocole" class="form-select"><option value="" selected disabled>Choisir...</option><option>Protocole 1</option><option>Protocole 2</option><option>Protocole 3</option><option>Protocole 4</option><option>Protocole 5</option><option>Protocole 6</option><option>Protocole 7</option><option>Protocole 8</option><option>Protocole 9</option><option>Protocole 10</option></select></div>
                                     <div class="col-6"><label class="small text-muted">Ordonné / Demandé par</label><input type="text" id="sigOrderedBy" class="form-control" placeholder="Laisser vide si c'est vous qui l'avez ordonné"></div>
                                 </div>
                                 <div class="mb-2"><label class="small text-muted">Raison*</label><textarea id="sigRaison" class="form-control" rows="2"></textarea></div>
                                 <div class="mb-2"><label class="small text-muted">Détails</label><textarea id="sigDetails" class="form-control" rows="4"></textarea></div>
-                                <div class="mb-2"><label class="small text-muted">SteamID</label><input type="text" id="sigSteamID" class="form-control form-control-sm text-secondary border-secondary" placeholder="À remplir si 408th, CT ASP Blanc, CCT ou job VIP"></div>
+                                <div class="mb-2"><label class="small text-muted">SteamID</label><input type="text" id="sigSteamID" class="form-control form-control-sm text-secondary border-secondary" placeholder="À remplir si 408th, CT ASP Blanc ou job VIP"></div>
                             </div>
                         </div>
                         <div class="text-center mt-4 pt-3 border-top border-secondary">
-                            <button type="button" onclick="envoyerSignalement()" class="btn btn-shock btn-lg px-5 fw-bold">Envoyer le Signalement</button>
+                            <button type="button" onclick="envoyerSignalement()" class="btn btn-signal btn-lg px-5 fw-bold">Envoyer le Signalement</button>
                         </div>
                     </div>
                 </div>
@@ -213,13 +212,13 @@
 
         <div class="row" id="protocolFormPanel" style="display: none;">
             <div class="col-12 mb-5"> 
-                <div class="card border-signal">
-                    <div class="card-remettre text-center text-signal fw-bold py-3" id="formTitle">🕰️ ORDONNER UN NOUVEAU PROTOCOLE A REMETTRE</div>
+                <div class="card border-danger">
+                    <div class="card-header text-center text-shock fw-bold py-3" id="formTitle">🕰️ ORDONNER UN NOUVEAU PROTOCOLE A REMETTRE</div>
                     <div class="card-body p-4">
                         <div class="row g-3">
                             <div class="col-md-3 border-end border-secondary pe-md-4">
                                 <h5 class="text-muted mb-3"><i class="fas fa-user-shield"></i> Personne qui ordonne le protocole</h5>
-                                <div class="mb-3"><label class="small text-muted">Votre Identité*</label><input type="text" id="auteurNom" class="form-control fw-bold text-signal" placeholder="Régiment + Gade + Matricule + Nom"></div>
+                                <div class="mb-3"><label class="small text-muted">Votre Identité*</label><input type="text" id="auteurNom" class="form-control fw-bold text-matricule" placeholder="Régiment + Gade + Matricule + Nom"></div>
                             </div>
                             <div class="col-md-9 ps-md-4">
                                 <h5 class="text-muted mb-3"><i class="fas fa-bullseye"></i> Informations du Clone à Sanctionner</h5>
@@ -234,7 +233,7 @@
                                 </div>
                                 <div class="mb-2"><label class="small text-muted">Raison*</label><textarea id="raison" class="form-control" rows="2"></textarea></div>
                                 <div class="mb-2"><label class="small text-muted">Détails</label><textarea id="details" class="form-control" rows="4"></textarea></div>
-                                <div class="mb-2"><label class="small text-muted">SteamID</label><input type="text" id="steamid" class="form-control form-control-sm text-secondary border-secondary" placeholder="À remplir si 408th, CT ASP Blanc, CCT ou job VIP"></div>
+                                <div class="mb-2"><label class="small text-muted">SteamID</label><input type="text" id="steamid" class="form-control form-control-sm text-secondary border-secondary" placeholder="À remplir si 408th, CT ASP Blanc ou job VIP"></div>
                             </div>
                         </div>
                         <div class="text-center mt-4 pt-3 border-top border-secondary">
@@ -311,18 +310,6 @@
         const confirmModal = new bootstrap.Modal(document.getElementById('customConfirmModal'));
         const promptModal = new bootstrap.Modal(document.getElementById('customPromptModal'));
 
-        // --- SÉCURITÉ XSS ---
-        // Cette fonction empêche l'injection de code HTML/JS
-        function escapeHtml(text) {
-            if (text === null || text === undefined) return "";
-            return String(text)
-                .replace(/&/g, "&amp;")
-                .replace(/</g, "&lt;")
-                .replace(/>/g, "&gt;")
-                .replace(/"/g, "&quot;")
-                .replace(/'/g, "&#039;");
-        }
-
         function customAlert(message) { document.getElementById('customAlertBody').innerText = message; alertModal.show(); }
         
         function customConfirm(message) { 
@@ -342,27 +329,7 @@
             }); 
         }
         
-        function customPrompt(message, title = "SAISIE REQUISE") { 
-            return new Promise((resolve) => { 
-                document.getElementById('customPromptTitle').innerText = title; 
-                document.getElementById('customPromptBody').innerText = message; 
-                const input = document.getElementById('customPromptInput'); 
-                input.value = ''; 
-                const btnOk = document.getElementById('btnPromptOk'); 
-                const btnCancel = document.getElementById('btnPromptCancel'); 
-                
-                const newOk = btnOk.cloneNode(true); 
-                const newCancel = btnCancel.cloneNode(true); 
-                btnOk.parentNode.replaceChild(newOk, btnOk); 
-                btnCancel.parentNode.replaceChild(newCancel, btnCancel); 
-                
-                newOk.onclick = () => { promptModal.hide(); resolve(input.value); }; 
-                newCancel.onclick = () => { promptModal.hide(); resolve(null); }; 
-                
-                document.getElementById('customPromptModal').addEventListener('shown.bs.modal', () => { input.focus(); }, { once: true }); 
-                promptModal.show(); 
-            }); 
-        }
+        function customPrompt(message, title = "SAISIE REQUISE") { return new Promise((resolve) => { document.getElementById('customPromptTitle').innerText = title; document.getElementById('customPromptBody').innerText = message; const input = document.getElementById('customPromptInput'); input.value = ''; const btnOk = document.getElementById('btnPromptOk'); const btnCancel = document.getElementById('btnPromptCancel'); const newOk = btnOk.cloneNode(true); const newCancel = btnCancel.cloneNode(true); btnOk.parentNode.replaceChild(newOk, btnOk); btnCancel.parentNode.replaceChild(newCancel, btnCancel); newOk.onclick = () => { promptModal.hide(); resolve(input.value); }; newCancel.onclick = () => { promptModal.hide(); resolve(null); }; document.getElementById('customPromptModal').addEventListener('shown.bs.modal', () => { input.focus(); }, { once: true }); promptModal.show(); }); }
 
         async function init() { await fetchConfig(); await checkUserStatus(); }
 
@@ -372,6 +339,7 @@
                 const data = await res.json();
                 user = data;
                 
+                // GESTION DU BANNISSEMENT
                 if (user.isBanned) {
                     document.body.innerHTML = '<div class="d-flex justify-content-center align-items-center vh-100"><div class="text-center p-5 bg-danger text-white rounded display-4 fw-bold">⛔ ACCÈS REFUSÉ<br><small class="fs-6 fw-normal">Vous avez été banni de ce site.</small></div></div>';
                     return;
@@ -391,11 +359,7 @@
                     else if (user.isShockOfficer) badge = '<span class="badge bg-danger text-white">OFFICIER SHOCK</span>';
                     else if (user.isOfficer) badge = '<span class="badge bg-danger">SHOCK</span>';
                     else if (user.isMarine) badge = '<span class="badge bg-info text-dark">ACCRÉDITÉ</span>';
-                    
-                    // Note: avatar URL is usually safe from Discord, but nickname should be escaped
-                    const safeNick = escapeHtml(data.nickname);
-                    document.getElementById('userZone').innerHTML = `<div class="d-flex align-items-center gap-2"><img src="${data.avatar}" class="avatar"><span class="fw-bold">${safeNick}</span>${badge}<a href="/auth/logout" class="btn btn-sm btn-outline-danger"><i class="fas fa-sign-out-alt"></i></a></div>`;
-                    
+                    document.getElementById('userZone').innerHTML = `<div class="d-flex align-items-center gap-2"><img src="${data.avatar}" class="avatar"><span class="fw-bold">${data.nickname}</span>${badge}<a href="/auth/logout" class="btn btn-sm btn-outline-danger"><i class="fas fa-sign-out-alt"></i></a></div>`;
                     document.getElementById('loginWarning').style.display = 'none';
                     if(canValidate) changerOnglet('signalement'); else chargerEnCours();
                 } else {
@@ -410,6 +374,7 @@
         async function fetchConfig() {
             try {
                 const res = await fetch('/api/config');
+                // Si l'utilisateur est banni et tente d'accéder, l'API renverra 403
                 if (res.status === 403) return; 
 
                 const data = await res.json();
@@ -422,7 +387,7 @@
         }
 
         function renderRegimentsSelect() {
-            const opts = (configData.regiments || []).map(r => `<option value="${escapeHtml(r.name)}">${escapeHtml(r.name)}</option>`).join('');
+            const opts = (configData.regiments || []).map(r => `<option value="${r.name}">${r.name}</option>`).join('');
             document.getElementById('cibleRegiment').innerHTML = '<option value="" disabled selected>Choisir...</option>' + opts;
             document.getElementById('sigCibleRegiment').innerHTML = '<option value="" disabled selected>Choisir...</option>' + opts;
         }
@@ -474,7 +439,6 @@
             if (res.status === 403) return; 
 
             const data = await res.json();
-            currentData = data; // IMPORTANT: Mise à jour globale pour que generateAndShow fonctionne
             const container = document.getElementById('listeProtocoles');
             container.innerHTML = '';
             
@@ -510,7 +474,7 @@
                         triggerBanner.setHours(0, 0, 0, 0);
 
                         if (now >= triggerBanner) {
-                            sanctionBanner = `<div class="sanction-alert">${escapeHtml(regConfig.sanctionText)} À APPLIQUER</div>`;
+                            sanctionBanner = `<div class="sanction-alert">${regConfig.sanctionText} À APPLIQUER</div>`;
                         }
                     }
 
@@ -526,30 +490,27 @@
 
         function afficherRappels(container, p, regConfig, retardJours, sanctionBanner, deadlineText) {
             const regColor = getRegimentColor(p.cibleRegiment);
-            // regColor comes from config, assume safe or validate color hex format if needed. 
             const headerStyle = `background-color: ${regColor}33; border-bottom: 1px solid #c0392b; color: white; font-weight: bold;`;
 
-            // MODIFICATION: On passe seulement l'ID. On récupère les données via JS pour éviter XSS dans onclick
-            const btnGen = `<button class="btn btn-outline-light btn-sm w-100 mb-2" onclick="generateAndShow('${p._id}')">📄 Générer le Message Discord</button>`;
+            const btnGen = `<button class="btn btn-outline-light btn-sm w-100 mb-2" onclick="generateAndShow('${p._id}', '${p.cibleRegiment}', '${p.cibleGrade}', '${p.cibleNom}', '${p.auteurNom}', '${p.protocoleType}', '${p.raison}', '${p.details || ''}', '${p.targetSteamID || ''}', ${regConfig.sanctionDays}, '${regConfig.sanctionText}')">📄 Générer le Message Discord</button>`;
 
             let statusPriseEnCharge = p.rappelPrisEnChargeBy 
-                ? `<div class="text-success fw-bold mt-2"><i class="fas fa-check"></i> Pris en charge par ${escapeHtml(p.rappelPrisEnChargeBy)}</div>${deadlineText}` 
+                ? `<div class="text-success fw-bold mt-2"><i class="fas fa-check"></i> Pris en charge par ${p.rappelPrisEnChargeBy}</div>${deadlineText}` 
                 : `<div class="text-warning fw-bold mt-2"><i class="fas fa-clock"></i> Pas encore pris en charge</div>`;
 
-            // TOUTES LES VARIABLES SONT ÉCHAPPÉES ICI
             container.innerHTML += `
             <div class="col-12">
                 <div class="card h-100 rappel-card" style="background-color: #2b2b2b !important;">
                     <div class="card-header d-flex justify-content-between align-items-center" style="${headerStyle}">
-                        <span>⚠️ DÉLAI DÉPASSÉ : ${escapeHtml(p.cibleNom)}</span>
+                        <span>⚠️ DÉLAI DÉPASSÉ : ${p.cibleNom}</span>
                         <small style="color:#e74c3c; font-weight:bold;">Dépassé de ${retardJours-1} jours</small>
                     </div>
                     <div class="card-body">
                         ${sanctionBanner}
                         <div class="row">
                             <div class="col-md-8">
-                                <p><strong>Cible :</strong> ${escapeHtml(p.cibleGrade)} ${escapeHtml(p.cibleNom)} (${escapeHtml(p.cibleRegiment)})<br>
-                                <strong>Protocole :</strong> ${escapeHtml(p.protocoleType)}<br>
+                                <p><strong>Cible :</strong> ${p.cibleGrade} ${p.cibleNom} (${p.cibleRegiment})<br>
+                                <strong>Protocole :</strong> ${p.protocoleType}<br>
                                 <strong>Date Ordre :</strong> ${new Date(p.date).toLocaleDateString('fr-FR')}</p>
                                 ${btnGen}
                                 <div id="gen-${p._id}" style="display:none;">
@@ -606,7 +567,7 @@
                 let mainButton = '';
 
                 if (p.isSuspended) {
-                    suspendedAlert = `<div class="alert-suspended">⛔ <strong>PROTOCOLE SUSPENDU</strong><br><small>Par ${escapeHtml(p.suspendedBy)} : ${escapeHtml(p.suspendReason)}</small></div>`;
+                    suspendedAlert = `<div class="alert-suspended">⛔ <strong>PROTOCOLE SUSPENDU</strong><br><small>Par ${p.suspendedBy} : ${p.suspendReason}</small></div>`;
                     
                     if (user.isAdmin || user.isShockOfficer) {
                         mainButton = `<button onclick="toggleSuspend('${p._id}', true)" class="btn btn-outline-warning w-100 fw-bold mb-2">🔓 Lever la Suspension</button>`;
@@ -639,48 +600,36 @@
                 }
 
                 let deleteBtn = '';
+                // Admin ou ShockOfficer ou (Auteur ET EnCours)
                 if (user.isAdmin || user.isShockOfficer || (isAuthor && estEnCours)) {
                     deleteBtn = `<button onclick="supprimer('${p._id}')" class="btn btn-sm btn-danger ms-2" title="Supprimer"><i class="fas fa-trash"></i></button>`;
                 }
                 
-                let timeAlert = (p.tempsRestant && !isDone) ? `<div class="alert-time p-2 rounded mb-2 text-center fw-bold">⚠️ TEMPS RESTANT : ${escapeHtml(p.tempsRestant)} min</div>` : '';
-                
-                let logName = p.discordNick || p.discordUser; 
-                if (p.discordNick && p.discordUser && p.discordNick !== p.discordUser) logName = `${p.discordNick} (${p.discordUser})`; 
-                const discordInfo = logName ? `<br><small class="text-secondary"><i class="fab fa-discord"></i> Log: ${escapeHtml(logName)}</small>` : ''; 
-                
-                const steamInfo = p.targetSteamID ? `<small class="text-muted d-block mt-1" style="font-size:0.7rem">${escapeHtml(p.targetSteamID)}</small>` : ''; 
-                const dateStr = new Date(p.date).toLocaleString().slice(0, -3); 
-                
-                let validatorInfo = ''; 
-                if (p.statut === 'Effectué') { 
-                    const vName = p.validatorManualName || (p.validatorNick || p.validatorUser); 
-                    if (vName) validatorInfo = `<div class="mt-2 small text-success border-top border-secondary pt-1"><i class="fas fa-check-circle"></i> Appliqué par : ${escapeHtml(p.validatorManualName ? p.validatorManualName + (p.validatorUser ? ` (${p.validatorUser})` : '') : vName)}</div>`; 
-                }
+                let timeAlert = (p.tempsRestant && !isDone) ? `<div class="alert-time p-2 rounded mb-2 text-center fw-bold">⚠️ TEMPS RESTANT : ${p.tempsRestant} min</div>` : '';
+                let logName = p.discordNick || p.discordUser; if (p.discordNick && p.discordUser && p.discordNick !== p.discordUser) logName = `${p.discordNick} (${p.discordUser})`; const discordInfo = logName ? `<br><small class="text-secondary"><i class="fab fa-discord"></i> Log: ${logName}</small>` : ''; const steamInfo = p.targetSteamID ? `<small class="text-muted d-block mt-1" style="font-size:0.7rem">${p.targetSteamID}</small>` : ''; const dateStr = new Date(p.date).toLocaleString().slice(0, -3); let validatorInfo = ''; if (p.statut === 'Effectué') { const vName = p.validatorManualName || (p.validatorNick || p.validatorUser); if (vName) validatorInfo = `<div class="mt-2 small text-success border-top border-secondary pt-1"><i class="fas fa-check-circle"></i> Appliqué par : ${p.validatorManualName ? p.validatorManualName + (p.validatorUser ? ` (${p.validatorUser})` : '') : vName}</div>`; }
 
                 const styleCard = ''; 
 
-                // TOUTES LES VARIABLES SONT ÉCHAPPÉES ICI
                 container.innerHTML += `
                 <div class="col-12" style="${styleCard}">
                     <div class="card h-100" style="background-color: #2b2b2b !important;">
                         <div class="card-header d-flex justify-content-between align-items-center" style="${headerStyle}">
-                            <div><span class="fs-5">${escapeHtml(p.cibleNom)}</span> <span class="small ms-2" style="opacity:0.8">${escapeHtml(p.cibleGrade)} - ${escapeHtml(p.cibleRegiment)}</span></div>
+                            <div><span class="fs-5">${p.cibleNom}</span> <span class="small ms-2" style="opacity:0.8">${p.cibleGrade} - ${p.cibleRegiment}</span></div>
                             <div class="d-flex align-items-center gap-2">${badge}${suspendBtn}${deleteBtn}</div>
                         </div>
                         <div class="card-body">
                             ${suspendedAlert}
                             <div class="row">
                                 <div class="col-md-9">
-                                    <div class="mb-2"><div class="p-2 bg-dark rounded border border-secondary"><small class="text-muted d-block ls-1">SANCTION</small><span class="fw-bold text-danger">${escapeHtml(p.protocoleType)}</span></div></div>
-                                    <div class="mb-2"><div class="p-2 bg-dark rounded border-start border-3 border-danger"><small class="text-muted d-block ls-1">RAISON</small><span class="text-light user-text">${escapeHtml(p.raison)}</span></div></div>
-                                    ${p.details ? `<div class="mb-2"><div class="p-2 bg-dark rounded border-start border-3 border-warning"><small class="text-muted d-block ls-1">DÉTAILS</small><span class="text-light user-text">${escapeHtml(p.details)}</span></div></div>` : ''}
-                                    ${p.targetSteamID ? `<div class="mb-2"><div class="p-2 bg-dark rounded border-start border-3 border-danger"><small class="text-muted d-block ls-1">STEAM ID</small><span class="text-light font-monospace">${escapeHtml(p.targetSteamID)}</span></div></div>` : ''}
+                                    <div class="mb-2"><div class="p-2 bg-dark rounded border border-secondary"><small class="text-muted d-block ls-1">SANCTION</small><span class="fw-bold text-danger">${p.protocoleType}</span></div></div>
+                                    <div class="mb-2"><div class="p-2 bg-dark rounded border-start border-3 border-danger"><small class="text-muted d-block ls-1">RAISON</small><span class="text-light user-text">${p.raison}</span></div></div>
+                                    ${p.details ? `<div class="mb-2"><div class="p-2 bg-dark rounded border-start border-3 border-warning"><small class="text-muted d-block ls-1">DÉTAILS</small><span class="text-light user-text">${p.details}</span></div></div>` : ''}
+                                    ${p.targetSteamID ? `<div class="mb-2"><div class="p-2 bg-dark rounded border-start border-3 border-danger"><small class="text-muted d-block ls-1">STEAM ID</small><span class="text-light font-monospace">${p.targetSteamID}</span></div></div>` : ''}
                                     ${timeAlert}
                                 </div>
                                 <div class="col-md-3 border-start border-secondary ps-4 d-flex flex-column justify-content-center">
                                     <div class="small text-muted mb-1">📅 ${dateStr}</div>
-                                    <div class="mb-1">Personne qui l'a ordonné : <strong>${escapeHtml(p.auteurNom) || "?"}</strong></div>
+                                    <div class="mb-1">Personne qui l'a ordonné : <strong>${p.auteurNom || "?"}</strong></div>
                                     ${discordInfo}
                                     ${validatorInfo}
                                 </div>
@@ -703,29 +652,7 @@
             afficherMandats(currentData, false);
         }
 
-        // --- NOUVELLE FONCTION GENERATE SECURISEE ---
-        function generateAndShow(id) { 
-            // On retrouve les données proprement dans le tableau en mémoire
-            const p = currentData.find(item => item._id === id);
-            if(!p) return;
-
-            const regConfig = configData.regiments.find(r => r.name === p.cibleRegiment);
-            const sanctionDays = regConfig ? regConfig.sanctionDays : 14;
-            const sanctionText = regConfig ? regConfig.sanctionText : 'Sanction par défaut';
-
-            const dateFinale = new Date(); 
-            dateFinale.setDate(dateFinale.getDate() + parseInt(sanctionDays)); 
-            const dateFinaleStr = dateFinale.toLocaleDateString('fr-FR'); 
-            
-            // Pas besoin d'escapeHtml ici car innerText s'en charge
-            const titlePost = `${p.cibleRegiment} ${p.cibleGrade} ${p.cibleNom} -> ${dateFinaleStr}`; 
-            const bodyPost = `<:FlecheVert:990651262976528414> Protocole à effectuer avant le ${dateFinaleStr} sinon : ${sanctionText}\n<:FlecheVert:990651262976528414> Le ping Discord\n\n...........................................................................\n\n- **Qui l'a ordonné :** ${p.auteurNom}\n- **Protocole :** ${p.protocoleType.replace(/Protocole\s+/i, '')}\n- **Raison :** ${p.raison}${p.details ? `\n- **Détails :** ${p.details}` : ''}${p.targetSteamID ? `\n- **Steam ID :** ${p.targetSteamID}` : ''}`; 
-            
-            document.getElementById(`title-${id}`).innerText = titlePost; 
-            document.getElementById(`body-${id}`).innerText = bodyPost; 
-            toggleBox(id); 
-        }
-
+        function generateAndShow(id, reg, grade, nom, auteur, proto, raison, details, steam, sanctionDays, sanctionText) { const dateFinale = new Date(); dateFinale.setDate(dateFinale.getDate() + parseInt(sanctionDays)); const dateFinaleStr = dateFinale.toLocaleDateString('fr-FR'); const titlePost = `${reg} ${grade} ${nom} -> ${dateFinaleStr}`; const bodyPost = `<:FlecheVert:990651262976528414> Protocole à effectuer avant le ${dateFinaleStr} sinon : ${sanctionText}\n<:FlecheVert:990651262976528414> Le ping Discord\n\n...........................................................................\n\n- **Qui l'a ordonné :** ${auteur}\n- **Protocole :** ${proto.replace(/Protocole\s+/i, '')}\n- **Raison :** ${raison}${details ? `\n- **Détails :** ${details}` : ''}${steam ? `\n- **Steam ID :** ${steam}` : ''}`; document.getElementById(`title-${id}`).innerText = titlePost; document.getElementById(`body-${id}`).innerText = bodyPost; toggleBox(id); }
         function toggleBox(id) { const el = document.getElementById(`gen-${id}`); el.style.display = el.style.display === 'none' ? 'block' : 'none'; }
         async function validerRappel(id) { const confirm = await customConfirm("Confirmer que vous prenez en charge ce rappel sur Discord ?"); if(!confirm) return; try { const res = await fetch(`${API_URL}/${id}/rappel`, { method: 'PUT' }); if(res.ok) chargerDelais(); } catch(e) { customAlert("Erreur réseau"); } }
         async function envoyerSignalement() { const body = { validatorManualName: document.getElementById('sigShockName').value, cibleNom: document.getElementById('sigCibleNom').value, cibleGrade: document.getElementById('sigCibleGrade').value, cibleRegiment: document.getElementById('sigCibleRegiment').value, protocoleType: document.getElementById('sigProtocole').value, auteurNom: document.getElementById('sigOrderedBy').value, raison: document.getElementById('sigRaison').value, details: document.getElementById('sigDetails').value, targetSteamID: document.getElementById('sigSteamID').value }; if(!body.validatorManualName || !body.cibleNom || !body.cibleGrade || !body.cibleRegiment || !body.protocoleType || !body.raison) return customAlert("Champs obligatoires manquants."); try { const res = await fetch('/api/protocoles/direct', { method: 'POST', headers: { 'Content-Type': 'application/json' }, body: JSON.stringify(body) }); if(res.ok) { customAlert("Enregistré !"); document.querySelectorAll('#signalementPanel input, #signalementPanel textarea, #signalementPanel select').forEach(i => i.value = ''); document.querySelectorAll('.nav-link')[3].click(); } else customAlert("Erreur"); } catch(e) { customAlert("Erreur connexion"); } }
@@ -734,9 +661,11 @@
         async function toggleSuspend(id, isSuspended) {
             let reason = null;
             if (!isSuspended) {
+                // On suspend -> Demander raison
                 reason = await customPrompt("Raison de la suspension ?");
-                if (reason === null) return; 
+                if (reason === null) return; // Annulation
             } else {
+                // On lève -> Confirmation
                 const confirm = await customConfirm("Lever la suspension ?");
                 if (!confirm) return;
             }
@@ -752,18 +681,21 @@
             } catch (e) { customAlert("Erreur réseau"); }
         }
 
+        // --- MISE A JOUR ADMIN UI POUR AJOUTER ID ROLE ---
         function renderAdminUI() { 
             const listAdminR = document.getElementById('listAdminRoles'); const listAdminU = document.getElementById('listAdminUsers'); const listOfficer = document.getElementById('listOfficerRoles'); const listMarine = document.getElementById('listMarineRoles'); 
+            // NOUVEAU
             const listShockUsers = document.getElementById('listShockUsers');
             const listBannedUsers = document.getElementById('listBannedUsers');
 
-            // UTILISATION DE ESCAPEHTML
-            listAdminR.innerHTML = (configData.adminRoles||[]).map(r => `<span class="badge bg-secondary">${escapeHtml(r)} <i class="fas fa-times tag-remove" onclick="removeConfig('adminRoles', '${escapeHtml(r)}')"></i></span>`).join(''); 
-            listAdminU.innerHTML = (configData.adminUsers||[]).map(r => `<span class="badge bg-secondary">${escapeHtml(r)} <i class="fas fa-times tag-remove" onclick="removeConfig('adminUsers', '${escapeHtml(r)}')"></i></span>`).join(''); 
-            listOfficer.innerHTML = (configData.officerRoles||[]).map(r => `<span class="badge bg-secondary">${escapeHtml(r)} <i class="fas fa-times tag-remove" onclick="removeConfig('officerRoles', '${escapeHtml(r)}')"></i></span>`).join(''); 
-            listMarine.innerHTML = (configData.marineRoles||[]).map(r => `<span class="badge bg-secondary">${escapeHtml(r)} <i class="fas fa-times tag-remove" onclick="removeConfig('marineRoles', '${escapeHtml(r)}')"></i></span>`).join(''); 
-            listShockUsers.innerHTML = (configData.shockOfficerUsers||[]).map(r => `<span class="badge bg-danger">${escapeHtml(r)} <i class="fas fa-times tag-remove" onclick="removeConfig('shockOfficerUsers', '${escapeHtml(r)}')"></i></span>`).join('');
-            listBannedUsers.innerHTML = (configData.bannedUsers||[]).map(r => `<span class="badge bg-danger">${escapeHtml(r)} <i class="fas fa-times tag-remove" onclick="removeConfig('bannedUsers', '${escapeHtml(r)}')"></i></span>`).join('');
+            listAdminR.innerHTML = (configData.adminRoles||[]).map(r => `<span class="badge bg-secondary">${r} <i class="fas fa-times tag-remove" onclick="removeConfig('adminRoles', '${r}')"></i></span>`).join(''); 
+            listAdminU.innerHTML = (configData.adminUsers||[]).map(r => `<span class="badge bg-secondary">${r} <i class="fas fa-times tag-remove" onclick="removeConfig('adminUsers', '${r}')"></i></span>`).join(''); 
+            listOfficer.innerHTML = (configData.officerRoles||[]).map(r => `<span class="badge bg-secondary">${r} <i class="fas fa-times tag-remove" onclick="removeConfig('officerRoles', '${r}')"></i></span>`).join(''); 
+            listMarine.innerHTML = (configData.marineRoles||[]).map(r => `<span class="badge bg-secondary">${r} <i class="fas fa-times tag-remove" onclick="removeConfig('marineRoles', '${r}')"></i></span>`).join(''); 
+            
+            // NOUVEAUX CHAMPS
+            listShockUsers.innerHTML = (configData.shockOfficerUsers||[]).map(r => `<span class="badge bg-danger">${r} <i class="fas fa-times tag-remove" onclick="removeConfig('shockOfficerUsers', '${r}')"></i></span>`).join('');
+            listBannedUsers.innerHTML = (configData.bannedUsers||[]).map(r => `<span class="badge bg-danger">${r} <i class="fas fa-times tag-remove" onclick="removeConfig('bannedUsers', '${r}')"></i></span>`).join('');
 
             const regList = document.getElementById('regimentConfigList'); 
             regList.innerHTML = ''; 
@@ -773,14 +705,16 @@
                 <div class="col-md-6 col-lg-4">
                     <div class="card border-secondary h-100">
                         <div class="card-header d-flex justify-content-between align-items-center py-2" style="border-bottom: 3px solid ${currentColor}">
-                            <span class="fw-bold">${escapeHtml(reg.name)}</span>
+                            <span class="fw-bold">${reg.name}</span>
                             <button class="btn btn-sm btn-outline-danger" onclick="removeRegiment(${index})">🗑️</button>
                         </div>
                         <div class="card-body p-2">
                             <div class="input-group input-group-sm mb-1"><span class="input-group-text bg-dark text-white border-secondary">Temps avant Rappel (j)</span><input type="number" class="form-control" value="${reg.rappelDays}" onchange="updateRegiment(${index}, 'rappelDays', this.value)"></div>
                             <div class="input-group input-group-sm mb-1"><span class="input-group-text bg-dark text-white border-secondary">Temps avant Sanction (j)</span><input type="number" class="form-control" value="${reg.sanctionDays}" onchange="updateRegiment(${index}, 'sanctionDays', this.value)"></div>
-                            <div class="input-group input-group-sm mb-2"><span class="input-group-text bg-dark text-white border-secondary">Sanction</span><input type="text" class="form-control" value="${escapeHtml(reg.sanctionText)}" onchange="updateRegiment(${index}, 'sanctionText', this.value)"></div>
-                            <div class="input-group input-group-sm mb-2"><span class="input-group-text bg-dark text-white border-secondary">ID Rôle(s) Discord</span><input type="text" class="form-control" value="${escapeHtml(reg.discordRoleID || '')}" onchange="updateRegiment(${index}, 'discordRoleID', this.value)" placeholder="123456789, 987654321"></div>
+                            <div class="input-group input-group-sm mb-2"><span class="input-group-text bg-dark text-white border-secondary">Sanction</span><input type="text" class="form-control" value="${reg.sanctionText}" onchange="updateRegiment(${index}, 'sanctionText', this.value)"></div>
+                            
+                            <div class="input-group input-group-sm mb-2"><span class="input-group-text bg-dark text-white border-secondary">ID Rôle(s) Discord</span><input type="text" class="form-control" value="${reg.discordRoleID || ''}" onchange="updateRegiment(${index}, 'discordRoleID', this.value)" placeholder="123456789, 987654321"></div>
+                            
                             <div class="d-flex align-items-center gap-2"><small class="text-muted">Couleur Bandeau :</small><input type="color" class="form-control form-control-color" value="${currentColor}" onchange="updateRegiment(${index}, 'color', this.value)" title="Choisir la couleur"></div>
                         </div>
                     </div>
@@ -791,47 +725,17 @@
         function addNewRegiment() { const name = document.getElementById('newRegimentName').value.trim(); if(!name) return; if(!configData.regiments) configData.regiments = []; configData.regiments.push({ name: name, rappelDays: 10, sanctionDays: 14, sanctionText: 'Protocole 6', color: '#c0392b', discordRoleID: '' }); document.getElementById('newRegimentName').value = ''; renderAdminUI(); }
         function updateRegiment(index, field, value) { if(field === 'rappelDays' || field === 'sanctionDays') value = parseInt(value); configData.regiments[index][field] = value; }
         function removeRegiment(index) { customConfirm("Supprimer ce régiment ?").then(ok => { if(ok) { configData.regiments.splice(index, 1); renderAdminUI(); }}); }
-        function addConfig(key) { 
-            let inputId = '';
-            if (key === 'adminRoles') inputId = 'newAdminRole';
-            else if (key === 'adminUsers') inputId = 'newAdminUser';
-            else if (key === 'officerRoles') inputId = 'newOfficerRole';
-            else if (key === 'marineRoles') inputId = 'newMarineRole';
-            else if (key === 'shockOfficerUsers') inputId = 'newShockUser';
-            else if (key === 'bannedUsers') inputId = 'newBannedUser';
-
-            const val = document.getElementById(inputId).value.trim(); 
-            if(!val) return; 
-            if(!configData[key]) configData[key] = []; 
-            configData[key].push(val); 
-            document.getElementById(inputId).value = ''; 
-            renderAdminUI(); 
-        }
+        function addConfig(key) { let inputId = (key==='adminRoles')?'newAdminRole':(key==='adminUsers')?'newAdminUser':(key==='officerRoles')?'newOfficerRole':'newMarineRole'; const val = document.getElementById(inputId).value.trim(); if(!val) return; if(!configData[key]) configData[key] = []; configData[key].push(val); document.getElementById(inputId).value = ''; renderAdminUI(); }
         function removeConfig(key, val) { configData[key] = configData[key].filter(item => item !== val); renderAdminUI(); }
         async function saveConfig() { await fetch('/api/config', { method: 'PUT', headers: { 'Content-Type': 'application/json' }, body: JSON.stringify(configData) }); customAlert("Configuration sauvegardée !"); renderRegimentsSelect(); }
+        function preparerAction(id, mode) { const item = currentData.find(p => p._id === id); document.getElementById('auteurNom').value = item.auteurNom; document.getElementById('cibleNom').value = item.cibleNom; document.getElementById('cibleGrade').value = item.cibleGrade; document.getElementById('cibleRegiment').value = item.cibleRegiment; document.getElementById('steamid').value = item.targetSteamID || ''; document.getElementById('protocole').value = item.protocoleType; document.getElementById('raison').value = item.raison; document.getElementById('details').value = item.details; document.getElementById('tempsRestant').value = item.tempsRestant || ''; document.getElementById('protocolFormPanel').style.display = 'block'; document.getElementById('protocolFormPanel').scrollIntoView({ behavior: 'smooth' }); if(mode === 'modifier') { editingId = id; document.getElementById('formTitle').innerText = "📝 MODIFICATION"; document.getElementById('btnSubmit').innerText = "Sauvegarder"; document.getElementById('btnSubmit').className = "btn btn-warning btn-lg px-5"; document.getElementById('btnCancel').style.display = "inline-block"; } else { editingId = null; document.getElementById('formTitle').innerText = "📋 DUPLICATION"; document.getElementById('btnSubmit').innerText = "Créer la copie"; document.getElementById('btnSubmit').className = "btn btn-shock btn-lg px-5"; document.getElementById('btnCancel').style.display = "inline-block"; } }
         
-        function preparerAction(id, mode) { 
-            const item = currentData.find(p => p._id === id); 
-            // .value est safe (ne parse pas le HTML)
-            document.getElementById('auteurNom').value = item.auteurNom; 
-            document.getElementById('cibleNom').value = item.cibleNom; 
-            document.getElementById('cibleGrade').value = item.cibleGrade; 
-            document.getElementById('cibleRegiment').value = item.cibleRegiment; 
-            document.getElementById('steamid').value = item.targetSteamID || ''; 
-            document.getElementById('protocole').value = item.protocoleType; 
-            document.getElementById('raison').value = item.raison; 
-            document.getElementById('details').value = item.details; 
-            document.getElementById('tempsRestant').value = item.tempsRestant || ''; 
-            document.getElementById('protocolFormPanel').style.display = 'block'; 
-            document.getElementById('protocolFormPanel').scrollIntoView({ behavior: 'smooth' }); 
-            if(mode === 'modifier') { editingId = id; document.getElementById('formTitle').innerText = "📝 MODIFICATION"; document.getElementById('btnSubmit').innerText = "Sauvegarder"; document.getElementById('btnSubmit').className = "btn btn-warning btn-lg px-5"; document.getElementById('btnCancel').style.display = "inline-block"; } else { editingId = null; document.getElementById('formTitle').innerText = "📋 DUPLICATION"; document.getElementById('btnSubmit').innerText = "Créer la copie"; document.getElementById('btnSubmit').className = "btn btn-shock btn-lg px-5"; document.getElementById('btnCancel').style.display = "inline-block"; } 
-        }
-        
+        // MODIFICATION ICI POUR LE BOUTON ORANGE (BTN-SIGNAL)
         function resetForm() { 
             editingId = null; 
             document.getElementById('formTitle').innerText = "🕰️ ORDONNER UN PROTOCOLE À REMETTRE"; 
             document.getElementById('btnSubmit').innerText = "Transmettre"; 
-            document.getElementById('btnSubmit').className = "btn btn-signal btn-lg px-5"; 
+            document.getElementById('btnSubmit').className = "btn btn-signal btn-lg px-5"; // C'est ici
             document.getElementById('btnCancel').style.display = "none"; 
             document.getElementById('cibleNom').value = ''; 
             document.getElementById('cibleGrade').value = ''; 
@@ -844,7 +748,32 @@
         }
 
         async function envoyerProtocole() { const body = { auteurNom: document.getElementById('auteurNom').value, cibleNom: document.getElementById('cibleNom').value, cibleGrade: document.getElementById('cibleGrade').value, cibleRegiment: document.getElementById('cibleRegiment').value, targetSteamID: document.getElementById('steamid').value, protocoleType: document.getElementById('protocole').value, raison: document.getElementById('raison').value, details: document.getElementById('details').value, tempsRestant: document.getElementById('tempsRestant').value }; if(!body.cibleNom || !body.cibleGrade || !body.cibleRegiment || !body.protocoleType || !body.raison || !body.auteurNom) return customAlert("Champs obligatoires manquants."); const method = editingId ? 'PUT' : 'POST'; const url = editingId ? `${API_URL}/${editingId}` : API_URL; try { const res = await fetch(url, { method: method, headers: { 'Content-Type': 'application/json' }, body: JSON.stringify(body) }); if(res.ok) { customAlert('✅ Protocole transmis'); resetForm(); chargerEnCours(); if(!editingId) toggleForm(); } else { if(res.status === 403) customAlert("Seul l'auteur ou l'admin peut modifier."); else customAlert('Erreur ou Permissions insuffisantes.'); } } catch(e) { customAlert("Erreur réseau"); } }
-        async function valider(id) { const validatorName = await customPrompt("Veuillez entrer votre Matricule + Nom pour appliquer le protocole :"); if (validatorName === null || validatorName.trim() === "") return; try { const res = await fetch(`${API_URL}/${id}/valider`, { method: 'PUT', headers: { 'Content-Type': 'application/json' }, body: JSON.stringify({ validatorName: validatorName }) }); if(res.ok) chargerEnCours(); else customAlert("Erreur validation"); } catch(e) { customAlert("Erreur connexion"); } }
+        
+        // MODIFICATION: Valider avec commentaire
+        async function valider(id) { 
+            const validatorName = await customPrompt("Veuillez entrer votre Matricule + Nom pour appliquer le protocole :"); 
+            if (validatorName === null || validatorName.trim() === "") return; 
+            
+            // SECOND POPUP POUR LE COMMENTAIRE
+            const commentaire = await customPrompt("Avez-vous un commentaire à ajouter ? (Laisser vide si aucun)");
+            
+            try { 
+                const res = await fetch(`${API_URL}/${id}/valider`, { 
+                    method: 'PUT', 
+                    headers: { 'Content-Type': 'application/json' }, 
+                    body: JSON.stringify({ 
+                        validatorName: validatorName,
+                        commentaire: commentaire // On envoie le commentaire au serveur
+                    }) 
+                }); 
+                
+                if(res.ok) chargerEnCours(); 
+                else customAlert("Erreur validation"); 
+            } catch(e) { 
+                customAlert("Erreur connexion"); 
+            } 
+        }
+
         async function restaurer(id) { const temps = await customPrompt("Temps restant en min ?\nLaisser vide si le protocole n'a pas été commencé"); const res = await fetch(`${API_URL}/${id}/restaurer`, { method: 'PUT', headers: { 'Content-Type': 'application/json' }, body: JSON.stringify({ tempsRestant: temps }) }); if(res.ok) chargerHistorique(); else customAlert("Permission refusée"); }
         
         async function supprimer(id) { 
