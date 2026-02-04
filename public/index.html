@@ -230,7 +230,16 @@
                                 </div>
                                 <div class="row g-2 mb-2">
                                     <div class="col-6"><label class="small text-muted">Protocole*</label><select id="protocole" class="form-select"><option value="" selected disabled>Choisir...</option><option>Protocole 1</option><option>Protocole 2</option><option>Protocole 3</option><option>Protocole 4</option><option>Protocole 5</option><option>Protocole 6</option><option>Protocole 7</option><option>Protocole 8</option><option>Protocole 9</option><option>Protocole 10</option></select></div>
-                                    <div class="col-6"><label class="small text-muted">Temps Restant (min)</label><input type="text" id="tempsRestant" class="form-control border-warning text-warning" placeholder="S'il a été commencé mais pas terminé"></div>
+                                    <div class="col-6">
+                                        <label class="small text-muted">Temps Restant (min)</label>
+                                        <div class="input-group">
+                                            <input type="text" id="tempsRestant" class="form-control border-warning text-warning" placeholder="ex: 15">
+                                            <div class="input-group-text bg-dark border-warning">
+                                                <input class="form-check-input mt-0" type="checkbox" id="notifyManager" title="Prévenir le gérant sur Discord">
+                                                <span class="small ms-2 text-warning"><i class="fas fa-bell"></i></span>
+                                            </div>
+                                        </div>
+                                    </div>
                                 </div>
                                 <div class="mb-2"><label class="small text-muted">Raison*</label><textarea id="raison" class="form-control" rows="2"></textarea></div>
                                 <div class="mb-2"><label class="small text-muted">Détails</label><textarea id="details" class="form-control" rows="4"></textarea></div>
@@ -321,6 +330,29 @@
         </div>
     </div>
 
+    <div class="modal fade" id="restoreModal" tabindex="-1" aria-hidden="true">
+        <div class="modal-dialog modal-dialog-centered">
+            <div class="modal-content">
+                <div class="modal-header"><h5 class="modal-title">RESTAURER PROTOCOLE</h5><button type="button" class="btn-close" data-bs-dismiss="modal"></button></div>
+                <div class="modal-body">
+                    <p class="text-muted small">Le protocole a-t-il été commencé mais pas fini ?</p>
+                    <div class="mb-3">
+                        <label class="form-label small">Temps Restant (min)</label>
+                        <input type="text" id="restoreTimeInput" class="form-control" placeholder="Laisser vide si non commencé">
+                    </div>
+                    <div class="form-check form-switch">
+                        <input class="form-check-input" type="checkbox" id="restoreNotifyInput">
+                        <label class="form-check-label text-warning" for="restoreNotifyInput">Prévenir le gérant sur Discord</label>
+                    </div>
+                </div>
+                <div class="modal-footer">
+                    <button type="button" class="btn btn-secondary" data-bs-dismiss="modal">Annuler</button>
+                    <button type="button" class="btn btn-shock" onclick="confirmerRestauration()">Restaurer</button>
+                </div>
+            </div>
+        </div>
+    </div>
+
     <script src="https://cdn.jsdelivr.net/npm/bootstrap@5.3.2/dist/js/bootstrap.bundle.min.js"></script>
     <script>
         const API_URL = '/api/protocoles';
@@ -329,11 +361,14 @@
         let editingId = null; 
         let user = { connecte: false, id: null, isAdmin: false, isShockOfficer: false, isOfficer: false, isMarine: false, isBanned: false };
 
+        // Variables pour restauration
+        let restoreId = null;
+
         const alertModal = new bootstrap.Modal(document.getElementById('customAlertModal'));
         const confirmModal = new bootstrap.Modal(document.getElementById('customConfirmModal'));
         const promptModal = new bootstrap.Modal(document.getElementById('customPromptModal'));
-        // Nouvelle Modale JS
         const validationModal = new bootstrap.Modal(document.getElementById('customValidationModal'));
+        const restoreModal = new bootstrap.Modal(document.getElementById('restoreModal'));
 
         // --- SÉCURITÉ XSS ---
         function escapeHtml(text) {
@@ -387,7 +422,6 @@
             }); 
         }
 
-        // --- NOUVELLE FONCTION POUR LA MODALE DE VALIDATION ---
         function askValidationDetails() {
             return new Promise((resolve) => {
                 const nameInput = document.getElementById('valInputName');
@@ -400,7 +434,6 @@
                 const btnOk = document.getElementById('btnValOk');
                 const btnCancel = document.getElementById('btnValCancel');
 
-                // Clone buttons to remove old listeners
                 const newOk = btnOk.cloneNode(true);
                 const newCancel = btnCancel.cloneNode(true);
                 btnOk.parentNode.replaceChild(newOk, btnOk);
@@ -411,7 +444,6 @@
                     const comment = commentInput.value.trim();
                     
                     if (name === "") {
-                        // Petit effet visuel si vide
                         nameInput.classList.add('is-invalid');
                         setTimeout(() => nameInput.classList.remove('is-invalid'), 2000);
                         return;
@@ -426,7 +458,6 @@
                     resolve(null);
                 };
 
-                // Focus sur le champ nom à l'ouverture
                 document.getElementById('customValidationModal').addEventListener('shown.bs.modal', () => { nameInput.focus(); }, { once: true });
                 validationModal.show();
             });
@@ -898,15 +929,50 @@
             document.getElementById('protocole').value = ''; 
             document.getElementById('raison').value = ''; 
             document.getElementById('details').value = ''; 
-            document.getElementById('tempsRestant').value = ''; 
+            document.getElementById('tempsRestant').value = '';
+            document.getElementById('notifyManager').checked = false;
         }
 
-        async function envoyerProtocole() { const body = { auteurNom: document.getElementById('auteurNom').value, cibleNom: document.getElementById('cibleNom').value, cibleGrade: document.getElementById('cibleGrade').value, cibleRegiment: document.getElementById('cibleRegiment').value, targetSteamID: document.getElementById('steamid').value, protocoleType: document.getElementById('protocole').value, raison: document.getElementById('raison').value, details: document.getElementById('details').value, tempsRestant: document.getElementById('tempsRestant').value }; if(!body.cibleNom || !body.cibleGrade || !body.cibleRegiment || !body.protocoleType || !body.raison || !body.auteurNom) return customAlert("Champs obligatoires manquants."); const method = editingId ? 'PUT' : 'POST'; const url = editingId ? `${API_URL}/${editingId}` : API_URL; try { const res = await fetch(url, { method: method, headers: { 'Content-Type': 'application/json' }, body: JSON.stringify(body) }); if(res.ok) { customAlert('✅ Protocole transmis'); resetForm(); chargerEnCours(); if(!editingId) toggleForm(); } else { if(res.status === 403) customAlert("Seul l'auteur ou l'admin peut modifier."); else customAlert('Erreur ou Permissions insuffisantes.'); } } catch(e) { customAlert("Erreur réseau"); } }
+        async function envoyerProtocole() { 
+            const body = { 
+                auteurNom: document.getElementById('auteurNom').value, 
+                cibleNom: document.getElementById('cibleNom').value, 
+                cibleGrade: document.getElementById('cibleGrade').value, 
+                cibleRegiment: document.getElementById('cibleRegiment').value, 
+                targetSteamID: document.getElementById('steamid').value, 
+                protocoleType: document.getElementById('protocole').value, 
+                raison: document.getElementById('raison').value, 
+                details: document.getElementById('details').value, 
+                tempsRestant: document.getElementById('tempsRestant').value,
+                notifyManager: document.getElementById('notifyManager').checked 
+            }; 
+            
+            if(!body.cibleNom || !body.cibleGrade || !body.cibleRegiment || !body.protocoleType || !body.raison || !body.auteurNom) 
+                return customAlert("Champs obligatoires manquants."); 
+            
+            if(body.notifyManager && !body.tempsRestant)
+                return customAlert("Pour prévenir le gérant, veuillez indiquer le temps restant.");
+
+            const method = editingId ? 'PUT' : 'POST'; 
+            const url = editingId ? `${API_URL}/${editingId}` : API_URL; 
+            
+            try { 
+                const res = await fetch(url, { method: method, headers: { 'Content-Type': 'application/json' }, body: JSON.stringify(body) }); 
+                if(res.ok) { 
+                    customAlert('✅ Protocole transmis'); 
+                    resetForm(); 
+                    chargerEnCours(); 
+                    if(!editingId) toggleForm(); 
+                } else { 
+                    if(res.status === 403) customAlert("Seul l'auteur ou l'admin peut modifier."); 
+                    else customAlert('Erreur ou Permissions insuffisantes.'); 
+                } 
+            } catch(e) { customAlert("Erreur réseau"); } 
+        }
         
-        // --- MISE A JOUR : FONCTION VALIDER AVEC NOUVELLE FENETRE ---
         async function valider(id) { 
             const data = await askValidationDetails(); 
-            if (!data) return; // Si annulé
+            if (!data) return; 
 
             try { 
                 const res = await fetch(`${API_URL}/${id}/valider`, { 
@@ -924,7 +990,38 @@
             } 
         }
         
-        async function restaurer(id) { const temps = await customPrompt("Temps restant en min ?\nLaisser vide si le protocole n'a pas été commencé"); const res = await fetch(`${API_URL}/${id}/restaurer`, { method: 'PUT', headers: { 'Content-Type': 'application/json' }, body: JSON.stringify({ tempsRestant: temps }) }); if(res.ok) chargerHistorique(); else customAlert("Permission refusée"); }
+        // Nouvelle fonction de restauration
+        function restaurer(id) {
+            restoreId = id;
+            document.getElementById('restoreTimeInput').value = '';
+            document.getElementById('restoreNotifyInput').checked = false;
+            restoreModal.show();
+        }
+
+        async function confirmerRestauration() {
+            const temps = document.getElementById('restoreTimeInput').value;
+            const notify = document.getElementById('restoreNotifyInput').checked;
+
+            if (notify && !temps) {
+                alert("Veuillez indiquer un temps pour envoyer la notification.");
+                return;
+            }
+
+            try {
+                const res = await fetch(`${API_URL}/${restoreId}/restaurer`, {
+                    method: 'PUT',
+                    headers: { 'Content-Type': 'application/json' },
+                    body: JSON.stringify({ tempsRestant: temps, notifyManager: notify })
+                });
+
+                if (res.ok) {
+                    restoreModal.hide();
+                    chargerHistorique();
+                } else {
+                    customAlert("Permission refusée");
+                }
+            } catch (e) { customAlert("Erreur réseau"); }
+        }
         
         async function supprimer(id) { 
             const confirm = await customConfirm("⚠️ SUPPRESSION DÉFINITIVE ⚠️\nÊtes-vous sûr ?"); 
