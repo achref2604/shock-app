@@ -164,13 +164,12 @@ async function sendIncompleteWebhook(protocole) {
         
         const description = `**${protocole.cibleNom}** n'a pas pu terminer son protocole **${protoNum}**.\n` +
                             `⏱️ Il lui reste **${protocole.tempsRestant} min** à effectuer.\n\n` +
-                            `*Un autre message vous informera quand il aura fini son protocole.*`;
+                            `*Un autre message vous informera quand il terminera son protocole.*`;
 
         const embed = {
-            title: "⚠️ Protocole Incomplet",
+            title: "⚠️ Protocole non terminé",
             description: description,
             color: colorInt,
-            footer: { text: "Suivi Protocole Shock" },
             timestamp: new Date().toISOString()
         };
 
@@ -231,10 +230,9 @@ async function sendDiscordWebhook(protocole, shockName) {
         if (protocole.tempsRestant && protocole.tempsRestant.trim() !== "") {
              const protoNum = protocole.protocoleType.replace(/Protocole\s+/i, '');
              const secondEmbed = {
-                title: "✅ Fin de Protocole Incomplet",
-                description: `Ce message vous informe que votre unité a terminé les **${protocole.tempsRestant} min** de son protocole **${protoNum}**.`,
-                color: 5763719, 
-                footer: { text: "Dossier Clôturé" }
+                title: "✔️ Fin du protocole non terminé",
+                description: `Ce message vous informe que votre unité a terminé les ${protocole.tempsRestant} min** de son protocole.`,
+                color: 0x00b30f
              };
              embeds.push(secondEmbed);
         }
