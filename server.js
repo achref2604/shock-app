@@ -48,7 +48,7 @@ mongoose.connect(MONGO_URI, { useNewUrlParser: true, useUnifiedTopology: true })
 const ConfigSchema = new mongoose.Schema({
     adminRoles: [String], 
     adminUsers: [String], 
-    shockOfficerUsers: { type: [String], default: [] }, // Sécurisation avec default
+    shockOfficerUsers: { type: [String], default: [] }, 
     bannedUsers: { type: [String], default: [] },
     officerRoles: [String], 
     marineRoles: [String], 
@@ -143,7 +143,47 @@ const checkValidate = async (req, res, next) => {
     res.status(403).json({ message: "Shock Only." }); 
 };
 
-// --- WEBHOOK ---
+// --- WEBHOOKS ---
+
+async function sendIncompleteWebhook(protocole) {
+    try {
+        const config = await Config.findOne();
+        const regConfig = config.regiments.find(r => r.name === protocole.cibleRegiment);
+        
+        let rolePing = "";
+        let colorInt = 15105570; // Orange
+
+        if (regConfig) {
+            if (regConfig.discordRoleID) {
+                const roles = regConfig.discordRoleID.split(',');
+                rolePing = roles.map(id => `<@&${id.trim()}>`).join(' ');
+            }
+        }
+
+        const protoNum = protocole.protocoleType.replace(/Protocole\s+/i, '');
+        
+        const description = `**${protocole.cibleNom}** n'a pas pu terminer son protocole **${protoNum}**.\n` +
+                            `⏱️ Il lui reste **${protocole.tempsRestant} min** à effectuer.\n\n` +
+                            `*Un autre message vous informera quand il aura fini son protocole.*`;
+
+        const embed = {
+            title: "⚠️ Protocole Incomplet",
+            description: description,
+            color: colorInt,
+            footer: { text: "Suivi Protocole Shock" },
+            timestamp: new Date().toISOString()
+        };
+
+        await axios.post(DISCORD_WEBHOOK_URL, {
+            content: rolePing,
+            embeds: [embed]
+        });
+        console.log("✅ Notification 'Incomplet' envoyée.");
+    } catch (error) {
+        console.error("❌ Erreur Webhook Incomplet : ", error.message);
+    }
+}
+
 async function sendDiscordWebhook(protocole, shockName) {
     try {
         const config = await Config.findOne();
@@ -180,17 +220,30 @@ async function sendDiscordWebhook(protocole, shockName) {
 
         const descriptionBody = contentArray.join("\n\n");
 
-        const embed = {
+        const embeds = [{
             title: "Signalement Protocole",
             description: descriptionBody, 
             color: colorInt,
             thumbnail: { url: SHOCK_LOGO_URL },
             timestamp: new Date().toISOString()
-        };
+        }];
+
+        // --- AJOUT : 2ème embed si temps restant existait ---
+        if (protocole.tempsRestant && protocole.tempsRestant.trim() !== "") {
+             const protoNum = protocole.protocoleType.replace(/Protocole\s+/i, '');
+             const secondEmbed = {
+                title: "✅ Fin de Protocole Incomplet",
+                description: `Ce message vous informe que votre unité a terminé les **${protocole.tempsRestant} min** de son protocole **${protoNum}**.`,
+                color: 5763719, // Vert (Green)
+                footer: { text: "Dossier Clôturé" }
+             };
+             embeds.push(secondEmbed);
+        }
+        // ----------------------------------------------------
 
         await axios.post(DISCORD_WEBHOOK_URL, {
             content: rolePing,
-            embeds: [embed]
+            embeds: embeds
         });
         console.log("✅ Webhook de",protocole.cibleNom," envoyé.");
 
@@ -298,8 +351,21 @@ app.get('/api/historique', async (req, res) => {
 app.post('/api/protocoles', checkEdit, async (req, res) => {
     try {
         const data = req.body;
-        data.discordUser = req.user.username; data.discordNick = req.user.serverNick; data.discordId = req.user.id;
-        await new Protocole(data).save();
+        const notify = data.notifyManager; // On récupère le flag
+        delete data.notifyManager; // On ne l'enregistre pas en base
+
+        data.discordUser = req.user.username; 
+        data.discordNick = req.user.serverNick; 
+        data.discordId = req.user.id;
+        
+        const nouveau = new Protocole(data);
+        await nouveau.save();
+
+        // Si option activée et temps restant présent
+        if (notify && data.tempsRestant) {
+            await sendIncompleteWebhook(nouveau);
+        }
+
         res.json({ message: "OK" });
     } catch (e) { res.status(500).json({ error: e.message }); }
 });
@@ -332,52 +398,50 @@ app.put('/api/protocoles/:id', checkEdit, async (req, res) => {
         if (!perms.isAdmin && !perms.isShockOfficer && p.discordId !== req.user.id) {
             return res.status(403).json({ message: "Non autorisé" });
         }
-        await Protocole.findByIdAndUpdate(req.params.id, req.body);
+
+        const data = req.body;
+        const notify = data.notifyManager;
+        delete data.notifyManager; 
+
+        // Mise à jour
+        const updated = await Protocole.findByIdAndUpdate(req.params.id, data, { new: true });
+        
+        // Trigger notification si demandée lors de l'édit
+        if (notify && updated.tempsRestant) {
+            await sendIncompleteWebhook(updated);
+        }
+
         res.json({ message: "OK" });
     } catch (e) { res.status(500).json({ error: "Erreur" }); }
 });
 
-// --- MODIFICATION ICI : ROUTE VALIDER ---
 app.put('/api/protocoles/:id/valider', checkValidate, async (req, res) => {
-    // On récupère aussi validatorComment
     const { validatorName, validatorComment } = req.body;
     
-    // On charge le protocole
     const p = await Protocole.findById(req.params.id);
     
     if(p.isSuspended) return res.status(403).json({ message: "Ce protocole est suspendu." });
 
     if(p && validatorName) {
-    // --- NOUVELLE LOGIQUE POUR LE COMMENTAIRE ---
         if (validatorComment && validatorComment.trim() !== "") {
-            // 1. On prépare le texte du commentaire uniquement
             const texteCommentaire = `💬 Commentaire de ${validatorName} : ${validatorComment}`;
-            
-            // 2. On détermine le séparateur : 
-            // Si p.details existe et n'est pas vide, on met "\n\n", sinon on ne met rien.
             const separateur = (p.details && p.details !== "") ? "\n\n" : "";
-
-            // 3. On construit la chaîne finale
             p.details = (p.details || "") + separateur + texteCommentaire;
         }
-        // ---------------------------------------------
 
-        // On envoie les webhooks avec l'objet p qui contient maintenant les détails mis à jour
         await sendToGoogleSheet(p, validatorName);
         await sendDiscordWebhook(p, validatorName);
     }
 
-    // On sauvegarde en base de données avec les nouveaux détails
     await Protocole.findByIdAndUpdate(req.params.id, {
         statut: 'Effectué', 
         validatorUser: req.user.username, 
         validatorNick: req.user.serverNick, 
         validatorId: req.user.id, 
         validatorManualName: validatorName,
-        details: p.details // IMPORTANT : On sauvegarde bien les détails modifiés
+        details: p.details 
     });
 
-    // Nettoyage de l'historique (> 30 éléments)
     const historique = await Protocole.find({ statut: 'Effectué' }).sort({ date: -1 });
     if (historique.length > 30) {
         const tropVieux = historique.slice(30);
@@ -388,10 +452,23 @@ app.put('/api/protocoles/:id/valider', checkValidate, async (req, res) => {
 });
 
 app.put('/api/protocoles/:id/restaurer', checkValidate, async (req, res) => {
-    const { tempsRestant } = req.body;
-    let updateData = { statut: 'En Attente', date: Date.now(), validatorUser: null, validatorNick: null, validatorId: null, validatorManualName: null, rappelPrisEnChargeBy: null, rappelDate: null };
+    const { tempsRestant, notifyManager } = req.body; 
+    
+    let updateData = { 
+        statut: 'En Attente', 
+        date: Date.now(), 
+        validatorUser: null, validatorNick: null, validatorId: null, validatorManualName: null, 
+        rappelPrisEnChargeBy: null, rappelDate: null, isSuspended: false 
+    };
+    
     if (tempsRestant) updateData.tempsRestant = tempsRestant;
-    await Protocole.findByIdAndUpdate(req.params.id, updateData);
+    
+    const updated = await Protocole.findByIdAndUpdate(req.params.id, updateData, { new: true });
+
+    if (notifyManager && tempsRestant) {
+        await sendIncompleteWebhook(updated);
+    }
+
     res.json({ message: "OK" });
 });
 
