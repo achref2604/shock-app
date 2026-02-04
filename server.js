@@ -143,7 +143,7 @@ const checkValidate = async (req, res, next) => {
     res.status(403).json({ message: "Shock Only." }); 
 };
 
-// --- WEBHOOKS ---
+// --- WEBHOOKS & GOOGLE SHEETS ---
 
 async function sendIncompleteWebhook(protocole) {
     try {
@@ -228,18 +228,16 @@ async function sendDiscordWebhook(protocole, shockName) {
             timestamp: new Date().toISOString()
         }];
 
-        // --- AJOUT : 2ème embed si temps restant existait ---
         if (protocole.tempsRestant && protocole.tempsRestant.trim() !== "") {
              const protoNum = protocole.protocoleType.replace(/Protocole\s+/i, '');
              const secondEmbed = {
                 title: "✅ Fin de Protocole Incomplet",
                 description: `Ce message vous informe que votre unité a terminé les **${protocole.tempsRestant} min** de son protocole **${protoNum}**.`,
-                color: 5763719, // Vert (Green)
+                color: 5763719, 
                 footer: { text: "Dossier Clôturé" }
              };
              embeds.push(secondEmbed);
         }
-        // ----------------------------------------------------
 
         await axios.post(DISCORD_WEBHOOK_URL, {
             content: rolePing,
@@ -274,6 +272,74 @@ async function sendToGoogleSheet(protocole, shockName) {
             spreadsheetId: SPREADSHEET_ID, range: `${SHEET_NAME}!A${nextRow}`, valueInputOption: 'USER_ENTERED', resource: { values }
         });
     } catch (error) { console.error("❌ Erreur Google Sheet pour ",protocole.cibleNom," : ",error); }
+}
+
+// --- NOUVEAU : FONCTION POUR OBTENIR L'ID (GID) DE LA FEUILLE ---
+async function getSheetId(sheets) {
+    const request = { spreadsheetId: SPREADSHEET_ID };
+    const response = await sheets.spreadsheets.get(request);
+    const sheet = response.data.sheets.find(s => s.properties.title === SHEET_NAME);
+    return sheet ? sheet.properties.sheetId : null;
+}
+
+// --- NOUVEAU : FONCTION POUR SUPPRIMER LA LIGNE DANS GOOGLE SHEET ---
+async function deleteFromGoogleSheet(protocole) {
+    try {
+        const sheets = google.sheets({ version: 'v4', auth: googleAuth });
+        
+        // 1. On récupère les données des colonnes utiles pour identifier la ligne (Nom Cible, Protocole, Raison)
+        // Colonnes : A=Date, B=Shock, C=Regiment, D=Grade, E=CibleNom, F=ProtoNum, G=Raison
+        const range = `${SHEET_NAME}!A:G`;
+        const response = await sheets.spreadsheets.values.get({ spreadsheetId: SPREADSHEET_ID, range });
+        const rows = response.data.values;
+        
+        if (!rows || rows.length === 0) return;
+
+        const targetName = protocole.cibleNom;
+        const targetProto = protocole.protocoleType.replace(/Protocole\s+/i, '');
+        const targetRaison = protocole.raison;
+
+        let rowIndexToDelete = -1;
+
+        // 2. On parcourt en partant de la FIN (car l'ajout se fait à la fin, donc le plus récent est en bas)
+        for (let i = rows.length - 1; i >= 0; i--) {
+            const row = rows[i];
+            // row[4] = CibleNom, row[5] = ProtoNum, row[6] = Raison
+            if (row[4] === targetName && row[5] == targetProto && row[6] === targetRaison) {
+                rowIndexToDelete = i;
+                break; // On a trouvé, on arrête
+            }
+        }
+
+        if (rowIndexToDelete !== -1) {
+            // 3. On récupère l'ID de la feuille (GID) nécessaire pour deleteDimension
+            const sheetId = await getSheetId(sheets);
+            if (sheetId === null) return;
+
+            // 4. On envoie la requête de suppression
+            await sheets.spreadsheets.batchUpdate({
+                spreadsheetId: SPREADSHEET_ID,
+                resource: {
+                    requests: [{
+                        deleteDimension: {
+                            range: {
+                                sheetId: sheetId,
+                                dimension: "ROWS",
+                                startIndex: rowIndexToDelete,
+                                endIndex: rowIndexToDelete + 1
+                            }
+                        }
+                    }]
+                }
+            });
+            console.log(`🗑️ Ligne supprimée du Sheet pour ${targetName}`);
+        } else {
+            console.log(`⚠️ Aucune ligne trouvée dans le Sheet pour ${targetName}`);
+        }
+
+    } catch (error) {
+        console.error("❌ Erreur suppression Google Sheet : ", error.message);
+    }
 }
 
 // --- MIDDLEWARES & ROUTES ---
@@ -351,8 +417,8 @@ app.get('/api/historique', async (req, res) => {
 app.post('/api/protocoles', checkEdit, async (req, res) => {
     try {
         const data = req.body;
-        const notify = data.notifyManager; // On récupère le flag
-        delete data.notifyManager; // On ne l'enregistre pas en base
+        const notify = data.notifyManager; 
+        delete data.notifyManager; 
 
         data.discordUser = req.user.username; 
         data.discordNick = req.user.serverNick; 
@@ -361,7 +427,6 @@ app.post('/api/protocoles', checkEdit, async (req, res) => {
         const nouveau = new Protocole(data);
         await nouveau.save();
 
-        // Si option activée et temps restant présent
         if (notify && data.tempsRestant) {
             await sendIncompleteWebhook(nouveau);
         }
@@ -403,10 +468,8 @@ app.put('/api/protocoles/:id', checkEdit, async (req, res) => {
         const notify = data.notifyManager;
         delete data.notifyManager; 
 
-        // Mise à jour
         const updated = await Protocole.findByIdAndUpdate(req.params.id, data, { new: true });
         
-        // Trigger notification si demandée lors de l'édit
         if (notify && updated.tempsRestant) {
             await sendIncompleteWebhook(updated);
         }
@@ -454,6 +517,15 @@ app.put('/api/protocoles/:id/valider', checkValidate, async (req, res) => {
 app.put('/api/protocoles/:id/restaurer', checkValidate, async (req, res) => {
     const { tempsRestant, notifyManager } = req.body; 
     
+    // 1. Récupérer le doc actuel AVANT modification pour avoir les données
+    const currentDoc = await Protocole.findById(req.params.id);
+    
+    // 2. Si le doc était "Effectué", on supprime la ligne du Sheet
+    if (currentDoc && currentDoc.statut === 'Effectué') {
+        await deleteFromGoogleSheet(currentDoc);
+    }
+
+    // 3. Procéder à la restauration
     let updateData = { 
         statut: 'En Attente', 
         date: Date.now(), 
@@ -490,14 +562,19 @@ app.delete('/api/protocoles/:id', async (req, res) => {
         
         if(perms.isBanned) return res.status(403).json({ message: "Banni." });
 
-        if (perms.isAdmin || perms.isShockOfficer) {
+        // VERIFICATION POUR SUPPRESSION
+        const canDelete = perms.isAdmin || perms.isShockOfficer || (p.discordId === req.user.id && p.statut !== 'Effectué');
+
+        if (canDelete) {
+            // AJOUT : Si on supprime une archive (statut effectué), on supprime du sheet
+            if (p.statut === 'Effectué') {
+                await deleteFromGoogleSheet(p);
+            }
+
             await Protocole.findByIdAndDelete(req.params.id);
-            return res.json({ message: "Supprimé par Haut Commandement" });
+            return res.json({ message: "Supprimé" });
         }
-        if (p.discordId === req.user.id && p.statut !== 'Effectué') {
-            await Protocole.findByIdAndDelete(req.params.id);
-            return res.json({ message: "Supprimé par Auteur" });
-        }
+        
         res.status(403).json({ message: "Vous n'avez pas la permission de supprimer." });
     } catch (e) {
         res.status(500).json({ error: "Erreur serveur" });
