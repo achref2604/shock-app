@@ -843,6 +843,15 @@
             } catch (e) { customAlert("Erreur réseau"); }
         }
 
+        // --- GESTION REORDER ---
+        function moveRegiment(index, direction) {
+            const regs = configData.regiments;
+            const newIndex = index + direction;
+            if (newIndex < 0 || newIndex >= regs.length) return;
+            [regs[index], regs[newIndex]] = [regs[newIndex], regs[index]];
+            renderAdminUI();
+        }
+
         function renderAdminUI() { 
             const listAdminR = document.getElementById('listAdminRoles'); const listAdminU = document.getElementById('listAdminUsers'); const listOfficer = document.getElementById('listOfficerRoles'); const listMarine = document.getElementById('listMarineRoles'); 
             const listShockUsers = document.getElementById('listShockUsers');
@@ -859,12 +868,22 @@
             regList.innerHTML = ''; 
             (configData.regiments || []).forEach((reg, index) => { 
                 const currentColor = reg.color || '#c0392b'; 
+                const isFirst = index === 0;
+                const isLast = index === configData.regiments.length - 1;
+                
+                const btnUp = isFirst ? '' : `<button class="btn btn-sm btn-outline-secondary" onclick="moveRegiment(${index}, -1)" title="Monter">⬆️</button>`;
+                const btnDown = isLast ? '' : `<button class="btn btn-sm btn-outline-secondary" onclick="moveRegiment(${index}, 1)" title="Descendre">⬇️</button>`;
+
                 regList.innerHTML += `
                 <div class="col-md-6 col-lg-4">
                     <div class="card border-secondary h-100">
                         <div class="card-header d-flex justify-content-between align-items-center py-2" style="border-bottom: 3px solid ${currentColor}">
                             <span class="fw-bold">${escapeHtml(reg.name)}</span>
-                            <button class="btn btn-sm btn-outline-danger" onclick="removeRegiment(${index})">🗑️</button>
+                            <div class="d-flex gap-1">
+                                ${btnUp}
+                                ${btnDown}
+                                <button class="btn btn-sm btn-outline-danger" onclick="removeRegiment(${index})" title="Supprimer">🗑️</button>
+                            </div>
                         </div>
                         <div class="card-body p-2">
                             <div class="input-group input-group-sm mb-1"><span class="input-group-text bg-dark text-white border-secondary">Temps avant Rappel (j)</span><input type="number" class="form-control" value="${reg.rappelDays}" onchange="updateRegiment(${index}, 'rappelDays', this.value)"></div>
@@ -898,7 +917,12 @@
             renderAdminUI(); 
         }
         function removeConfig(key, val) { configData[key] = configData[key].filter(item => item !== val); renderAdminUI(); }
-        async function saveConfig() { await fetch('/api/config', { method: 'PUT', headers: { 'Content-Type': 'application/json' }, body: JSON.stringify(configData) }); customAlert("Configuration sauvegardée !"); renderRegimentsSelect(); }
+        
+        async function saveConfig() { 
+            await fetch('/api/config', { method: 'PUT', headers: { 'Content-Type': 'application/json' }, body: JSON.stringify(configData) }); 
+            customAlert("Configuration sauvegardée !"); 
+            renderRegimentsSelect(); // Met à jour les listes déroulantes immédiatement
+        }
         
         function preparerAction(id, mode) { 
             const item = currentData.find(p => p._id === id); 
@@ -990,7 +1014,6 @@
             } 
         }
         
-        // Nouvelle fonction de restauration
         function restaurer(id) {
             restoreId = id;
             document.getElementById('restoreTimeInput').value = '';
