@@ -599,7 +599,7 @@
                         const datePriseEnCharge = new Date(p.rappelDate);
                         const deadline = new Date(datePriseEnCharge);
                         deadline.setDate(deadline.getDate() + regConfig.sanctionDays);
-                        const deadlineStr = deadline.toLocaleDateString('fr-FR');
+                        const deadlineStr = deadline.toLocaleDateString('fr-FR'), { day: '2-digit', month: '2-digit' });
 
                         deadlineText = `<div class="text-white mt-1 small">A jusqu'au <strong>${deadlineStr}</strong> inclus pour effectuer le protocole.</div>`;
 
@@ -643,9 +643,9 @@
                         ${sanctionBanner}
                         <div class="row">
                             <div class="col-md-8">
-                                <p><strong>Cible :</strong> ${escapeHtml(p.cibleGrade)} ${escapeHtml(p.cibleNom)} (${escapeHtml(p.cibleRegiment)})<br>
+                                <p><strong>Clone à Sanctionner :</strong> ${escapeHtml(p.cibleGrade)} ${escapeHtml(p.cibleNom)} (${escapeHtml(p.cibleRegiment)})<br>
                                 <strong>Protocole :</strong> ${escapeHtml(p.protocoleType)}<br>
-                                <strong>Date Ordre :</strong> ${new Date(p.date).toLocaleDateString('fr-FR')}</p>
+                                <strong>Date du Protocole :</strong> ${new Date(p.date).toLocaleDateString('fr-FR', { day: '2-digit', month: '2-digit' })}</p>
                                 ${btnGen}
                                 <div id="gen-${p._id}" style="display:none;">
                                     <div class="generated-box mb-2" id="title-${p._id}" onclick="copyText(this.innerText)"></div>
