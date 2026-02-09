@@ -599,7 +599,7 @@
                         const datePriseEnCharge = new Date(p.rappelDate);
                         const deadline = new Date(datePriseEnCharge);
                         deadline.setDate(deadline.getDate() + regConfig.sanctionDays);
-                        const deadlineStr = deadline.toLocaleDateString('fr-FR'), { day: '2-digit', month: '2-digit' });
+                        const deadlineStr = deadline.toLocaleDateString('fr-FR', { day: '2-digit', month: '2-digit' });
 
                         deadlineText = `<div class="text-white mt-1 small">A jusqu'au <strong>${deadlineStr}</strong> inclus pour effectuer le protocole.</div>`;
 
